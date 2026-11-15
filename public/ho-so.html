@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hồ sơ xét tuyển – Tuyển sinh HHT</title>
+  <meta name="description" content="Checklist giấy tờ xét tuyển theo từng đối tượng: Cao đẳng, Trung cấp, hệ 9+, bộ đội xuất ngũ.">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div data-layout="header"></div>
+  <main id="main">
+    <section class="page-head"><div class="wrap"><p class="crumbs"><a href="/">Trang chủ</a> / Hồ sơ</p>
+      <h1>Checklist hồ sơ</h1>
+      <p class="lede">Chọn đối tượng của bạn, đánh dấu giấy tờ đã có. Danh mục lấy từ thông báo tuyển sinh 2026–2027.</p>
+    </div></section>
+    <section class="section"><div class="wrap detail-grid">
+      <div>
+        <fieldset class="no-print"><legend>Bạn thuộc đối tượng nào?</legend>
+          <div class="choice-grid" id="audiences"></div>
+        </fieldset>
+        <h2 class="mt-l" id="checklist-title">Danh mục giấy tờ</h2>
+        <ul class="doc-list" id="doc-list"></ul>
+      </div>
+      <aside class="panel sticky">
+        <h3>Tiến độ chuẩn bị</h3>
+        <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+        <p id="progress-text" class="small mt-xs">Chọn đối tượng để bắt đầu.</p>
+        <div id="missing" class="small"></div>
+        <div class="btn-row no-print mt-s">
+          <a class="btn btn--tag" id="to-booking" href="/dat-lich.html">Đặt lịch nộp hồ sơ</a>
+          <button class="btn" type="button" data-action="print">In checklist</button>
+        </div>
+        <p class="btn-row no-print mt-s">Có thể nộp trực tiếp tại trường, gửi bưu điện, hoặc <a href="/huong-dan-dang-ky.html">đăng ký trực tuyến</a>.</p>
+      </aside>
+    </div></section>
+  </main>
+  <div data-layout="footer"></div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/checklist.js"></script>
+</body>
+</html>

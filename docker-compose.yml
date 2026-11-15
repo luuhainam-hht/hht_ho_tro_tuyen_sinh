@@ -1,0 +1,64 @@
+# Triển khai trên VPS (~300.000 đ/tháng): docker compose up -d --build
+name: hht-tuyen-sinh
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hht
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Đặt POSTGRES_PASSWORD trong .env}
+      POSTGRES_DB: hht_tuyen_sinh
+      TZ: Asia/Ho_Chi_Minh
+    volumes: [db-data:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:5432:5432"]   # chỉ mở cho máy chủ, không ra Internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hht -d hht_tuyen_sinh"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://hht:${POSTGRES_PASSWORD}@db:5432/hht_tuyen_sinh
+      DATABASE_SSL: "false"
+    volumes: [uploads:/app/data/uploads]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+    stop_grace_period: 12s
+
+  caddy:
+    image: caddy:2-alpine
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to app:3000
+    ports: ["80:80", "443:443"]
+    volumes: [caddy-data:/data]
+    depends_on: [app]
+    restart: unless-stopped
+
+  backup:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+    volumes: [backups:/backups]
+    entrypoint: ["/bin/sh", "-c"]
+    # pg_dump mỗi 24 giờ, giữ BACKUP_KEEP bản gần nhất
+    command:
+      - |
+        while true; do
+          f=/backups/hht_$$(date +%Y%m%d_%H%M).sql.gz
+          pg_dump -h db -U hht hht_tuyen_sinh | gzip > "$$f" && echo "[backup] $$f"
+          ls -1t /backups/*.sql.gz | tail -n +$$((BACKUP_KEEP + 1)) | xargs -r rm -f
+          sleep 86400
+        done
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  backups:

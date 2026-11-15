@@ -1,0 +1,906 @@
+[
+  {
+    "code": "Q01",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Trường Cao đẳng Công nghệ cao Hà Nội là trường công hay trường tư?",
+    "variants": [
+      "Trường HHT có phải trường công lập không?",
+      "Trường thuộc cơ quan nào quản lý?"
+    ],
+    "answer": "Trường Cao đẳng Công nghệ cao Hà Nội (HHT) là trường công lập, trực thuộc UBND Thành phố Hà Nội.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q02",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Trường có những danh hiệu, thành tích gì nổi bật?",
+    "variants": [
+      "Trường có uy tín không?",
+      "HHT là Trung tâm Quốc gia là sao?"
+    ],
+    "answer": "Trường được Chủ tịch nước tặng Huân chương Lao động hạng Nhì và được Thủ tướng Chính phủ phê duyệt xây dựng trở thành Trung tâm Quốc gia đào tạo và thực hành nghề chất lượng cao theo Quyết định số 1569/QĐ-TTg ngày 12/12/2024.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q03",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Trường được thành lập từ khi nào? Lịch sử của trường?",
+    "variants": [
+      "HHT có từ năm nào?",
+      "Tiền thân của trường là gì?"
+    ],
+    "answer": "Tiền thân là Trường Cao đẳng nghề Công nghệ cao Hà Nội, công trình trọng điểm chào mừng Đại lễ 1000 năm Thăng Long – Hà Nội, hoạt động từ năm 2010. Năm 2022, Trường Cao đẳng Công nghệ và Môi trường Hà Nội được sáp nhập vào và trường đổi tên thành Trường Cao đẳng Công nghệ cao Hà Nội theo Quyết định số 1267/QĐ-LĐTBXH ngày 15/12/2022 của Bộ trưởng Bộ LĐ-TB&XH.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S14"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Website không ghi số quyết định thành lập ban đầu."
+  },
+  {
+    "code": "Q04",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Mã trường của HHT là gì?",
+    "variants": [
+      "Mã tuyển sinh của trường?",
+      "Tên viết tắt của trường?"
+    ],
+    "answer": "Tên viết tắt là HHT (Hanoi High Tech). Mã trường ghi trong thông báo tuyển sinh 2026–2027 là CDD0118.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Thông báo 2025–2026 ghi CDD0118; một số dòng trong bảng ghi CDD118."
+  },
+  {
+    "code": "Q05",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Trường có mấy cơ sở, địa chỉ ở đâu?",
+    "variants": [
+      "Trường nằm ở đâu?",
+      "Địa chỉ trường HHT?",
+      "Cơ sở 2 ở đâu?"
+    ],
+    "answer": "Trường có 3 cơ sở:\n- Cơ sở 1 (trụ sở chính): Phố Nhuệ Giang, Phường Xuân Phương, TP. Hà Nội\n- Cơ sở 2: 268 Vũ Hữu, Phường Thanh Xuân, TP. Hà Nội\n- Cơ sở 3: 181 Đình Thôn, Phường Từ Liêm, TP. Hà Nội",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S20"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Địa chỉ cũ trên trang Liên hệ: Tây Mỗ, Nam Từ Liêm. Nên thống nhất theo địa giới mới."
+  },
+  {
+    "code": "Q06",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Trường có những khoa nào?",
+    "variants": [
+      "HHT đào tạo những lĩnh vực gì?"
+    ],
+    "answer": "Trường có 9 khoa: Công nghệ thông tin; Công nghệ cơ khí; Kỹ thuật Điện – Điện tử; Kinh tế – Du lịch; Chăm sóc sắc đẹp; Khoa học cơ bản; Công nghệ ô tô; Nông nghiệp công nghệ cao; Ngoại ngữ – Đào tạo quốc tế.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S20",
+      "S14"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q07",
+    "topic": "GIOI_THIEU",
+    "topicLabel": "Giới thiệu trường",
+    "question": "Học xong ở trường có việc làm không?",
+    "variants": [
+      "Ra trường có được giới thiệu việc làm không?",
+      "Lương sau khi ra trường bao nhiêu?"
+    ],
+    "answer": "Nhà trường cam kết 100% sinh viên tốt nghiệp đạt chuẩn đầu ra có việc làm hoặc có thể tự tạo việc làm, với thu nhập từ 10 đến 50 triệu đồng/tháng (tùy ngành nghề, vị trí và năng lực). Trường có Trung tâm Tuyển sinh & Giải quyết việc làm làm đầu mối giới thiệu việc làm, thực tập tại doanh nghiệp.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S12"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Đây là cam kết của trường, không phải mức lương được bảo đảm cho từng người."
+  },
+  {
+    "code": "Q08",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Năm học 2026–2027 trường tuyển bao nhiêu chỉ tiêu?",
+    "variants": [
+      "Năm nay HHT tuyển bao nhiêu sinh viên?",
+      "Có bao nhiêu ngành?"
+    ],
+    "answer": "Năm học 2026–2027 trường tuyển 4.500 chỉ tiêu (tăng 500 so với năm trước) bằng hình thức xét tuyển, ở các hệ: Cao đẳng, THPT – Cao đẳng (9+), Liên thông, Sơ cấp – ngắn hạn, với 46 nghề.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S07"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Chưa có số chỉ tiêu theo từng ngành cho hệ CĐ/TC."
+  },
+  {
+    "code": "Q09",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Trường xét tuyển hay thi tuyển? Xét bằng gì?",
+    "variants": [
+      "Phương thức tuyển sinh?",
+      "Có phải thi đầu vào không?",
+      "Xét học bạ được không?",
+      "Xét khối nào?"
+    ],
+    "answer": "Trường xét tuyển, không thi đầu vào. Hệ Cao đẳng xét học bạ hoặc xét điểm thi tốt nghiệp THPT, xét tất cả các tổ hợp (bao gồm khối C00, A00). Hệ 9+ và Trung cấp xét học bạ THCS/kết quả học tập lớp 9.\nRiêng hệ Cao đẳng theo đơn đặt hàng doanh nghiệp: doanh nghiệp sẽ phỏng vấn đầu vào.",
+    "appliesTo": "CĐ, TC, 9+",
+    "sourceCodes": [
+      "S01",
+      "S02",
+      "S07"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q10",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Điều kiện để học Cao đẳng là gì?",
+    "variants": [
+      "Chưa tốt nghiệp THPT có học cao đẳng được không?",
+      "Ai được đăng ký hệ cao đẳng?"
+    ],
+    "answer": "Hệ Cao đẳng chính quy dành cho người đã tốt nghiệp THPT hoặc tương đương trở lên, tuyển sinh trên toàn quốc. Tốt nghiệp được cấp bằng cao đẳng chính quy (danh hiệu Kỹ sư/Cử nhân thực hành) và được học liên thông lên Đại học.\nNếu mới tốt nghiệp THCS, bạn có thể học hệ Trung cấp hoặc hệ 9+.",
+    "appliesTo": "Cao đẳng",
+    "sourceCodes": [
+      "S01",
+      "S07"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q11",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Điều kiện để học Trung cấp là gì?",
+    "variants": [
+      "Học xong lớp 9 có học được không?",
+      "Hệ trung cấp tuyển ai?"
+    ],
+    "answer": "Hệ Trung cấp tuyển người tốt nghiệp THCS hoặc tương đương trở lên. Tốt nghiệp được cấp bằng Trung cấp chính quy và được học liên thông lên Cao đẳng, Đại học.",
+    "appliesTo": "Trung cấp",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q12",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Học cao đẳng ở trường mất mấy năm?",
+    "variants": [
+      "Thời gian đào tạo bao lâu?",
+      "Trung cấp học mấy năm?"
+    ],
+    "answer": "Theo thông tin của trường: Cao đẳng khoảng 3 năm; Trung cấp khoảng 2 năm; hệ Cao đẳng theo đơn đặt hàng doanh nghiệp 2,5–3 năm; hệ 9+ là 4 năm (3 năm THPT + Trung cấp, 1 năm Cao đẳng).",
+    "appliesTo": "CĐ, TC, 9+",
+    "sourceCodes": [
+      "S09",
+      "S01",
+      "S02"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Thời gian CĐ 3 năm/TC 2 năm lấy từ thông báo 2025–2026; thông báo 2026–2027 không ghi lại."
+  },
+  {
+    "code": "Q13",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Tốt nghiệp được cấp bằng gì?",
+    "variants": [
+      "Bằng của trường có giá trị không?",
+      "Có được học liên thông lên đại học không?"
+    ],
+    "answer": "- Cao đẳng: bằng Cao đẳng chính quy, danh hiệu Kỹ sư thực hành hoặc Cử nhân thực hành, được học liên thông lên Đại học.\n- Trung cấp: bằng Trung cấp chính quy, được học liên thông lên Cao đẳng, Đại học.\n- Hệ 9+: bằng tốt nghiệp THPT + bằng Trung cấp (sau 3 năm), học tiếp 1 năm để lấy bằng Cao đẳng.",
+    "appliesTo": "CĐ, TC, 9+",
+    "sourceCodes": [
+      "S01",
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q14",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Năm 2026 trường có ngành mới nào?",
+    "variants": [
+      "Ngành mới năm nay?",
+      "Trường có ngành bán dẫn không?"
+    ],
+    "answer": "Năm học 2026–2027 trường tuyển sinh 2 nghề mới: Công nghệ kỹ thuật cơ khí (Khoa Công nghệ cơ khí) và Công nghệ kỹ thuật điện, điện tử – Công nghệ bán dẫn (Khoa Kỹ thuật Điện – Điện tử, hệ Cao đẳng).",
+    "appliesTo": "Cao đẳng",
+    "sourceCodes": [
+      "S07",
+      "S01"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Nghề Công nghệ kỹ thuật cơ khí chưa có trong bảng ngành chính thức."
+  },
+  {
+    "code": "Q15",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Trường có những ngành nào?",
+    "variants": [
+      "Danh sách ngành?",
+      "Khoa CNTT có ngành gì?",
+      "Có ngành X không?"
+    ],
+    "answer": "Trường đào tạo khoảng 46 nghề thuộc các nhóm: Cơ khí, Công nghệ thông tin, Chăm sóc sắc đẹp, Kinh tế – Du lịch, Điện – Điện tử, Ngoại ngữ, Nông nghiệp – Tài nguyên – Môi trường, Công nghệ ô tô. Danh sách chi tiết theo từng hệ (9+, Trung cấp, Cao đẳng, Sơ cấp) xem bảng ngành.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Chatbot nên tra sheet \"Ngành nghề\" để trả lời câu hỏi về từng ngành."
+  },
+  {
+    "code": "Q16",
+    "topic": "TUYEN_SINH",
+    "topicLabel": "Tuyển sinh chung",
+    "question": "Khoa Công nghệ thông tin đào tạo những ngành gì?",
+    "variants": [
+      "Học CNTT ở HHT có ngành nào?",
+      "Có ngành lập trình không?",
+      "Có ngành thiết kế đồ họa không?"
+    ],
+    "answer": "Khoa Công nghệ thông tin tuyển sinh 2026–2027:\n- Thiết kế đồ họa (9+, Trung cấp, Cao đẳng, Sơ cấp)\n- Thiết kế trang web, Lập trình máy tính (Trung cấp, Cao đẳng, Sơ cấp)\n- Công nghệ thông tin (Ứng dụng phần mềm), Tin học ứng dụng (9+, Trung cấp, Cao đẳng, Sơ cấp)\n- Thiết kế nội, ngoại thất (Cao đẳng, Sơ cấp)",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Biểu mẫu online còn có: Quản trị mạng máy tính, Phát triển ứng dụng di động."
+  },
+  {
+    "code": "Q17",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Học phí của trường là bao nhiêu?",
+    "variants": [
+      "Học phí 1 tháng bao nhiêu?",
+      "Học phí cao đẳng?",
+      "Học phí trung cấp?"
+    ],
+    "answer": "Học phí hệ Trung cấp và Cao đẳng từ 1.800.000 đến 2.400.000 đồng/tháng, tùy từng ngành nghề. Nhiều ngành được Nhà nước hoặc doanh nghiệp hỗ trợ một phần học phí. Riêng hệ 9+, phần Trung cấp được miễn 100% học phí.",
+    "appliesTo": "CĐ, TC, liên thông",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Website không có bảng học phí cụ thể từng ngành → cần bổ sung."
+  },
+  {
+    "code": "Q18",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Ngành nào được Nhà nước hỗ trợ 70% học phí?",
+    "variants": [
+      "Ngành nào được giảm học phí?",
+      "Ngành nặng nhọc độc hại được hỗ trợ gì?"
+    ],
+    "answer": "Theo bài tin tuyển sinh 07/2026, sinh viên hệ Cao đẳng chính quy học các nghề sau được Nhà nước hỗ trợ 70% học phí (danh mục nghề nặng nhọc, độc hại, nguy hiểm): Cắt gọt kim loại, Chế tạo thiết bị cơ khí, Công nghệ Hàn, Điện công nghiệp, Hướng dẫn du lịch, Kỹ thuật máy lạnh và điều hòa không khí, Công nghệ kỹ thuật cơ khí, Dịch vụ thú y, Chăn nuôi thú y, Bảo vệ thực vật, Công nghệ ô tô, Trồng trọt và bảo vệ thực vật, Công nghệ kỹ thuật điện – điện tử (Công nghệ bán dẫn).",
+    "appliesTo": "Cao đẳng chính quy",
+    "sourceCodes": [
+      "S07",
+      "S01",
+      "S05"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Bảng 08/2026 không còn ghi 70% cho Công nghệ ô tô; S05 ghi \"một số ngành còn chỉ tiêu\". Cần xác nhận danh sách hiện hành."
+  },
+  {
+    "code": "Q19",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Doanh nghiệp hỗ trợ học phí ngành nào?",
+    "variants": [
+      "Ngành nào được doanh nghiệp tài trợ?"
+    ],
+    "answer": "Theo bảng ngành 2026–2027, một số ngành có chính sách doanh nghiệp hỗ trợ học phí (thường 30%): Cơ điện tử, Cắt gọt kim loại, Chế tạo thiết bị cơ khí, Điện công nghiệp, Công nghệ kỹ thuật điều khiển và tự động hóa, Kỹ thuật lắp đặt và điều khiển điện trong công nghiệp, Điện tử công nghiệp, Kỹ thuật sửa chữa và lắp ráp máy tính, Kỹ thuật máy lạnh và điều hòa không khí, Công nghệ bán dẫn; Chế tạo khuôn mẫu 100%.",
+    "appliesTo": "CĐ, TC",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "C",
+    "status": "DRAFT",
+    "internalNote": "Bảng 08/2026 thay đổi nhiều mức hỗ trợ DN. Cần xác nhận trước khi đưa vào chatbot."
+  },
+  {
+    "code": "Q20",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Hà Nội hỗ trợ 100% học phí là như thế nào?",
+    "variants": [
+      "Có hộ khẩu Hà Nội được miễn học phí không?",
+      "Nghị quyết 57 là gì?"
+    ],
+    "answer": "Theo Nghị quyết số 57/2026/NQ-HĐND của TP Hà Nội: người học thường trú tại Hà Nội, tốt nghiệp THPT hoặc tương đương, học trình độ Trung cấp/Cao đẳng (hoặc liên thông TC lên CĐ) thuộc các ngành, nghề trọng điểm hoặc ngành, nghề tiếp cận trình độ tiên tiến khu vực và thế giới được hỗ trợ học phí theo chính sách của thành phố (có thể đến 100%).\nThời gian hỗ trợ tối đa: Trung cấp 20 tháng, Cao đẳng 30 tháng, liên thông TC lên CĐ 10 tháng; chi theo kỳ, mỗi kỳ không quá 5 tháng, không quá 10 tháng/năm.",
+    "appliesTo": "Người thường trú Hà Nội",
+    "sourceCodes": [
+      "S04"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Bài viết không nêu ngành cụ thể của HHT thuộc danh mục và giấy tờ chứng minh. Cần bổ sung."
+  },
+  {
+    "code": "Q21",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Chính sách miễn giảm học phí áp dụng theo quy định nào?",
+    "variants": [
+      "Con thương binh có được miễn học phí không?",
+      "Hộ nghèo có được giảm học phí không?"
+    ],
+    "answer": "Học sinh, sinh viên được hưởng chế độ miễn, giảm học phí theo Nghị định 238/2025/NĐ-CP và chính sách nội trú theo Quyết định 53/2015/QĐ-TTg. Mức cụ thể tùy đối tượng; vui lòng liên hệ Trung tâm Tuyển sinh để được hướng dẫn hồ sơ.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Thông báo dành cho bộ đội xuất ngũ (S03) vẫn ghi Nghị định 81/2021/NĐ-CP."
+  },
+  {
+    "code": "Q22",
+    "topic": "HOC_PHI",
+    "topicLabel": "Học phí & hỗ trợ",
+    "question": "Trường có học bổng không?",
+    "variants": [
+      "Điều kiện nhận học bổng?",
+      "Học sinh giỏi có học bổng không?"
+    ],
+    "answer": "Có. Nhà trường cấp học bổng khuyến khích đầu vào cho: thí sinh có điểm thi tốt nghiệp THPT cao (xét theo từng tổ hợp môn), học sinh giỏi lớp 12, bộ đội xuất ngũ, học sinh vùng dân tộc thiểu số, vùng chịu ảnh hưởng thiên tai, bão lũ. Ngoài ra có học bổng khuyến học, học bổng doanh nghiệp; các đối tượng ưu tiên (bộ đội xuất ngũ, công an nghĩa vụ, học sinh dân tộc, hộ khẩu vùng khó khăn, con thương binh, liệt sĩ, người khuyết tật, người đã có 1 bằng CĐ/ĐH, học sinh có thành tích học tập cao…) được áp dụng đồng bộ các chính sách học bổng, miễn/giảm học phí theo quy định.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S07",
+      "S06",
+      "S01"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Website không công bố mức học bổng. Link \"Thông tin học bổng\" ở chân trang bị đặt sai."
+  },
+  {
+    "code": "Q23",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Hồ sơ xét tuyển Cao đẳng, Trung cấp gồm những gì?",
+    "variants": [
+      "Cần chuẩn bị giấy tờ gì?",
+      "Nộp hồ sơ cần những gì?",
+      "Hồ sơ nhập học gồm gì?"
+    ],
+    "answer": "Hồ sơ tuyển sinh gồm:\n1. Phiếu đăng ký dự tuyển (tải tại www.hht.edu.vn hoặc nhận tại Ban tuyển sinh các trường THPT, TT GDTX-GDNN, THCS)\n2. Sơ yếu lý lịch (tải tại www.hht.edu.vn)\n3. Bản sao công chứng: Học bạ; Bằng tốt nghiệp hoặc Giấy chứng nhận tốt nghiệp tạm thời; Giấy khai sinh; CCCD; giấy tờ ưu tiên khác (nếu có).",
+    "appliesTo": "CĐ, TC chính quy",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Thông báo không ghi ảnh thẻ; các thông báo khác yêu cầu 02 ảnh 3x4."
+  },
+  {
+    "code": "Q24",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Có cần nộp ảnh thẻ không? Ảnh cỡ nào?",
+    "variants": [
+      "Cần mấy ảnh?",
+      "Ảnh 3x4 hay 4x6?"
+    ],
+    "answer": "Thông báo tuyển sinh CĐ/TC 2026–2027 không ghi ảnh thẻ. Thông báo hệ 9+ và hệ bộ đội xuất ngũ yêu cầu 02 ảnh 3x4 (mặt sau ghi rõ họ tên, ngày sinh; bộ đội xuất ngũ: nền xanh, mặc áo có cổ). Bạn nên chuẩn bị sẵn 02 ảnh 3x4 và hỏi lại hotline khi nộp.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S02",
+      "S03"
+    ],
+    "reliability": "C",
+    "status": "DRAFT",
+    "internalNote": "Cần trường thống nhất yêu cầu ảnh cho hệ CĐ/TC."
+  },
+  {
+    "code": "Q25",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Chưa có bằng tốt nghiệp thì nộp hồ sơ được không?",
+    "variants": [
+      "Chưa nhận bằng THPT thì sao?",
+      "Dùng giấy chứng nhận tốt nghiệp tạm thời được không?"
+    ],
+    "answer": "Được. Bạn có thể nộp bản sao công chứng Giấy chứng nhận tốt nghiệp tạm thời thay cho bằng tốt nghiệp.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q26",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Tải mẫu phiếu đăng ký, sơ yếu lý lịch ở đâu?",
+    "variants": [
+      "Lấy mẫu hồ sơ ở đâu?",
+      "Download phiếu đăng ký xét tuyển?"
+    ],
+    "answer": "Bạn tải mẫu Phiếu đăng ký dự tuyển và Sơ yếu lý lịch trên website www.hht.edu.vn (trang Đăng ký hồ sơ tuyển sinh trực tuyến, mục \"Mẫu hồ sơ đăng ký tuyển sinh\"), hoặc nhận trực tiếp tại Ban tuyển sinh các trường THPT, Trung tâm GDTX-GDNN, THCS, hoặc tại trường.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S10"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Mục tải mẫu trên trang đăng ký vẫn ghi \"2025\"."
+  },
+  {
+    "code": "Q27",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Nộp hồ sơ bằng cách nào?",
+    "variants": [
+      "Có đăng ký online được không?",
+      "Gửi hồ sơ qua bưu điện được không?"
+    ],
+    "answer": "Có 3 cách:\n- Nộp trực tiếp tại trường (Trung tâm Tuyển sinh & Giải quyết việc làm, tầng 1 nhà A, Cơ sở 1 – Phố Nhuệ Giang, Phường Xuân Phương; hoặc Cơ sở 2 – 268 Vũ Hữu, Phường Thanh Xuân)\n- Gửi qua bưu điện\n- Đăng ký trực tuyến tại https://hht.edu.vn/dang-ky-ho-so-tuyen-sinh-truc-tuyen/",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S07",
+      "S12"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q28",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Đăng ký online cần điền những thông tin gì?",
+    "variants": [
+      "Form đăng ký trực tuyến gồm gì?",
+      "Đăng ký online như thế nào?"
+    ],
+    "answer": "Biểu mẫu đăng ký trực tuyến gồm:\n1. Thông tin cá nhân: họ tên*, ngày sinh*, giới tính*, email, điện thoại*, trường THPT/THCS đã học*, năm tốt nghiệp\n2. Đăng ký học nghề: tối đa 3 nguyện vọng (nguyện vọng 1 bắt buộc), mỗi nguyện vọng chọn ngành và cấp bậc (Cao đẳng / Trung cấp đã tốt nghiệp THPT / Trung cấp chưa tốt nghiệp THPT / Ngắn hạn)\n3. Địa chỉ nhận thư: người nhận*, địa chỉ, điện thoại*\n4. Bạn biết đến trường từ đâu\n5. Xác nhận thông tin\n(* là bắt buộc)",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S10"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q29",
+    "topic": "HO_SO",
+    "topicLabel": "Hồ sơ & thủ tục",
+    "question": "Quy trình nhập học gồm mấy bước?",
+    "variants": [
+      "Các bước nhập học?",
+      "Đăng ký xong thì làm gì tiếp?"
+    ],
+    "answer": "5 bước nhập học:\n1. Xác định đối tượng (tốt nghiệp THCS: hệ 9+, Trung cấp; tốt nghiệp THPT: hệ Cao đẳng)\n2. Xét tuyển (học bạ THCS, THPT; tốt nghiệp THCS, THPT)\n3. Đăng ký online tại www.hht.edu.vn\n4. Nộp hồ sơ (từ 01/01 đến 31/12 hằng năm)\n5. Hoàn tất nhập học trực tiếp tại trường",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q30",
+    "topic": "LICH",
+    "topicLabel": "Thời gian tuyển sinh",
+    "question": "Khi nào trường nhận hồ sơ?",
+    "variants": [
+      "Hạn nộp hồ sơ?",
+      "Bây giờ còn nộp hồ sơ được không?",
+      "Tháng 11, 12 còn tuyển không?"
+    ],
+    "answer": "Trường tuyển sinh liên tục từ 01/01/2026 đến 31/12/2026. Năm học 2026–2027 có 4 đợt nhập học:\n- Đợt 1: 01/01 – 30/03/2026\n- Đợt 2: 01/05 – 31/08/2026\n- Đợt 3: 01/09 – 31/10/2026\n- Đợt 4: 01/11 – 31/12/2026",
+    "appliesTo": "CĐ, TC chính quy",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Thông báo cho bộ đội xuất ngũ (S03) chia 3 đợt khác. Cần cập nhật khi có thông báo 2027–2028."
+  },
+  {
+    "code": "Q31",
+    "topic": "HE_9_PLUS",
+    "topicLabel": "Hệ 9+ (THPT + Cao đẳng)",
+    "question": "Hệ 9+ là gì?",
+    "variants": [
+      "Học xong lớp 9 vào trường học như thế nào?",
+      "Hệ song bằng là gì?",
+      "Hệ THPT – Cao đẳng?"
+    ],
+    "answer": "Hệ 9+ dành cho học sinh tốt nghiệp THCS, xét tuyển học bạ/kết quả học tập lớp 9. Thời gian đào tạo 4 năm:\n- Giai đoạn 1 (3 năm đầu): học song song chương trình GDTX cấp THPT và Trung cấp; dự thi tốt nghiệp THPT quốc gia; nhận 2 bằng: tốt nghiệp THPT và Trung cấp.\n- Giai đoạn 2 (1 năm cuối): học chương trình Cao đẳng, được cấp bằng Cao đẳng (danh hiệu Kỹ sư/Cử nhân thực hành) và đủ điều kiện học liên thông lên đại học.",
+    "appliesTo": "Hệ 9+",
+    "sourceCodes": [
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q32",
+    "topic": "HE_9_PLUS",
+    "topicLabel": "Hệ 9+ (THPT + Cao đẳng)",
+    "question": "Học phí hệ 9+ bao nhiêu?",
+    "variants": [
+      "Học 9+ có mất tiền không?",
+      "Hệ 9+ có được miễn học phí không?"
+    ],
+    "answer": "- Học phí trình độ Trung cấp: miễn 100%\n- Học phí trình độ Cao đẳng: từ 1.800.000 đến 2.400.000 đồng/tháng (tùy nghề)\n- Học phí học văn hóa: theo quy định của Nhà nước, của TP Hà Nội",
+    "appliesTo": "Hệ 9+",
+    "sourceCodes": [
+      "S02",
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q33",
+    "topic": "HE_9_PLUS",
+    "topicLabel": "Hệ 9+ (THPT + Cao đẳng)",
+    "question": "Hệ 9+ có những ngành nào, chỉ tiêu bao nhiêu?",
+    "variants": [
+      "9+ học ngành gì?",
+      "9+ học ở cơ sở nào?"
+    ],
+    "answer": "Hệ 9+ năm 2026–2027 có 20 nghề (chỉ tiêu CS1/CS2): Cắt gọt kim loại 35; Công nghệ hàn 35; Cơ điện tử 25; Công nghệ ô tô 40; Điện tử công nghiệp/Điện tử tự động hóa 35; Kỹ thuật máy lạnh và điều hòa không khí 60; Kỹ thuật sửa chữa và lắp ráp máy tính 30/30; Thiết kế đồ họa 35/35; Tin học ứng dụng, CNTT (UDPM) 35/35; Tiếng Anh 35; Tiếng Hàn 25; Tiếng Trung (CS2) 35; Tiếng Nhật 35; Quản trị doanh nghiệp vừa và nhỏ 25; Kế toán doanh nghiệp 25; Du lịch sinh thái (CS2) 25; Chăm sóc sắc đẹp (theo chương trình Hàn Quốc) 35/35; Kỹ thuật chăm sóc tóc 35; Chăn nuôi thú y – Chăm sóc thú cưng (CS2) 35; Trồng trọt và bảo vệ thực vật – Nông nghiệp công nghệ cao 35.",
+    "appliesTo": "Hệ 9+",
+    "sourceCodes": [
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q34",
+    "topic": "HE_9_PLUS",
+    "topicLabel": "Hệ 9+ (THPT + Cao đẳng)",
+    "question": "Hồ sơ và thời gian nộp hồ sơ hệ 9+?",
+    "variants": [
+      "Hồ sơ vào lớp 10 hệ 9+?",
+      "Hạn nộp hồ sơ 9+?"
+    ],
+    "answer": "Hồ sơ hệ 9+ gồm: Phiếu đăng ký xét tuyển, sơ yếu lý lịch (mẫu tải tại hht.edu.vn hoặc nhận tại trường); Bản chính học bạ, bằng tốt nghiệp hoặc Giấy CN tốt nghiệp THCS tạm thời; Bản sao công chứng học bạ, bằng/giấy CN tốt nghiệp THCS, CCCD, giấy khai sinh, giấy tờ ưu tiên (mỗi loại 02 bản); 02 ảnh 3x4 (ghi họ tên, ngày sinh mặt sau); Giấy xác nhận nhân sự/không vi phạm pháp luật (với học sinh tốt nghiệp năm trước); Phiếu tạm trú tạm vắng (với học sinh không thuộc hộ khẩu Hà Nội).\nNăm 2026, hồ sơ nhận đợt 1 từ 01/05 – 10/07/2026, đợt 2 từ 11/07 – 31/07/2026 (ngừng khi đủ chỉ tiêu). Đợt tuyển 2026 đã kết thúc; vui lòng theo dõi thông báo năm 2027.",
+    "appliesTo": "Hệ 9+",
+    "sourceCodes": [
+      "S02"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q35",
+    "topic": "LIEN_THONG",
+    "topicLabel": "Liên thông",
+    "question": "Trường có tuyển sinh liên thông không?",
+    "variants": [
+      "Đã có bằng trung cấp học lên cao đẳng được không?",
+      "Có bằng đại học học thêm cao đẳng được không?"
+    ],
+    "answer": "Có. Hệ Cao đẳng liên thông tuyển người đã tốt nghiệp Trung cấp, Cao đẳng, Đại học trở lên. Học phí 1.800.000 – 2.400.000 đồng/tháng (tùy ngành). Tốt nghiệp được cấp bằng cao đẳng chính quy (danh hiệu Kỹ sư/Cử nhân thực hành) và được học liên thông lên Đại học.",
+    "appliesTo": "Liên thông",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Chuyên mục liên thông trên web chỉ có bài cũ (2019–2023)."
+  },
+  {
+    "code": "Q36",
+    "topic": "DOI_TUONG_DAC_BIET",
+    "topicLabel": "Đối tượng đặc biệt",
+    "question": "Bộ đội, công an xuất ngũ học ở trường có ưu đãi gì?",
+    "variants": [
+      "Bộ đội xuất ngũ dùng thẻ học nghề được không?",
+      "Quyền lợi của bộ đội xuất ngũ?"
+    ],
+    "answer": "Bộ đội, công an xuất ngũ được: hỗ trợ 70–100% học phí toàn khóa; học, thực tập tại doanh nghiệp (doanh nghiệp hỗ trợ 100–150 triệu đồng/khóa) và có thể trở thành nhân viên chính thức; học liên thông lên đại học; hưởng miễn, giảm học phí và chính sách nội trú theo quy định; được ưu tiên xét học bổng. Trường tuyển 09 ngành nghề cho đối tượng này.\nHồ sơ: Thẻ học nghề (bản gốc); Quyết định xuất ngũ (bản công chứng); Phiếu đăng ký dự tuyển; Sơ yếu lý lịch có xác nhận địa phương; bản sao công chứng học bạ, bằng tốt nghiệp, giấy khai sinh, CCCD; 02 ảnh 3x4 nền xanh, mặc áo có cổ; giấy tờ ưu tiên (nếu có).",
+    "appliesTo": "Bộ đội, Công an xuất ngũ",
+    "sourceCodes": [
+      "S03"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Danh sách 09 ngành nằm trong ảnh, chưa trích được."
+  },
+  {
+    "code": "Q37",
+    "topic": "DAT_HANG_DN",
+    "topicLabel": "Hệ đặt hàng doanh nghiệp",
+    "question": "Hệ Cao đẳng theo đơn đặt hàng doanh nghiệp là gì?",
+    "variants": [
+      "Học được doanh nghiệp trả học phí là sao?",
+      "Hệ kỹ sư thực hành?",
+      "Vừa học vừa hưởng lương?"
+    ],
+    "answer": "Đây là chương trình Cao đẳng chính quy dài hạn do trường liên kết đào tạo theo đơn đặt hàng của doanh nghiệp (Viettel, Hanwha Aero Engines, XtechFuture, Cơ khí Công nghệ cao Hưng Thịnh, Thành Long, Kennametal, Wistron, Lotte, Thống Nhất, Tân Hải Anh…), năm 2026–2027 khoảng 1.250 chỉ tiêu, thời gian 2,5–3 năm.\nNgành: Cắt gọt kim loại, Công nghệ Hàn, Chế tạo thiết bị cơ khí, Cơ điện tử, Điện tử công nghiệp, Kỹ thuật lắp đặt và điều khiển điện trong công nghiệp, Kỹ thuật lắp ráp và sửa chữa máy tính, Công nghệ kỹ thuật điều khiển và tự động hóa, Công nghệ bán dẫn.\nQuyền lợi: được doanh nghiệp hỗ trợ học phí (70–100%), hưởng lương trong quá trình học thực hành, trở thành nhân viên chính thức sau tốt nghiệp.\nĐiều kiện: tốt nghiệp THPT, yêu thích và gắn bó với nghề; doanh nghiệp phỏng vấn đầu vào. Khi nhập học thí sinh nộp kinh phí theo thông báo, sau khi phỏng vấn trúng tuyển sẽ được doanh nghiệp chi trả lại phần học phí đã nộp.",
+    "appliesTo": "Hệ đặt hàng DN",
+    "sourceCodes": [
+      "S01",
+      "S07"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Bài 07/2026 ghi \"100% học phí\" ở một chỗ và \"70–100%\" ở chỗ khác."
+  },
+  {
+    "code": "Q38",
+    "topic": "DAT_HANG_DN",
+    "topicLabel": "Hệ đặt hàng doanh nghiệp",
+    "question": "Chương trình Kỹ sư thực hành Hanwha là gì?",
+    "variants": [
+      "Hanwha tuyển như thế nào?",
+      "Học Hanwha được lương bao nhiêu?"
+    ],
+    "answer": "Chương trình \"Kĩ sư thực hành\" khóa 8 (2026–2029) liên kết giữa Công ty TNHH Hanwha Aero Engines và trường: nghề Cơ khí – Cắt gọt kim loại; học lý thuyết 12 tháng tại trường, thực hành 18 tháng tại công ty (tổng 30 tháng). Đối tượng: nam, tốt nghiệp THPT năm 2024–2026, yêu thích kỹ thuật cơ khí. Phúc lợi: công ty trả 100% học phí, hỗ trợ tiền KTX, ăn trưa, sinh hoạt phí năm đầu; lương thực hành dự kiến 5,36–7,94 triệu/tháng; sau tốt nghiệp làm nhân viên chính thức (dự kiến 8,79 triệu/tháng, mức dự tính của công ty).\nĐợt tuyển khóa 8 đã kết thúc (nhập học dự kiến 23/08/2026). Liên hệ: Ms Bùi Thị Phượng – 0347 258 917, phuongbt@hht.edu.vn.",
+    "appliesTo": "Hệ đặt hàng DN",
+    "sourceCodes": [
+      "S08"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Chỉ là thông tin tham khảo đợt 2026; cần cập nhật khi có khóa 9."
+  },
+  {
+    "code": "Q39",
+    "topic": "NGAN_HAN_KHAC",
+    "topicLabel": "Ngắn hạn, du học, khác",
+    "question": "Trường có đào tạo ngắn hạn, cấp chứng chỉ không?",
+    "variants": [
+      "Học sơ cấp ở trường?",
+      "Học nghề ngắn hạn?"
+    ],
+    "answer": "Có. Trường liên tục tuyển sinh và đào tạo các lớp cấp chứng chỉ, chứng nhận của 46 ngành nghề thuộc các lĩnh vực: Cơ khí, Điện – Điện tử, CNTT, Ngoại ngữ, Chăm sóc sắc đẹp, Công nghệ ô tô, Kinh tế – Du lịch, Nông nghiệp – Tài nguyên và Môi trường, Nghiệp vụ bất động sản, Duy trì công tác vệ sinh môi trường…",
+    "appliesTo": "Sơ cấp – ngắn hạn",
+    "sourceCodes": [
+      "S01"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Mức học phí ngắn hạn trên web là từ 2019 → không dùng."
+  },
+  {
+    "code": "Q40",
+    "topic": "NGAN_HAN_KHAC",
+    "topicLabel": "Ngắn hạn, du học, khác",
+    "question": "Trường có chương trình du học, trao đổi sinh viên, đi làm việc nước ngoài không?",
+    "variants": [
+      "Đi Hàn Quốc học được không?",
+      "Có xuất khẩu lao động không?",
+      "Du học Nhật, Đức?"
+    ],
+    "answer": "Trường liên tục tuyển sinh và đào tạo cao đẳng định hướng, trao đổi sinh viên tại các nước: Hàn Quốc (diện visa D2-6, D4-6 → E7), Nhật Bản, CHLB Đức…; sinh viên có cơ hội làm việc tại Nhật Bản, Hàn Quốc, Đài Loan, Canada, New Zealand, Đức, Australia. Chi tiết điều kiện, chi phí vui lòng liên hệ Trung tâm Tuyển sinh & Giải quyết việc làm.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S03"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Theo S21, các lộ trình với trường Hàn Quốc chỉ là lộ trình học tập, không phải chương trình liên kết cấp bằng. Chatbot không nên dùng từ \"song bằng\", \"liên kết cấp bằng đại học\"."
+  },
+  {
+    "code": "Q41",
+    "topic": "NGAN_HAN_KHAC",
+    "topicLabel": "Ngắn hạn, du học, khác",
+    "question": "Trường có nhận thi bằng lái xe máy không?",
+    "variants": [
+      "Thi bằng A1 ở trường?",
+      "Sát hạch giấy phép lái xe?"
+    ],
+    "answer": "Có. Trường nhận hồ sơ đăng ký sát hạch cấp giấy phép lái xe mô tô hạng A, A1 (ưu tiên học sinh – sinh viên của trường). Đăng ký tại Văn phòng tuyển sinh (gần cổng số 1), Phố Nhuệ Giang, Phường Xuân Phương; thi liên tục hằng tháng từ tháng 9/2026 tại sân trường (Cơ sở 1). Hotline/Zalo: 0981 670 588 / 0977 610 800.",
+    "appliesTo": "HSSV, người có nhu cầu",
+    "sourceCodes": [
+      "S05"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q42",
+    "topic": "KTX",
+    "topicLabel": "Ký túc xá",
+    "question": "Trường có ký túc xá không?",
+    "variants": [
+      "Có chỗ ở cho sinh viên không?",
+      "KTX ở đâu?"
+    ],
+    "answer": "Có. Trường có Trung tâm Ký túc xá đặt tại nhà K1, K2; sinh viên được sinh hoạt trong khu ký túc xá và khu liên hợp thể thao (Pickleball, bóng đá, bóng chuyền, cầu lông…). Liên hệ Trung tâm Ký túc xá: (024) 3765 3906, email kytucxa@hht.edu.vn.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S11",
+      "S01"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": "Website không ghi KTX thuộc cơ sở nào (nhiều khả năng CS1, cần xác nhận)."
+  },
+  {
+    "code": "Q43",
+    "topic": "KTX",
+    "topicLabel": "Ký túc xá",
+    "question": "Giá ký túc xá bao nhiêu?",
+    "variants": [
+      "Ở KTX 1 tháng hết bao nhiêu tiền?",
+      "Phòng KTX mấy người?"
+    ],
+    "answer": "Website của trường hiện chưa công bố mức phí, loại phòng và số chỗ ký túc xá. Bạn vui lòng liên hệ Trung tâm Ký túc xá: (024) 3765 3906, email kytucxa@hht.edu.vn, hoặc hotline tuyển sinh để được báo giá chính xác.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S11"
+    ],
+    "reliability": "D",
+    "status": "APPROVED",
+    "internalNote": "CẦN BỔ SUNG: mức phí/tháng, loại phòng, số người/phòng, điện nước, tiện ích."
+  },
+  {
+    "code": "Q44",
+    "topic": "KTX",
+    "topicLabel": "Ký túc xá",
+    "question": "Đăng ký ở ký túc xá như thế nào?",
+    "variants": [
+      "Thủ tục vào KTX?",
+      "Khi nào được đăng ký KTX?",
+      "Hồ sơ đăng ký KTX?"
+    ],
+    "answer": "Website chưa công bố quy trình đăng ký ký túc xá. Theo chức năng của Trung tâm Ký túc xá: trung tâm phối hợp với phòng Công tác Sinh viên tiếp nhận sinh viên vào KTX theo điều kiện, tiêu chuẩn của trường và quản lý tạm trú, tạm vắng cho sinh viên nội trú. Bạn nên đăng ký nguyện vọng ở KTX khi làm thủ tục nhập học và liên hệ (024) 3765 3906 / kytucxa@hht.edu.vn để được hướng dẫn.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S11"
+    ],
+    "reliability": "D",
+    "status": "APPROVED",
+    "internalNote": "CẦN BỔ SUNG: thời điểm đăng ký, mẫu đơn, giấy tờ, đối tượng ưu tiên, nội quy."
+  },
+  {
+    "code": "Q45",
+    "topic": "KTX",
+    "topicLabel": "Ký túc xá",
+    "question": "Ở trường có phòng y tế không?",
+    "variants": [
+      "Ốm thì khám ở đâu?",
+      "Có khám sức khỏe đầu khóa không?"
+    ],
+    "answer": "Có. Trung tâm Ký túc xá đồng thời quản lý y tế trường học: khám và điều trị bệnh thông thường, sơ cấp cứu ban đầu, khám sức khỏe định kỳ và quản lý hồ sơ sức khỏe học sinh.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S11"
+    ],
+    "reliability": "B",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q46",
+    "topic": "LIEN_HE",
+    "topicLabel": "Liên hệ",
+    "question": "Số điện thoại tư vấn tuyển sinh?",
+    "variants": [
+      "Hotline trường?",
+      "Zalo tư vấn?",
+      "Gọi ai để hỏi tuyển sinh?"
+    ],
+    "answer": "Hotline/Zalo tuyển sinh: 0986 043 356 (Cô Thương), 0977 610 800 (Cô Vui), 0962 940 002 (Cô Lan Phương), 0974 986 306 (Cô Trang), 0981 432 899 (Thầy Huấn), 0857 974 156 (Cô My); số chung 0981 670 588 / 0981 667 288; email tuyensinh@hht.edu.vn. Điện thoại bàn Trung tâm Tuyển sinh: 024 3765 3568.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S12",
+      "S20"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": "Danh sách hotline khác nhau giữa các bài, nên được trường xác nhận danh sách hiện hành."
+  },
+  {
+    "code": "Q47",
+    "topic": "LIEN_HE",
+    "topicLabel": "Liên hệ",
+    "question": "Email, fanpage của trường?",
+    "variants": [
+      "Liên hệ qua Facebook?",
+      "Messenger tuyển sinh?"
+    ],
+    "answer": "Email tuyển sinh: tuyensinh@hht.edu.vn; email chung: caodangcongnghecaohanoi@hht.edu.vn. Website: https://hht.edu.vn. Fanpage tuyển sinh: facebook.com/tuyensinh.hht.edu.vn (Messenger: m.me/tuyensinh.hht.edu.vn).",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [
+      "S01",
+      "S20"
+    ],
+    "reliability": "A",
+    "status": "APPROVED",
+    "internalNote": null
+  },
+  {
+    "code": "Q48",
+    "topic": "LIEN_HE",
+    "topicLabel": "Liên hệ",
+    "question": "Giờ làm việc của phòng tuyển sinh?",
+    "variants": [
+      "Thứ 7 có nhận hồ sơ không?",
+      "Mấy giờ mở cửa?"
+    ],
+    "answer": "Website chưa công bố giờ tiếp nhận hồ sơ. Bạn vui lòng gọi hotline tuyển sinh trước khi đến trường.",
+    "appliesTo": "Tất cả",
+    "sourceCodes": [],
+    "reliability": "D",
+    "status": "APPROVED",
+    "internalNote": "CẦN BỔ SUNG: giờ làm việc, làm việc thứ 7/CN mùa tuyển sinh."
+  }
+]

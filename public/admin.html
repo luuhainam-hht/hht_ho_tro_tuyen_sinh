@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản trị – Tuyển sinh HHT</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-no-chat>
+  <div id="login" class="login-box hidden">
+    <div class="panel">
+      <div class="brand mb-m"><img class="brand-logo" src="/img/logo-hht-sm.png" alt="HHT – Hanoi High Tech" width="120" height="52"><span class="brand-text"><strong>Quản trị tuyển sinh</strong><span>Dành cho cán bộ Nhà trường</span></span></div>
+      <form class="form" data-action="login">
+        <label>Tên đăng nhập <input name="username" autocomplete="username" required></label>
+        <label>Mật khẩu <input name="password" type="password" autocomplete="current-password" required></label>
+        <button class="btn btn--primary" type="submit">Đăng nhập</button>
+      </form>
+    </div>
+  </div>
+  <div id="change-password" class="login-box hidden">
+    <div class="panel">
+      <h1>Đổi mật khẩu</h1>
+      <p class="small muted">Tài khoản mới hoặc vừa được đặt lại mật khẩu cần đổi mật khẩu trước khi sử dụng. Mật khẩu ít nhất 10 ký tự, có cả chữ và số.</p>
+      <form class="form" data-action="change-password">
+        <label>Mật khẩu hiện tại <input name="currentPassword" type="password" autocomplete="current-password" required></label>
+        <label>Mật khẩu mới <input name="newPassword" type="password" autocomplete="new-password" minlength="10" required></label>
+        <button class="btn btn--primary" type="submit">Lưu mật khẩu mới</button>
+      </form>
+    </div>
+  </div>
+  <div id="app" class="admin hidden">
+    <aside class="admin-side">
+      <a class="brand" href="/"><img class="brand-logo" src="/img/logo-hht-sm.png" alt="HHT – Hanoi High Tech" width="92" height="40"><span class="brand-text"><strong>Tuyển sinh</strong><span>Trang quản trị</span></span></a>
+      <nav class="admin-nav" id="admin-nav" aria-label="Chức năng quản trị"></nav>
+    </aside>
+    <main class="admin-main" id="main">
+      <div class="admin-top">
+        <h1 id="tab-title"></h1>
+        <span class="who" id="who"></span>
+        <span class="badge" id="ws-status">…</span>
+        <button class="btn btn--sm" data-action="logout">Đăng xuất</button>
+      </div>
+      <div id="tab"></div>
+    </main>
+  </div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/wsClient.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/admin/core.js"></script>
+  <script src="/js/admin/dashboard.js"></script>
+  <script src="/js/admin/handoff.js"></script>
+  <script src="/js/admin/kb.js"></script>
+  <script src="/js/admin/faq.js"></script>
+  <script src="/js/admin/catalog.js"></script>
+  <script src="/js/admin/appointments.js"></script>
+  <script src="/js/admin/staff.js"></script>
+  <script src="/js/admin/system.js"></script>
+  <script src="/js/admin/boot.js"></script>
+</body>
+</html>

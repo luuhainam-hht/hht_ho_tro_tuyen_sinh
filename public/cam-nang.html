@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hỏi đáp tuyển sinh – Tuyển sinh HHT</title>
+  <meta name="description" content="Câu hỏi thường gặp về tuyển sinh, học phí, hồ sơ, hệ 9+, ký túc xá.">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div data-layout="header"></div>
+  <main id="main">
+    <section class="page-head"><div class="wrap"><p class="crumbs"><a href="/">Trang chủ</a> / Hỏi đáp</p>
+      <h1>Hỏi đáp tuyển sinh</h1>
+      <p class="lede">Câu trả lời đã được cán bộ tuyển sinh duyệt, kèm nguồn văn bản.</p>
+    </div></section>
+    <section class="section"><div class="wrap">
+      <form class="ask ask--bordered mb-m" data-action="faq-search" role="search">
+        <label class="visually-hidden" for="faq-q">Tìm câu hỏi</label>
+        <input id="faq-q" name="q" placeholder="Tìm trong hỏi đáp" autocomplete="off">
+        <button class="btn btn--primary" type="submit">Tìm</button>
+      </form>
+      <div class="topic-nav" id="topics" role="group" aria-label="Lọc theo chủ đề"></div>
+      <div class="faq" id="faq"></div>
+      <div class="panel mt-l"><h3>Không thấy câu trả lời?</h3><p>Đặt câu hỏi trong khung tư vấn hoặc để lại câu hỏi cho cán bộ tuyển sinh.</p><button class="btn btn--tag" data-action="toggle-chat">Đặt câu hỏi</button></div>
+    </div></section>
+  </main>
+  <div data-layout="footer"></div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/faq.js"></script>
+</body>
+</html>

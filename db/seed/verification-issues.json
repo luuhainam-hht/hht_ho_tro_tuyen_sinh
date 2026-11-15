@@ -1,0 +1,130 @@
+[
+  {
+    "code": "V01",
+    "topic": "Địa chỉ",
+    "description": "Trang Liên hệ ghi địa chỉ chính \"Tây Mỗ, Nam Từ Liêm\"; thông báo 2025–2026 ghi địa chỉ cũ (Tây Mỗ, Trung Văn, Mỹ Đình I – Nam Từ Liêm); các trang 2026 ghi Xuân Phương, Thanh Xuân, Từ Liêm. Ảnh thông báo 2026–2027 ghi nhầm \"Phường Tứ Liêm\".",
+    "sources": "S13, S09, S01, S20",
+    "impact": "Trung bình",
+    "proposal": "Chatbot dùng địa chỉ mới; có thể kèm địa chỉ cũ để người dùng tra bản đồ."
+  },
+  {
+    "code": "V02",
+    "topic": "Đợt nhập học",
+    "description": "Thông báo chính 2026–2027: 4 đợt (01/01–30/03; 01/05–31/08; 01/09–31/10; 01/11–31/12), bỏ trống tháng 4. Thông báo bộ đội xuất ngũ: 3 đợt (01/03–31/08; 01/09–31/10; 01/11–31/12). Các bài tin lại có đợt tháng 7, 8, 9 riêng.",
+    "sources": "S01, S03, S05–S07",
+    "impact": "Cao",
+    "proposal": "Trường cần chốt 1 lịch chính thức cho chatbot."
+  },
+  {
+    "code": "V03",
+    "topic": "Hỗ trợ học phí",
+    "description": "Bảng ngành 03/2026 và bảng 08/2026 khác nhau: Công nghệ ô tô (70% → không ghi), Cơ điện tử (DN 30% → không ghi), Chế tạo khuôn mẫu (DN 100% → không ghi), Công nghệ Hàn (DN – → 30%), Chăn nuôi thú y (DN – → 30%). Bài 07/2026 vẫn ghi ô tô được hỗ trợ 70%.",
+    "sources": "S01, S05, S07",
+    "impact": "Cao",
+    "proposal": "Xác nhận mức hỗ trợ hiện hành trước khi đưa vào chatbot; tạm thời chatbot nên nói \"một số ngành\" và mời liên hệ."
+  },
+  {
+    "code": "V04",
+    "topic": "Ngành tuyển sinh",
+    "description": "Bảng ngành 08/2026 không còn các nghề Điện – Điện tử (Điện công nghiệp, Điện tử CN, Máy lạnh, Tự động hóa, Bán dẫn, Thang máy…) và Quản trị khách sạn/nhà hàng; 2 dòng Sửa chữa máy tính, Quản trị mạng không đánh dấu hệ nào. Có thể do hết chỉ tiêu đợt tháng 9, nhưng ảnh không ghi lý do.",
+    "sources": "S05 (ảnh anh-2-9)",
+    "impact": "Cao",
+    "proposal": "Hỏi Trung tâm Tuyển sinh: các nghề này còn tuyển cho đợt 4 (11–12/2026) không."
+  },
+  {
+    "code": "V05",
+    "topic": "Ngành tuyển sinh",
+    "description": "\"Công nghệ kỹ thuật cơ khí\" được công bố là nghề mới và được hỗ trợ 70% nhưng không có trong bảng ngành, không có mã nghề. Biểu mẫu online có thêm các nghề không có trong bảng: Bảo dưỡng sửa chữa máy CNC, Tự động hóa công nghiệp, Phát triển ứng dụng di động, Cơ – Điện nông nghiệp, Quản trị mạng máy tính.",
+    "sources": "S07, S10",
+    "impact": "Trung bình",
+    "proposal": "Đồng bộ danh mục nghề giữa thông báo, biểu mẫu online và trang ngành học."
+  },
+  {
+    "code": "V06",
+    "topic": "Mã nghề",
+    "description": "Du lịch sinh thái/Hướng dẫn du lịch: 5810102 (03/2026) vs 6810103 (08/2026). Thông báo 2025–2026 ghi Tiếng Trung trùng mã 6220206 với Tiếng Anh. Một số dòng ghi \"CDD0118\" (mã trường) thay cho mã nghề.",
+    "sources": "S01, S05, S09",
+    "impact": "Thấp",
+    "proposal": "Không đưa mã nghề vào câu trả lời chatbot cho đến khi được xác nhận."
+  },
+  {
+    "code": "V07",
+    "topic": "Hệ 9+",
+    "description": "Tiêu đề ghi \"song bằng THPT + Cao đẳng\" nhưng sau 3 năm học sinh nhận bằng THPT + Trung cấp; bằng Cao đẳng cần học thêm năm thứ 4. Tiếng Nhật và Chăn nuôi thú y có chỉ tiêu 9+ nhưng bảng ngành 03/2026 không đánh dấu hệ 9+.",
+    "sources": "S01, S02",
+    "impact": "Trung bình",
+    "proposal": "Chatbot phải nói rõ lộ trình 3 + 1 năm."
+  },
+  {
+    "code": "V08",
+    "topic": "Văn bản miễn giảm",
+    "description": "Thông báo chính 2026–2027 ghi Nghị định 238/2025/NĐ-CP; thông báo bộ đội xuất ngũ ghi Nghị định 81/2021/NĐ-CP.",
+    "sources": "S01, S03",
+    "impact": "Trung bình",
+    "proposal": "Thống nhất theo văn bản đang có hiệu lực."
+  },
+  {
+    "code": "V09",
+    "topic": "Hệ đặt hàng",
+    "description": "Bài 07/2026 ghi sinh viên được hỗ trợ \"100% học phí\" và \"70–100% học phí\" trong cùng bài. Thông báo 2025–2026 ghi DN hỗ trợ 30–100%, \"từ 3–10 triệu đồng/tháng\".",
+    "sources": "S07, S09",
+    "impact": "Trung bình",
+    "proposal": "Chatbot dùng \"70–100%\" và nói rõ nộp trước, được hoàn lại sau khi trúng tuyển."
+  },
+  {
+    "code": "V10",
+    "topic": "Hotline",
+    "description": "Danh sách hotline khác nhau: Cô My 0988 645 044 (2025–2026) vs 0857 974 156 (2026–2027); Cô Hằng 0912 534 581 chỉ có ở 2025–2026; 0974 735 885 không ghi tên; thông báo 9+ ghi 0981 670 588 là số Cô Thương, 0981 667 288 là số Cô Lan Phương.",
+    "sources": "S01, S02, S07, S09",
+    "impact": "Trung bình",
+    "proposal": "Trường xác nhận danh sách hotline hiện hành."
+  },
+  {
+    "code": "V11",
+    "topic": "Email",
+    "description": "Có 3 email: tuyensinh@hht.edu.vn, caodangcongnghecaohanoi@hht.edu.vn, contact@hht.edu.vn.",
+    "sources": "S01, S13, S20",
+    "impact": "Thấp",
+    "proposal": "Chatbot ưu tiên tuyensinh@ cho câu hỏi tuyển sinh."
+  },
+  {
+    "code": "V12",
+    "topic": "Website",
+    "description": "Menu \"Tuyển sinh Cao đẳng, Trung cấp\" vẫn trỏ về thông báo 2025–2026. Link \"Thông tin học bổng\" dẫn sang trang giới thiệu Trung tâm Tuyển sinh. Trang ngành học: mục \"Kế toán doanh nghiệp\" trỏ vào URL tiếng Anh du lịch. Trang đăng ký online ghi \"mẫu hồ sơ 2025\". Phần chữ của thông báo 2026–2027 bị cắt, nội dung chỉ có trong ảnh.",
+    "sources": "S01, S10, S12, S15, S20",
+    "impact": "Trung bình",
+    "proposal": "Báo bộ phận quản trị web sửa. Nội dung trong ảnh nên có thêm bản chữ để máy tìm kiếm và chatbot đọc được."
+  },
+  {
+    "code": "V13",
+    "topic": "Ký túc xá",
+    "description": "Không có thông tin giá, loại phòng, số chỗ, quy trình, hồ sơ đăng ký, nội quy KTX trên website.",
+    "sources": "S11",
+    "impact": "Cao",
+    "proposal": "Trường cung cấp văn bản chính thức (quy định nội trú, bảng phí) để bổ sung."
+  },
+  {
+    "code": "V14",
+    "topic": "Học phí",
+    "description": "Chỉ có khoảng 1,8–2,4 triệu/tháng, không có bảng học phí từng ngành, không có lệ phí xét tuyển, không có các khoản thu khác (BHYT, đồng phục…). Học phí ngắn hạn trên web là từ năm 2019.",
+    "sources": "S01, S18",
+    "impact": "Cao",
+    "proposal": "Bổ sung bảng học phí và các khoản thu đầu khóa năm 2026–2027."
+  },
+  {
+    "code": "V15",
+    "topic": "Chương trình nước ngoài",
+    "description": "Báo GDVN (07/2026) nêu website quảng bá mô hình 3+2, 1+1+4… với trường Hàn Quốc; Hiệu trưởng trả lời đó chỉ là lộ trình học tập, không phải liên kết đào tạo cấp bằng.",
+    "sources": "S21",
+    "impact": "Cao",
+    "proposal": "Chatbot không dùng các từ \"song bằng\", \"liên kết cấp bằng đại học Hàn Quốc\"; chỉ nói \"định hướng, trao đổi sinh viên\" và mời liên hệ."
+  },
+  {
+    "code": "V16",
+    "topic": "Nguồn bên ngoài",
+    "description": "Tuyensinh247 trộn thông tin HHT với \"Cao đẳng Công nghệ Hà Nội\" (mã CNH, tư thục).",
+    "sources": "S22",
+    "impact": "Trung bình",
+    "proposal": "Không dùng làm nguồn. Chatbot có thể cảnh báo người dùng tránh nhầm 2 trường."
+  }
+]

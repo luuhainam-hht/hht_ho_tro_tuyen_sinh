@@ -1,0 +1,81 @@
+{
+  "_note": "Hồ sơ RIASEC, trọng số môn học, mô tả và hướng nghề nghiệp do NHÓM ĐỀ TÀI gán theo khoa để chạy thử gợi ý ngành. KHÔNG phải số liệu của trường; cần chuyên gia hướng nghiệp rà soát (majors.profile_is_sample = true).",
+  "faculties": {
+    "Công nghệ Cơ khí": {
+      "riasec": { "R": 1.0, "I": 0.6, "A": 0.2, "S": 0.1, "E": 0.2, "C": 0.5 },
+      "subjects": { "TOAN": 0.9, "VAT_LY": 1.0, "TIN_HOC": 0.4 },
+      "workStyles": ["WORKSHOP"],
+      "description": "Đào tạo kỹ năng thực hành gia công, chế tạo, lắp ráp và bảo trì thiết bị cơ khí, làm việc với máy công cụ và máy CNC.",
+      "careers": ["Kỹ thuật viên gia công cơ khí, vận hành máy CNC", "Thợ hàn, chế tạo kết cấu", "Kỹ thuật viên bảo trì thiết bị tại nhà máy"]
+    },
+    "Công nghệ thông tin": {
+      "riasec": { "R": 0.4, "I": 1.0, "A": 0.5, "S": 0.2, "E": 0.3, "C": 0.6 },
+      "subjects": { "TOAN": 0.8, "TIN_HOC": 1.0, "NGOAI_NGU": 0.5 },
+      "workStyles": ["OFFICE"],
+      "description": "Đào tạo kỹ năng ứng dụng máy tính, lập trình, thiết kế trên máy tính phục vụ doanh nghiệp.",
+      "careers": ["Lập trình viên, phát triển web", "Kỹ thuật viên tin học văn phòng, hỗ trợ kỹ thuật", "Nhân viên thiết kế, dựng hình"]
+    },
+    "Chăm sóc sắc đẹp": {
+      "riasec": { "R": 0.5, "I": 0.1, "A": 1.0, "S": 0.8, "E": 0.6, "C": 0.3 },
+      "subjects": { "MY_THUAT": 1.0, "HOA_SINH": 0.5, "NGOAI_NGU": 0.3 },
+      "workStyles": ["PEOPLE", "CREATIVE"],
+      "description": "Đào tạo kỹ thuật chăm sóc da, tóc, móng, trang điểm và kỹ năng phục vụ khách hàng tại spa, salon.",
+      "careers": ["Kỹ thuật viên spa, chăm sóc da", "Thợ làm tóc, tạo mẫu tóc", "Tự mở salon, cửa hàng làm đẹp"]
+    },
+    "Kinh tế – Du lịch": {
+      "riasec": { "R": 0.1, "I": 0.3, "A": 0.3, "S": 0.8, "E": 1.0, "C": 0.8 },
+      "subjects": { "TOAN": 0.6, "NGU_VAN": 0.7, "NGOAI_NGU": 0.8 },
+      "workStyles": ["OFFICE", "PEOPLE"],
+      "description": "Đào tạo nghiệp vụ kinh doanh, kế toán, quản trị và dịch vụ du lịch – khách sạn.",
+      "careers": ["Nhân viên kế toán, hành chính", "Nhân viên kinh doanh, bán hàng trực tuyến", "Hướng dẫn viên, nhân viên lễ tân khách sạn"]
+    },
+    "Kỹ thuật Điện – Điện tử": {
+      "riasec": { "R": 1.0, "I": 0.8, "A": 0.1, "S": 0.1, "E": 0.2, "C": 0.5 },
+      "subjects": { "TOAN": 0.9, "VAT_LY": 1.0, "TIN_HOC": 0.6 },
+      "workStyles": ["WORKSHOP"],
+      "description": "Đào tạo lắp đặt, vận hành, sửa chữa hệ thống điện, điện tử, tự động hóa và thiết bị điện lạnh.",
+      "careers": ["Kỹ thuật viên điện công nghiệp, điện dân dụng", "Kỹ thuật viên điện tử, tự động hóa trong nhà máy", "Thợ lắp đặt, sửa chữa điều hòa, máy tính"]
+    },
+    "Ngoại ngữ – Đào tạo quốc tế": {
+      "riasec": { "R": 0.1, "I": 0.4, "A": 0.5, "S": 0.9, "E": 0.7, "C": 0.5 },
+      "subjects": { "NGOAI_NGU": 1.0, "NGU_VAN": 0.8 },
+      "workStyles": ["OFFICE", "PEOPLE"],
+      "description": "Đào tạo năng lực ngoại ngữ ứng dụng cho doanh nghiệp, du lịch, phiên dịch và định hướng làm việc ở nước ngoài.",
+      "careers": ["Phiên dịch, biên dịch tại doanh nghiệp FDI", "Nhân viên văn phòng sử dụng ngoại ngữ", "Hướng dẫn viên, chăm sóc khách hàng quốc tế"]
+    },
+    "Nông nghiệp – Tài nguyên – Môi trường": {
+      "riasec": { "R": 1.0, "I": 0.7, "A": 0.2, "S": 0.4, "E": 0.3, "C": 0.4 },
+      "subjects": { "HOA_SINH": 1.0, "TOAN": 0.4, "VAT_LY": 0.3 },
+      "workStyles": ["OUTDOOR"],
+      "description": "Đào tạo kỹ thuật trồng trọt, chăn nuôi, thú y, bảo quản nông sản và quản lý đất đai, ứng dụng nông nghiệp công nghệ cao.",
+      "careers": ["Kỹ thuật viên nông nghiệp công nghệ cao", "Nhân viên thú y, chăm sóc thú cưng", "Tự phát triển trang trại, cơ sở sản xuất"]
+    },
+    "Công nghệ ô tô": {
+      "riasec": { "R": 1.0, "I": 0.6, "A": 0.1, "S": 0.3, "E": 0.3, "C": 0.4 },
+      "subjects": { "VAT_LY": 1.0, "TOAN": 0.7, "TIN_HOC": 0.3 },
+      "workStyles": ["WORKSHOP"],
+      "description": "Đào tạo bảo dưỡng, chẩn đoán và sửa chữa ô tô, hệ thống điện – điện tử ô tô.",
+      "careers": ["Kỹ thuật viên sửa chữa ô tô tại xưởng dịch vụ, đại lý", "Cố vấn dịch vụ ô tô", "Tự mở gara"]
+    }
+  },
+  "overrides": [
+    { "match": "Thiết kế đồ họa", "riasec": { "R": 0.2, "I": 0.5, "A": 1.0, "S": 0.3, "E": 0.4, "C": 0.4 }, "subjects": { "MY_THUAT": 1.0, "TIN_HOC": 0.8 }, "workStyles": ["CREATIVE", "OFFICE"] },
+    { "match": "Thiết kế nội, ngoại thất", "riasec": { "R": 0.4, "I": 0.5, "A": 1.0, "S": 0.3, "E": 0.4, "C": 0.4 }, "subjects": { "MY_THUAT": 1.0, "TOAN": 0.5, "TIN_HOC": 0.6 }, "workStyles": ["CREATIVE", "OFFICE"] },
+    { "match": "Thiết kế trang web", "riasec": { "R": 0.3, "I": 1.0, "A": 0.6, "S": 0.2, "E": 0.3, "C": 0.6 }, "subjects": { "TIN_HOC": 1.0, "TOAN": 0.8, "NGOAI_NGU": 0.5 } },
+    { "match": "Sửa chữa và lắp ráp máy tính", "riasec": { "R": 1.0, "I": 0.8, "A": 0.1, "S": 0.3, "E": 0.2, "C": 0.5 }, "subjects": { "TIN_HOC": 1.0, "VAT_LY": 0.7 }, "workStyles": ["WORKSHOP", "OFFICE"] },
+    { "match": "Quản trị mạng", "riasec": { "R": 0.6, "I": 1.0, "A": 0.1, "S": 0.3, "E": 0.2, "C": 0.7 }, "subjects": { "TIN_HOC": 1.0, "TOAN": 0.7 }, "workStyles": ["OFFICE"] },
+    { "match": "Kế toán", "riasec": { "R": 0.1, "I": 0.5, "A": 0.1, "S": 0.3, "E": 0.5, "C": 1.0 }, "subjects": { "TOAN": 1.0, "TIN_HOC": 0.5 }, "workStyles": ["OFFICE"] },
+    { "match": "Quản trị doanh nghiệp", "riasec": { "R": 0.1, "I": 0.4, "A": 0.2, "S": 0.6, "E": 1.0, "C": 0.7 }, "subjects": { "TOAN": 0.7, "NGU_VAN": 0.6, "NGOAI_NGU": 0.6 }, "workStyles": ["OFFICE", "PEOPLE"] },
+    { "match": "Quan hệ công chúng", "riasec": { "R": 0.1, "I": 0.3, "A": 0.7, "S": 0.8, "E": 1.0, "C": 0.4 }, "subjects": { "NGU_VAN": 0.9, "TIN_HOC": 0.6, "NGOAI_NGU": 0.6 }, "workStyles": ["OFFICE", "CREATIVE"] },
+    { "match": "Du lịch", "riasec": { "R": 0.4, "I": 0.3, "A": 0.4, "S": 1.0, "E": 0.8, "C": 0.3 }, "subjects": { "NGU_VAN": 0.8, "NGOAI_NGU": 0.9 }, "workStyles": ["PEOPLE", "OUTDOOR"] },
+    { "match": "Quản trị khách sạn", "riasec": { "R": 0.2, "I": 0.2, "A": 0.3, "S": 1.0, "E": 0.8, "C": 0.6 }, "subjects": { "NGOAI_NGU": 0.9, "NGU_VAN": 0.6 }, "workStyles": ["PEOPLE"] },
+    { "match": "Vẽ và thiết kế cơ khí", "riasec": { "R": 0.8, "I": 0.7, "A": 0.6, "S": 0.1, "E": 0.2, "C": 0.7 }, "subjects": { "TOAN": 0.8, "VAT_LY": 0.8, "TIN_HOC": 0.7, "MY_THUAT": 0.5 }, "workStyles": ["OFFICE", "WORKSHOP"] },
+    { "match": "Cơ điện tử", "riasec": { "R": 1.0, "I": 0.9, "A": 0.2, "S": 0.1, "E": 0.2, "C": 0.5 }, "subjects": { "VAT_LY": 1.0, "TOAN": 0.9, "TIN_HOC": 0.6 } },
+    { "match": "điều khiển và tự động hóa", "riasec": { "R": 0.9, "I": 1.0, "A": 0.1, "S": 0.1, "E": 0.2, "C": 0.6 }, "subjects": { "TOAN": 1.0, "VAT_LY": 1.0, "TIN_HOC": 0.7 } },
+    { "match": "bán dẫn", "riasec": { "R": 0.8, "I": 1.0, "A": 0.1, "S": 0.1, "E": 0.2, "C": 0.7 }, "subjects": { "TOAN": 1.0, "VAT_LY": 1.0, "HOA_SINH": 0.5 } },
+    { "match": "Dịch vụ thú y", "riasec": { "R": 0.9, "I": 0.7, "A": 0.2, "S": 0.8, "E": 0.3, "C": 0.4 }, "subjects": { "HOA_SINH": 1.0 }, "workStyles": ["OUTDOOR", "PEOPLE"] },
+    { "match": "Chăn nuôi", "riasec": { "R": 1.0, "I": 0.6, "A": 0.2, "S": 0.7, "E": 0.3, "C": 0.4 }, "subjects": { "HOA_SINH": 1.0 } },
+    { "match": "Quản lý đất đai", "riasec": { "R": 0.6, "I": 0.6, "A": 0.2, "S": 0.3, "E": 0.3, "C": 0.9 }, "subjects": { "TOAN": 0.7, "TIN_HOC": 0.5, "HOA_SINH": 0.4 }, "workStyles": ["OFFICE", "OUTDOOR"] },
+    { "match": "Tiếng Đức", "riasec": { "R": 0.2, "I": 0.5, "A": 0.4, "S": 0.8, "E": 0.6, "C": 0.6 } }
+  ]
+}

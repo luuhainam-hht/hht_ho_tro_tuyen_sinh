@@ -1,0 +1,11 @@
+{"question":"Trường HHT là trường công hay tư?","expected_facts":["cong lap"],"expected_doc":"S01","should_refuse":false}
+{"question":"Học phí cao đẳng một tháng bao nhiêu?","expected_facts":["1.800.000","2.400.000"],"expected_doc":"S01","should_refuse":false}
+{"question":"Học hệ 9+ có phải đóng học phí trung cấp không?","expected_facts":["mien 100"],"expected_doc":"S02","should_refuse":false}
+{"question":"Hồ sơ xét tuyển cao đẳng gồm những gì?","expected_facts":["phieu dang ky","hoc ba"],"expected_doc":"S01","should_refuse":false}
+{"question":"Bây giờ còn nộp hồ sơ được không?","expected_facts":["31/12/2026"],"expected_doc":"S01","should_refuse":false}
+{"question":"Trường có ký túc xá không?","expected_facts":["k1"],"expected_doc":"S11","should_refuse":false}
+{"question":"Xét tuyển hay thi đầu vào?","expected_facts":["xet tuyen"],"expected_doc":"S01","should_refuse":false}
+{"question":"Bộ đội xuất ngũ cần nộp giấy tờ gì?","expected_facts":["the hoc nghe"],"expected_doc":"S03","should_refuse":false}
+{"question":"Email tuyển sinh của trường?","expected_facts":["tuyensinh@hht.edu.vn"],"expected_doc":"S01","should_refuse":false}
+{"question":"Trường có bể bơi không?","expected_facts":[],"expected_doc":null,"should_refuse":true}
+{"question":"Điểm chuẩn ngành y đa khoa năm nay?","expected_facts":[],"expected_doc":null,"should_refuse":true}

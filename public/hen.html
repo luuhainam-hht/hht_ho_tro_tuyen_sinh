@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tra cứu lịch hẹn – Tuyển sinh HHT</title>
+  <meta name="description" content="Tra cứu, đổi hoặc hủy lịch hẹn nộp hồ sơ bằng mã hẹn.">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div data-layout="header"></div>
+  <main id="main">
+    <section class="page-head"><div class="wrap"><p class="crumbs"><a href="/">Trang chủ</a> / Lịch hẹn</p>
+      <h1>Tra cứu lịch hẹn</h1>
+      <p class="lede">Nhập mã hẹn dạng HS-XXXX-XXXX để xem, đổi giờ hoặc hủy lịch.</p>
+    </div></section>
+    <section class="section"><div class="wrap narrow-760">
+      <form class="ask ask--bordered no-print mb-l" data-action="lookup">
+        <label class="visually-hidden" for="code">Mã hẹn</label>
+        <input id="code" name="code" placeholder="HS-XXXX-XXXX" autocomplete="off" maxlength="14" class="upper">
+        <button class="btn btn--primary" type="submit">Tra cứu</button>
+      </form>
+      <div id="appointment"></div>
+    </div></section>
+  </main>
+  <div data-layout="footer"></div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/appointment.js"></script>
+</body>
+</html>

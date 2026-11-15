@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tư vấn tuyển sinh HHT</title>
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-no-chat>
+  <div class="chat-app">
+    <header class="chat-top">
+      <img src="/img/logo-hht-sm.png" alt="HHT – Hanoi High Tech" width="78" height="34">
+      <div><strong>Tư vấn tuyển sinh</strong><div class="small muted">Giải đáp theo thông báo tuyển sinh của Nhà trường</div></div>
+      <button class="btn btn--ghost btn--sm" data-action="close" id="close-btn" aria-label="Đóng khung tư vấn">Đóng</button>
+    </header>
+    <div class="chat-log" id="log" role="log" aria-live="polite"></div>
+    <div>
+      <div class="chat-handoff hidden" id="handoff"></div>
+      <form class="chat-input" data-action="send">
+        <label class="visually-hidden" for="msg">Câu hỏi</label>
+        <input id="msg" name="message" maxlength="1000" autocomplete="off" placeholder="Nhập câu hỏi về tuyển sinh…">
+        <button class="btn btn--primary" type="submit">Gửi</button>
+      </form>
+    </div>
+  </div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/chat.js"></script>
+</body>
+</html>

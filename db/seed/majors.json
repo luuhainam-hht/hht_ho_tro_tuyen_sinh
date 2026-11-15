@@ -1,0 +1,1126 @@
+[
+  {
+    "code": "6520263",
+    "occupationCode": "6520263",
+    "name": "Cơ điện tử",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 25,
+    "quota9PlusCs2": null,
+    "internalNote": "Bản 08/2026 không còn ghi hỗ trợ DN 30%.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6520121",
+    "occupationCode": "6520121",
+    "name": "Cắt gọt kim loại (Cơ khí chế tạo)",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": "30%",
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": "Có trong hệ đặt hàng doanh nghiệp (Hanwha…).",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6520123",
+    "occupationCode": "6520123",
+    "name": "Công nghệ Hàn",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": "30%",
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6520104",
+    "occupationCode": "6520104",
+    "name": "Chế tạo thiết bị cơ khí",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": "30%",
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6520105",
+    "occupationCode": "6520105",
+    "name": "Chế tạo khuôn mẫu",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "100%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Bảng 03/2026 ghi DN hỗ trợ 100%; bản 08/2026 không ghi.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6480213",
+    "occupationCode": "6480213",
+    "name": "Vẽ và thiết kế cơ khí",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6520151",
+    "occupationCode": "6520151",
+    "name": "Bảo dưỡng (bản 08/2026 ghi: Bảo trì) hệ thống thiết bị cơ khí",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "N-CONG-NGHE-KY-THUAT-CO-KHI-NGHE-MOI-2026",
+    "occupationCode": null,
+    "name": "Công nghệ kỹ thuật cơ khí (nghề mới 2026)",
+    "faculty": "Công nghệ Cơ khí",
+    "levels": [],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Nêu là nghề mới trong S07 và được Nhà nước hỗ trợ 70%, nhưng không có trong cả 2 bảng ngành.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6210402",
+    "occupationCode": "6210402",
+    "name": "Thiết kế đồ họa",
+    "faculty": "Công nghệ thông tin",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": 35,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6480214",
+    "occupationCode": "6480214",
+    "name": "Thiết kế trang web, Lập trình máy tính",
+    "faculty": "Công nghệ thông tin",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Biểu mẫu online tách thành: Thiết kế và lập trình web; Phát triển ứng dụng di động.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6480202",
+    "occupationCode": "6480202",
+    "name": "Công nghệ thông tin (Ứng dụng phần mềm), Tin học ứng dụng",
+    "faculty": "Công nghệ thông tin",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": 35,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6210403",
+    "occupationCode": "6210403",
+    "name": "Thiết kế nội, ngoại thất",
+    "faculty": "Công nghệ thông tin",
+    "levels": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6810404",
+    "occupationCode": "6810404",
+    "name": "Chăm sóc sắc đẹp (theo chương trình Hàn Quốc)",
+    "faculty": "Chăm sóc sắc đẹp",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": 35,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "5810403",
+    "occupationCode": "5810403",
+    "name": "Kỹ thuật chăm sóc tóc, Thiết kế tạo mẫu tóc",
+    "faculty": "Chăm sóc sắc đẹp",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "N-VE-MONG-NGHE-THUAT-NAIL-TRANG-DIEM-THAM-",
+    "occupationCode": null,
+    "name": "Vẽ móng nghệ thuật (Nail), Trang điểm thẩm mỹ",
+    "faculty": "Chăm sóc sắc đẹp",
+    "levels": [
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Chỉ đào tạo sơ cấp. Mã ghi trong bảng là mã trường, không phải mã nghề.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "N-CHAM-SOC-DA",
+    "occupationCode": null,
+    "name": "Chăm sóc da",
+    "faculty": "Chăm sóc sắc đẹp",
+    "levels": [
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Chỉ đào tạo sơ cấp.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6320108",
+    "occupationCode": "6320108",
+    "name": "Quan hệ công chúng, Thương mại điện tử",
+    "faculty": "Kinh tế – Du lịch",
+    "levels": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6340122",
+    "occupationCode": "6340122",
+    "name": "Quản trị khách sạn, Quản trị nhà hàng",
+    "faculty": "Kinh tế – Du lịch",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6340302",
+    "occupationCode": "6340302",
+    "name": "Kế toán doanh nghiệp",
+    "faculty": "Kinh tế – Du lịch",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 25,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6340417",
+    "occupationCode": "6340417",
+    "name": "Quản trị doanh nghiệp vừa và nhỏ",
+    "faculty": "Kinh tế – Du lịch",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 25,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6810103",
+    "occupationCode": "6810103",
+    "name": "Du lịch sinh thái, Hướng dẫn du lịch",
+    "faculty": "Kinh tế – Du lịch",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": 25,
+    "internalNote": "Mã khác nhau giữa 2 bảng (03/2026: 5810102; 08/2026: 6810103). 9+ chỉ tiêu ghi \"Du lịch sinh thái\" tại CS2.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6520227",
+    "occupationCode": "6520227",
+    "name": "Điện công nghiệp, Kỹ thuật lắp đặt điện nước",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6580212",
+    "occupationCode": "6580212",
+    "name": "Công nghệ kỹ thuật điều khiển và tự động hóa",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "CAO_DANG"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6520201",
+    "occupationCode": "6520201",
+    "name": "Kỹ thuật lắp đặt và điều khiển điện trong công nghiệp",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6520225",
+    "occupationCode": "6520225",
+    "name": "Điện tử công nghiệp, Điện tử tự động hóa",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6480102",
+    "occupationCode": "6480102",
+    "name": "Kỹ thuật sửa chữa và lắp ráp máy tính (bảng 03/2026 gộp: Quản trị mạng máy tính)",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": "30%",
+    "quota9PlusCs1": 30,
+    "quota9PlusCs2": 30,
+    "internalNote": "Bảng 08/2026 có dòng này nhưng KHÔNG đánh dấu hệ nào.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6480209",
+    "occupationCode": "6480209",
+    "name": "Quản trị mạng máy tính",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Chỉ xuất hiện ở bảng 08/2026, không đánh dấu hệ nào.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6520205",
+    "occupationCode": "6520205",
+    "name": "Kỹ thuật máy lạnh và điều hòa không khí",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 60,
+    "quota9PlusCs2": null,
+    "internalNote": "Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6510303",
+    "occupationCode": "6510303",
+    "name": "Công nghệ kỹ thuật điện, điện tử (Công nghệ bán dẫn)",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "CAO_DANG"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": "30%",
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Nghề mới 2026. Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "N-KY-THUAT-THANG-MAY",
+    "occupationCode": null,
+    "name": "Kỹ thuật thang máy",
+    "faculty": "Kỹ thuật Điện – Điện tử",
+    "levels": [
+      "SO_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": "Chỉ sơ cấp. Không có trong bảng 08/2026.",
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6220205",
+    "occupationCode": "6220205",
+    "name": "Tiếng Đức",
+    "faculty": "Ngoại ngữ – Đào tạo quốc tế",
+    "levels": [
+      "TRUNG_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6220206",
+    "occupationCode": "6220206",
+    "name": "Tiếng Trung",
+    "faculty": "Ngoại ngữ – Đào tạo quốc tế",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": 35,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6220211",
+    "occupationCode": "6220211",
+    "name": "Tiếng Hàn Quốc",
+    "faculty": "Ngoại ngữ – Đào tạo quốc tế",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 25,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6220212",
+    "occupationCode": "6220212",
+    "name": "Tiếng Nhật",
+    "faculty": "Ngoại ngữ – Đào tạo quốc tế",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": "Bảng 03/2026 không đánh dấu hệ 9+, nhưng thông báo 9+ (S02) có chỉ tiêu 35.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6220203",
+    "occupationCode": "6220203",
+    "name": "Tiếng Anh, Phiên dịch Tiếng Anh du lịch",
+    "faculty": "Ngoại ngữ – Đào tạo quốc tế",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6620116",
+    "occupationCode": "6620116",
+    "name": "Bảo vệ thực vật (bản 08/2026 gộp: Bảo vệ thực vật, Trồng trọt và bảo vệ thực vật)",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6640201",
+    "occupationCode": "6640201",
+    "name": "Dịch vụ thú y",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "5620102",
+    "occupationCode": "5620102",
+    "name": "Công nghệ kỹ thuật chế biến và bảo quản nông sản",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "TRUNG_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "5850102",
+    "occupationCode": "5850102",
+    "name": "Quản lý đất đai",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "TRUNG_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "5620111",
+    "occupationCode": "5620111",
+    "name": "Trồng trọt và bảo vệ thực vật",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP"
+    ],
+    "levels082026": [],
+    "listedIn082026": false,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 35,
+    "quota9PlusCs2": null,
+    "internalNote": "9+ ghi: Trồng trọt và bảo vệ thực vật (Nông nghiệp công nghệ cao).",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "5620120",
+    "occupationCode": "5620120",
+    "name": "Chăn nuôi – thú y",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": "70%",
+    "enterpriseSupport082026": "30%",
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": 35,
+    "internalNote": "9+ ghi: Chăn nuôi thú y (Chăm sóc thú cưng) tại CS2, dù bảng 03/2026 không đánh dấu hệ 9+.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  },
+  {
+    "code": "6620131",
+    "occupationCode": "6620131",
+    "name": "Nông nghiệp công nghệ cao",
+    "faculty": "Nông nghiệp – Tài nguyên – Môi trường",
+    "levels": [
+      "CAO_DANG"
+    ],
+    "levels082026": [
+      "CAO_DANG"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": null,
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": null,
+    "quota9PlusCs2": null,
+    "internalNote": null,
+    "sourceCodes": [
+      "S01",
+      "S05"
+    ]
+  },
+  {
+    "code": "6510216",
+    "occupationCode": "6510216",
+    "name": "Công nghệ ô tô",
+    "faculty": "Công nghệ ô tô",
+    "levels": [
+      "HE_9_PLUS",
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "levels082026": [
+      "TRUNG_CAP",
+      "CAO_DANG",
+      "SO_CAP"
+    ],
+    "listedIn082026": true,
+    "stateSupport032026": "70%",
+    "enterpriseSupport032026": null,
+    "stateSupport082026": null,
+    "enterpriseSupport082026": null,
+    "quota9PlusCs1": 40,
+    "quota9PlusCs2": null,
+    "internalNote": "Bảng 08/2026 không ghi hỗ trợ 70%, nhưng S07 (07/2026) vẫn ghi được Nhà nước hỗ trợ 70%.",
+    "sourceCodes": [
+      "S01",
+      "S05",
+      "S02"
+    ]
+  }
+]

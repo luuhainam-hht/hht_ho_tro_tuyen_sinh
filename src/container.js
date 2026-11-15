@@ -1,0 +1,104 @@
+'use strict';
+/**
+ * Composition root: lắp ráp mọi phụ thuộc một lần. Service nhận phụ thuộc qua tham số -> test thay
+ * DB/LLM giả dễ dàng; server và CLI (scripts/) dùng chung một cách lắp.
+ */
+const path = require('node:path');
+const env = require('./config/env');
+const { getDb } = require('./config/db');
+const { createConfigService } = require('./config/configService');
+const { createOriginChecker } = require('./config/security');
+const { createWsHub } = require('./websocket/wsHub');
+const { createPgBus } = require('./realtime/pgBus');
+const { createLlmClient } = require('./services/ai/llmClient');
+const { createAuthService } = require('./services/authService');
+const { createStaffService } = require('./services/staffService');
+const { createIntentClassifier } = require('./services/intentClassifier');
+const { createRuleAssistant } = require('./services/ruleAssistant');
+const { createFaqMatcher } = require('./services/faqMatcher');
+const { createRetriever } = require('./services/rag/retriever');
+const { createAnswerService } = require('./services/rag/answerService');
+const { createIngestService } = require('./services/rag/ingestService');
+const { createKbService } = require('./services/kbService');
+const { createFaqService } = require('./services/faqService');
+const { createHandoffService } = require('./services/handoffService');
+const { createHandbookService } = require('./services/handbookService');
+const { createRecommendService } = require('./services/recommendService');
+const { createAnalyticsService } = require('./services/analyticsService');
+const { createMaintenanceService } = require('./services/maintenanceService');
+const { createMessengerService } = require('./services/messengerService');
+const { createAppointmentService } = require('./services/submission/appointmentService');
+const { createVisitorHasher } = require('./services/visitor');
+const { createJobRunner } = require('./services/jobRunner');
+const { createScheduler } = require('./services/scheduler');
+
+function createContainer({ db = getDb(), logger = console, llmTransport, fetchImpl } = {}) {
+  const isOriginAllowed = createOriginChecker();
+  const authService = createAuthService({ db });
+  const wsHub = createWsHub({ isOriginAllowed, resolveToken: (t) => authService.resolveToken(t).catch(() => null), logger });
+  const pgBus = createPgBus({ db, logger });
+  wsHub.useBus(pgBus);
+  const { broadcast } = wsHub;
+
+  const configService = createConfigService({ db, broadcast });
+  const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, ...(llmTransport ? { transport: llmTransport } : {}) });
+  const uploadDir = path.resolve(env.UPLOAD_DIR);
+
+  // Danh sách ngành cho bộ phân loại: nạp lười, làm mới mỗi 5 phút.
+  let majorsCache = { at: 0, rows: [] };
+  const refreshMajors = async () => {
+    const { rows } = await db.query('SELECT code, name FROM majors WHERE is_active');
+    majorsCache = { at: Date.now(), rows };
+  };
+  const classifier = createIntentClassifier({ getMajors: () => majorsCache.rows });
+
+  const faqMatcher = createFaqMatcher({ db, configService });
+  const retriever = createRetriever({ db, configService });
+  const ruleAssistant = createRuleAssistant({ configService });
+  const answerService = createAnswerService({ db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger });
+  const ingestService = createIngestService({ db, llm, broadcast, uploadDir, logger });
+  const kbService = createKbService({ db, configService, broadcast, uploadDir });
+  const faqService = createFaqService({ db, configService, broadcast });
+  const handoffService = createHandoffService({ db, configService, broadcast, classifier });
+  const handbookService = createHandbookService({ db, configService });
+  const recommendService = createRecommendService({ db, configService, llm, logger });
+  const analyticsService = createAnalyticsService({ db, configService });
+  const maintenanceService = createMaintenanceService({ db, configService, classifier });
+  const appointmentService = createAppointmentService({ db, configService, broadcast });
+  const messengerService = createMessengerService({ db, configService, answerService, env, logger, ...(fetchImpl ? { fetchImpl } : {}) });
+  const staffService = createStaffService({ db });
+  const visitorHash = createVisitorHasher(env.VISITOR_HASH_SECRET);
+
+  const jobRunner = createJobRunner({
+    db, workerId: env.INSTANCE_ID, broadcast, logger,
+    handlers: {
+      INGEST_DOCUMENT: (p) => ingestService.processDocument(p.documentId),
+      REEMBED_ALL: (p) => ingestService.reembedMissing({ reset: Boolean(p.reset) }),
+      CLASSIFY_MESSAGES: () => maintenanceService.classifyMessages(),
+      PURGE_OLD_DATA: () => maintenanceService.purgeOldData(),
+      GENERATE_SLOTS: () => appointmentService.generateSlots(),
+      APPOINTMENT_NO_SHOW: () => appointmentService.markNoShows(),
+    },
+  });
+  const scheduler = createScheduler({
+    db, logger,
+    tasks: {
+      purgeSessions: () => authService.purgeExpiredSessions(),
+      refreshMajors: () => (Date.now() - majorsCache.at > 5 * 60_000 ? refreshMajors() : null),
+    },
+  });
+
+  function onBusEvent(type, payload) {
+    if (type === 'CONFIG_UPDATED' && payload?.key) configService.reload(payload.key).catch((err) => logger.warn('[config] reload lỗi:', err.message));
+    wsHub.localBroadcast(type, payload, { remote: true });
+  }
+
+  return {
+    env, db, logger, isOriginAllowed, wsHub, pgBus, configService, llm, authService, staffService, classifier, faqMatcher, retriever,
+    answerService, ingestService, kbService, faqService, handoffService, handbookService, recommendService, analyticsService,
+    maintenanceService, appointmentService, messengerService, visitorHash, jobRunner, scheduler, onBusEvent, refreshMajors,
+    pgBusState: () => ({ connected: pgBus.isConnected() }),
+  };
+}
+
+module.exports = { createContainer };

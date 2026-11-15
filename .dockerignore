@@ -1,0 +1,8 @@
+node_modules
+.git
+.github
+.env
+data
+test
+docs/*.xlsx
+*.log

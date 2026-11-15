@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tuyển sinh HHT – Trường Cao đẳng Công nghệ cao Hà Nội</title>
+  <meta name="description" content="Tra cứu ngành học, hồ sơ, lịch xét tuyển và hỏi đáp tuyển sinh của Trường Cao đẳng Công nghệ cao Hà Nội.">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div data-layout="header"></div>
+  <main id="main">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="tag" id="hero-status">Năm học 2026–2027</span>
+          <h1>Thông tin tuyển sinh Trường Cao đẳng Công nghệ cao Hà Nội</h1>
+          <p class="lede">Tra cứu ngành học, học phí, hồ sơ và lịch xét tuyển. Có câu hỏi, bạn nhập vào ô dưới đây để được giải đáp theo thông báo tuyển sinh của Nhà trường.</p>
+          <form class="ask" data-action="hero-ask" role="search">
+            <label class="visually-hidden" for="hero-q">Câu hỏi tuyển sinh</label>
+            <input id="hero-q" name="q" maxlength="300" autocomplete="off" placeholder="Ví dụ: Học xong lớp 9 thì học hệ nào?">
+            <button class="btn btn--primary" type="submit">Gửi câu hỏi</button>
+          </form>
+          <div class="chips" id="hero-chips">
+            <button class="chip" type="button" data-action="ask">Học phí bao nhiêu?</button>
+            <button class="chip" type="button" data-action="ask">Hồ sơ cần những giấy tờ gì?</button>
+            <button class="chip" type="button" data-action="ask">Hệ 9+ là gì?</button>
+            <button class="chip" type="button" data-action="ask">Trường có ký túc xá không?</button>
+          </div>
+          <p class="facts" id="hero-facts"><span>Trường công lập trực thuộc UBND TP Hà Nội</span></p>
+        </div>
+        <aside class="board" aria-labelledby="board-title">
+          <h2 id="board-title">Đang nhận hồ sơ</h2>
+          <ul class="board-list" id="board-list"><li class="muted">Đang tải lịch tuyển sinh…</li></ul>
+          <p class="small mt-s mb-0"><a href="/lich-tuyen-sinh.html">Xem toàn bộ lịch tuyển sinh</a></p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section section--alt"><div class="wrap">
+      <h2>Các bước nhập học</h2>
+      <ol class="steps" id="steps"></ol>
+    </div></section>
+
+    <section class="section section--alt"><div class="wrap paths">
+      <a class="path" href="/goi-y-nganh.html"><strong>Chưa biết chọn ngành?</strong><span>Làm bài trắc nghiệm sở thích 5 phút, nhận 3 ngành phù hợp kèm lý do.</span></a>
+      <a class="path" href="/ho-so.html"><strong>Chuẩn bị hồ sơ</strong><span>Checklist giấy tờ theo từng đối tượng, đánh dấu và in ra mang theo.</span></a>
+      <a class="path" href="/dat-lich.html"><strong>Đặt lịch nộp hồ sơ</strong><span>Chọn ngày giờ đến trường, nhận mã hẹn, không phải xếp hàng chờ.</span></a>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="btn-row row-between mb-m">
+        <h2 class="mb-0">Ngành nghề theo khoa</h2>
+        <a class="btn btn--sm" href="/nganh.html">Lọc theo hệ đào tạo</a>
+      </div>
+      <div class="faculty-list" id="faculties"><p class="muted">Đang tải danh sách ngành…</p></div>
+    </div></section>
+  </main>
+  <div data-layout="footer"></div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/home.js"></script>
+</body>
+</html>

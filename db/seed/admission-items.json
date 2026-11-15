@@ -1,0 +1,919 @@
+[
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:PHIEU_DANG_KY",
+    "code": "PHIEU_DANG_KY",
+    "audience": "CHINH_QUY",
+    "title": "Phiếu đăng ký dự tuyển / xét tuyển (theo mẫu)",
+    "detail": "Có – tải tại hht.edu.vn hoặc nhận tại Ban tuyển sinh các trường THPT, TT GDTX-GDNN, THCS",
+    "orderNo": 1,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "FORM",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:PHIEU_DANG_KY",
+    "code": "PHIEU_DANG_KY",
+    "audience": "HE_9_PLUS",
+    "title": "Phiếu đăng ký dự tuyển / xét tuyển (theo mẫu)",
+    "detail": "Có – mẫu tải tại hht.edu.vn hoặc nhận trực tiếp tại trường",
+    "orderNo": 1,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "FORM",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:PHIEU_DANG_KY",
+    "code": "PHIEU_DANG_KY",
+    "audience": "BO_DOI",
+    "title": "Phiếu đăng ký dự tuyển / xét tuyển (theo mẫu)",
+    "detail": "Có – theo mẫu quy định",
+    "orderNo": 1,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "FORM",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:SO_YEU_LY_LICH",
+    "code": "SO_YEU_LY_LICH",
+    "audience": "CHINH_QUY",
+    "title": "Sơ yếu lý lịch",
+    "detail": "Có – tải tại www.hht.edu.vn",
+    "orderNo": 2,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "FORM",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:SO_YEU_LY_LICH",
+    "code": "SO_YEU_LY_LICH",
+    "audience": "HE_9_PLUS",
+    "title": "Sơ yếu lý lịch",
+    "detail": "Có – mẫu tải tại hht.edu.vn",
+    "orderNo": 2,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "FORM",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:SO_YEU_LY_LICH",
+    "code": "SO_YEU_LY_LICH",
+    "audience": "BO_DOI",
+    "title": "Sơ yếu lý lịch",
+    "detail": "Có – phải có xác nhận của địa phương",
+    "orderNo": 2,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "ORIGINAL",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:HOC_BA",
+    "code": "HOC_BA",
+    "audience": "CHINH_QUY",
+    "title": "Học bạ",
+    "detail": "Bản sao công chứng",
+    "orderNo": 3,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:HOC_BA",
+    "code": "HOC_BA",
+    "audience": "HE_9_PLUS",
+    "title": "Học bạ",
+    "detail": "Bản chính (gốc) + bản sao công chứng (02 bản)",
+    "orderNo": 3,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "ORIGINAL_AND_COPY",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:HOC_BA",
+    "code": "HOC_BA",
+    "audience": "BO_DOI",
+    "title": "Học bạ",
+    "detail": "Bản sao công chứng",
+    "orderNo": 3,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:BANG_TOT_NGHIEP",
+    "code": "BANG_TOT_NGHIEP",
+    "audience": "CHINH_QUY",
+    "title": "Bằng tốt nghiệp hoặc Giấy chứng nhận tốt nghiệp tạm thời",
+    "detail": "Bản sao công chứng",
+    "orderNo": 4,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:BANG_TOT_NGHIEP",
+    "code": "BANG_TOT_NGHIEP",
+    "audience": "HE_9_PLUS",
+    "title": "Bằng tốt nghiệp hoặc Giấy chứng nhận tốt nghiệp tạm thời",
+    "detail": "Bản chính bằng TN hoặc Giấy CN tốt nghiệp THCS tạm thời + bản sao công chứng (02 bản)",
+    "orderNo": 4,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "ORIGINAL_AND_COPY",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:BANG_TOT_NGHIEP",
+    "code": "BANG_TOT_NGHIEP",
+    "audience": "BO_DOI",
+    "title": "Bằng tốt nghiệp hoặc Giấy chứng nhận tốt nghiệp tạm thời",
+    "detail": "Bản sao công chứng",
+    "orderNo": 4,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:GIAY_KHAI_SINH",
+    "code": "GIAY_KHAI_SINH",
+    "audience": "CHINH_QUY",
+    "title": "Giấy khai sinh",
+    "detail": "Bản sao công chứng",
+    "orderNo": 5,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:GIAY_KHAI_SINH",
+    "code": "GIAY_KHAI_SINH",
+    "audience": "HE_9_PLUS",
+    "title": "Giấy khai sinh",
+    "detail": "Bản sao công chứng (02 bản)",
+    "orderNo": 5,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:GIAY_KHAI_SINH",
+    "code": "GIAY_KHAI_SINH",
+    "audience": "BO_DOI",
+    "title": "Giấy khai sinh",
+    "detail": "Bản sao công chứng",
+    "orderNo": 5,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:CCCD",
+    "code": "CCCD",
+    "audience": "CHINH_QUY",
+    "title": "Căn cước công dân (CCCD)",
+    "detail": "Bản sao công chứng",
+    "orderNo": 6,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:CCCD",
+    "code": "CCCD",
+    "audience": "HE_9_PLUS",
+    "title": "Căn cước công dân (CCCD)",
+    "detail": "Bản sao công chứng (02 bản)",
+    "orderNo": 6,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:CCCD",
+    "code": "CCCD",
+    "audience": "BO_DOI",
+    "title": "Căn cước công dân (CCCD)",
+    "detail": "Bản sao công chứng",
+    "orderNo": 6,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:CHINH_QUY:GIAY_TO_UU_TIEN",
+    "code": "GIAY_TO_UU_TIEN",
+    "audience": "CHINH_QUY",
+    "title": "Giấy tờ ưu tiên (nếu có)",
+    "detail": "Bản sao công chứng",
+    "orderNo": 7,
+    "sourceCodes": [
+      "S01"
+    ],
+    "isMandatory": false,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:GIAY_TO_UU_TIEN",
+    "code": "GIAY_TO_UU_TIEN",
+    "audience": "HE_9_PLUS",
+    "title": "Giấy tờ ưu tiên (nếu có)",
+    "detail": "Bản sao công chứng (02 bản)",
+    "orderNo": 7,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": false,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:GIAY_TO_UU_TIEN",
+    "code": "GIAY_TO_UU_TIEN",
+    "audience": "BO_DOI",
+    "title": "Giấy tờ ưu tiên (nếu có)",
+    "detail": "Có (nếu có)",
+    "orderNo": 7,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": false,
+    "copyType": "ORIGINAL",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:ANH_THE",
+    "code": "ANH_THE",
+    "audience": "HE_9_PLUS",
+    "title": "Ảnh thẻ",
+    "detail": "02 ảnh 3x4, mặt sau ghi rõ họ tên, ngày sinh",
+    "orderNo": 8,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": true,
+    "copyType": "PHOTO",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:ANH_THE",
+    "code": "ANH_THE",
+    "audience": "BO_DOI",
+    "title": "Ảnh thẻ",
+    "detail": "02 ảnh 3x4 nền xanh, mặc áo có cổ, mặt sau ghi họ tên, ngày tháng năm sinh",
+    "orderNo": 8,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "PHOTO",
+    "quantity": 2
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:XAC_NHAN_NHAN_SU",
+    "code": "XAC_NHAN_NHAN_SU",
+    "audience": "HE_9_PLUS",
+    "title": "Giấy xác nhận nhân sự / không vi phạm pháp luật",
+    "detail": "Chỉ với học sinh tốt nghiệp các năm trước",
+    "orderNo": 9,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": false,
+    "copyType": "ORIGINAL",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:HE_9_PLUS:TAM_TRU",
+    "code": "TAM_TRU",
+    "audience": "HE_9_PLUS",
+    "title": "Phiếu tạm trú tạm vắng tại địa phương",
+    "detail": "Chỉ với học sinh không có hộ khẩu Hà Nội",
+    "orderNo": 10,
+    "sourceCodes": [
+      "S02"
+    ],
+    "isMandatory": false,
+    "copyType": "ORIGINAL",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:THE_HOC_NGHE",
+    "code": "THE_HOC_NGHE",
+    "audience": "BO_DOI",
+    "title": "Thẻ học nghề",
+    "detail": "Bản gốc",
+    "orderNo": 11,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "ORIGINAL",
+    "quantity": 1
+  },
+  {
+    "kind": "DOC_CHECKLIST",
+    "itemKey": "DOC:BO_DOI:QUYET_DINH_XUAT_NGU",
+    "code": "QUYET_DINH_XUAT_NGU",
+    "audience": "BO_DOI",
+    "title": "Quyết định xuất ngũ",
+    "detail": "Bản công chứng",
+    "orderNo": 12,
+    "sourceCodes": [
+      "S03"
+    ],
+    "isMandatory": true,
+    "copyType": "CERTIFIED_COPY",
+    "quantity": 1
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:1",
+    "audience": "CĐ, TC chính quy 2026–2027",
+    "title": "Nhận hồ sơ",
+    "detail": "Liên tục 01/01/2026 – 31/12/2026",
+    "dateFrom": "2026-01-01",
+    "dateTo": "2026-12-31",
+    "orderNo": 1,
+    "sourceCodes": [
+      "S01"
+    ],
+    "note": "Đang nhận"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:2",
+    "audience": "CĐ, TC chính quy 2026–2027",
+    "title": "Nhập học đợt 1",
+    "detail": "01/01/2026 – 30/03/2026",
+    "dateFrom": "2026-01-01",
+    "dateTo": "2026-03-30",
+    "orderNo": 2,
+    "sourceCodes": [
+      "S01"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:3",
+    "audience": "CĐ, TC chính quy 2026–2027",
+    "title": "Nhập học đợt 2",
+    "detail": "01/05/2026 – 31/08/2026",
+    "dateFrom": "2026-05-01",
+    "dateTo": "2026-08-31",
+    "orderNo": 3,
+    "sourceCodes": [
+      "S01"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:4",
+    "audience": "CĐ, TC chính quy 2026–2027",
+    "title": "Nhập học đợt 3",
+    "detail": "01/09/2026 – 31/10/2026",
+    "dateFrom": "2026-09-01",
+    "dateTo": "2026-10-31",
+    "orderNo": 4,
+    "sourceCodes": [
+      "S01"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:5",
+    "audience": "CĐ, TC chính quy 2026–2027",
+    "title": "Nhập học đợt 4",
+    "detail": "01/11/2026 – 31/12/2026",
+    "dateFrom": "2026-11-01",
+    "dateTo": "2026-12-31",
+    "orderNo": 5,
+    "sourceCodes": [
+      "S01"
+    ],
+    "note": "ĐANG DIỄN RA"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:6",
+    "audience": "CĐ, TC (bài tin)",
+    "title": "Đợt nhập học tháng 7",
+    "detail": "Nhận hồ sơ 15/07 – 31/07/2026",
+    "dateFrom": "2026-07-15",
+    "dateTo": "2026-07-31",
+    "orderNo": 6,
+    "sourceCodes": [
+      "S07"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:7",
+    "audience": "CĐ, TC (bài tin)",
+    "title": "Đợt nhập học tháng 8",
+    "detail": "Nhận hồ sơ 01/08 – 31/08/2026",
+    "dateFrom": "2026-08-01",
+    "dateTo": "2026-08-31",
+    "orderNo": 7,
+    "sourceCodes": [
+      "S06"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:8",
+    "audience": "CĐ chính quy danh hiệu KS thực hành",
+    "title": "Tuyển sinh bổ sung đợt cuối năm 2026 (350 chỉ tiêu)",
+    "detail": "01/09 – 30/09/2026",
+    "dateFrom": "2026-09-01",
+    "dateTo": "2026-09-30",
+    "orderNo": 8,
+    "sourceCodes": [
+      "S05"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:9",
+    "audience": "Hệ 9+ (lớp 10) 2026–2027",
+    "title": "Nộp hồ sơ đợt 1",
+    "detail": "01/05 – 10/07/2026",
+    "dateFrom": "2026-05-01",
+    "dateTo": "2026-07-10",
+    "orderNo": 9,
+    "sourceCodes": [
+      "S02"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:10",
+    "audience": "Hệ 9+ (lớp 10) 2026–2027",
+    "title": "Nộp hồ sơ đợt 2",
+    "detail": "11/07 – 31/07/2026 (ngừng khi đủ chỉ tiêu)",
+    "dateFrom": "2026-07-11",
+    "dateTo": "2026-07-31",
+    "orderNo": 10,
+    "sourceCodes": [
+      "S02"
+    ],
+    "note": "Đã qua"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:11",
+    "audience": "Bộ đội, Công an xuất ngũ 2026–2027",
+    "title": "Nhận hồ sơ",
+    "detail": "Liên tục 01/01 – 31/12/2026",
+    "dateFrom": "2026-01-01",
+    "dateTo": "2026-12-31",
+    "orderNo": 11,
+    "sourceCodes": [
+      "S03"
+    ],
+    "note": "Đang nhận"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:12",
+    "audience": "Bộ đội, Công an xuất ngũ 2026–2027",
+    "title": "Nhập học đợt 1 / 2 / 3",
+    "detail": "01/03–31/08/2026; 01/09–31/10/2026; 01/11–31/12/2026",
+    "dateFrom": "2026-03-01",
+    "dateTo": "2026-12-31",
+    "orderNo": 12,
+    "sourceCodes": [
+      "S03"
+    ],
+    "note": "Đợt 3 đang diễn ra"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:13",
+    "audience": "Hanwha – Kĩ sư thực hành khóa 8",
+    "title": "Nhận đơn → thi tuyển → ký HĐ → nhập học",
+    "detail": "05/2026–10/07/2026; 17/07/2026; 31/07/2026; 23/08/2026 (dự kiến)",
+    "dateFrom": "2026-07-10",
+    "dateTo": "2026-08-23",
+    "orderNo": 13,
+    "sourceCodes": [
+      "S08"
+    ],
+    "note": "Đã kết thúc"
+  },
+  {
+    "kind": "SCHEDULE",
+    "itemKey": "SCHEDULE:14",
+    "audience": "Sát hạch GPLX mô tô hạng A, A1",
+    "title": "Nhận hồ sơ và thi",
+    "detail": "Liên tục hằng tháng từ tháng 9/2026",
+    "dateFrom": null,
+    "dateTo": null,
+    "orderNo": 14,
+    "sourceCodes": [
+      "S05"
+    ],
+    "note": "Đang nhận (theo thông báo)"
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:1",
+    "audience": "Địa chỉ",
+    "title": "Cơ sở 1 (trụ sở chính)",
+    "detail": "Phố Nhuệ Giang, Phường Xuân Phương, TP. Hà Nội",
+    "orderNo": 1,
+    "sourceCodes": [
+      "S01",
+      "S20"
+    ],
+    "internalNote": "Địa chỉ cũ: Phường Tây Mỗ, Quận Nam Từ Liêm (trước sắp xếp đơn vị hành chính)."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:2",
+    "audience": "Địa chỉ",
+    "title": "Cơ sở 2",
+    "detail": "268 Vũ Hữu, Phường Thanh Xuân, TP. Hà Nội",
+    "orderNo": 2,
+    "sourceCodes": [
+      "S01",
+      "S20"
+    ],
+    "internalNote": "Địa chỉ cũ: Phường Trung Văn, Quận Nam Từ Liêm."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:3",
+    "audience": "Địa chỉ",
+    "title": "Cơ sở 3",
+    "detail": "181 Đình Thôn, Phường Từ Liêm, TP. Hà Nội",
+    "orderNo": 3,
+    "sourceCodes": [
+      "S20"
+    ],
+    "internalNote": "Ảnh thông báo S01 ghi nhầm \"Phường Tứ Liêm\". Địa chỉ cũ: Phường Mỹ Đình 1, Quận Nam Từ Liêm."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:4",
+    "audience": "Nơi nộp hồ sơ",
+    "title": "Trung tâm Tuyển sinh & Giải quyết việc làm",
+    "detail": "Tầng 1 nhà A, Cơ sở 1 (gần cổng số 1)",
+    "orderNo": 4,
+    "sourceCodes": [
+      "S12",
+      "S08",
+      "S05"
+    ],
+    "internalNote": "Bài tin 2026 ghi nhận hồ sơ tại CS1 hoặc CS2."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:5",
+    "audience": "Hotline tuyển sinh",
+    "title": "Cô Thương",
+    "detail": "0986 043 356",
+    "orderNo": 5,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": "Thông báo 9+ (S02) lại ghi 0981 670 588 là số của Cô Thương."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:6",
+    "audience": "Hotline tuyển sinh",
+    "title": "Cô Vui",
+    "detail": "0977 610 800",
+    "orderNo": 6,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:7",
+    "audience": "Hotline tuyển sinh",
+    "title": "Cô Lan Phương",
+    "detail": "0962 940 002",
+    "orderNo": 7,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": "S02 ghi số Cô Lan Phương là 0981 667 288."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:8",
+    "audience": "Hotline tuyển sinh",
+    "title": "Cô Trang",
+    "detail": "0974 986 306",
+    "orderNo": 8,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:9",
+    "audience": "Hotline tuyển sinh",
+    "title": "Thầy Huấn",
+    "detail": "0981 432 899",
+    "orderNo": 9,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:10",
+    "audience": "Hotline tuyển sinh",
+    "title": "Cô (Trà) My",
+    "detail": "0857 974 156",
+    "orderNo": 10,
+    "sourceCodes": [
+      "S01"
+    ],
+    "internalNote": "Thông báo 2025–2026 ghi Cô My là 0988 645 044."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:11",
+    "audience": "Hotline chung",
+    "title": "Số ở chân trang website",
+    "detail": "0981 670 588; 0981 667 288",
+    "orderNo": 11,
+    "sourceCodes": [
+      "S20"
+    ],
+    "internalNote": "Các bài tin 2026 còn ghi thêm 0974 735 885 (không ghi tên)."
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:12",
+    "audience": "Điện thoại bàn",
+    "title": "Trung tâm Tuyển sinh & GQVL",
+    "detail": "024 3765 3568; 024 3765 3962",
+    "orderNo": 12,
+    "sourceCodes": [
+      "S12"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:13",
+    "audience": "Điện thoại bàn",
+    "title": "Tổng đài chung",
+    "detail": "(024) 3765 3687",
+    "orderNo": 13,
+    "sourceCodes": [
+      "S13"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:14",
+    "audience": "Điện thoại bàn",
+    "title": "Phòng Đào tạo",
+    "detail": "024 3765 3755",
+    "orderNo": 14,
+    "sourceCodes": [
+      "S13"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:15",
+    "audience": "Điện thoại bàn",
+    "title": "Phòng Tài chính – Kế toán",
+    "detail": "024 3765 3756",
+    "orderNo": 15,
+    "sourceCodes": [
+      "S13"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:16",
+    "audience": "Điện thoại bàn",
+    "title": "Trung tâm Ký túc xá",
+    "detail": "(024) 3765 3906",
+    "orderNo": 16,
+    "sourceCodes": [
+      "S11"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:17",
+    "audience": "Email",
+    "title": "Tuyển sinh",
+    "detail": "tuyensinh@hht.edu.vn",
+    "orderNo": 17,
+    "sourceCodes": [
+      "S01",
+      "S12"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:18",
+    "audience": "Email",
+    "title": "Email chung",
+    "detail": "caodangcongnghecaohanoi@hht.edu.vn; contact@hht.edu.vn",
+    "orderNo": 18,
+    "sourceCodes": [
+      "S20",
+      "S13"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:19",
+    "audience": "Email",
+    "title": "Ký túc xá",
+    "detail": "kytucxa@hht.edu.vn",
+    "orderNo": 19,
+    "sourceCodes": [
+      "S11"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:20",
+    "audience": "Email",
+    "title": "Hệ đặt hàng Hanwha (Ms Bùi Thị Phượng)",
+    "detail": "phuongbt@hht.edu.vn; 0347 258 917",
+    "orderNo": 20,
+    "sourceCodes": [
+      "S08"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:21",
+    "audience": "Website / MXH",
+    "title": "Website",
+    "detail": "https://hht.edu.vn",
+    "orderNo": 21,
+    "sourceCodes": [
+      "S20"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:22",
+    "audience": "Website / MXH",
+    "title": "Đăng ký online",
+    "detail": "https://hht.edu.vn/dang-ky-ho-so-tuyen-sinh-truc-tuyen/",
+    "orderNo": 22,
+    "sourceCodes": [
+      "S10"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:23",
+    "audience": "Website / MXH",
+    "title": "Fanpage tuyển sinh / Messenger",
+    "detail": "facebook.com/tuyensinh.hht.edu.vn ; m.me/tuyensinh.hht.edu.vn",
+    "orderNo": 23,
+    "sourceCodes": [
+      "S20"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:24",
+    "audience": "Website / MXH",
+    "title": "Fanpage trường",
+    "detail": "facebook.com/caodangcongnghecaohanoi",
+    "orderNo": 24,
+    "sourceCodes": [
+      "S02"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:25",
+    "audience": "Website / MXH",
+    "title": "Cổng thông tin sinh viên",
+    "detail": "https://sinhvien.hht.edu.vn",
+    "orderNo": 25,
+    "sourceCodes": [
+      "S20"
+    ],
+    "internalNote": null
+  },
+  {
+    "kind": "CONTACT",
+    "itemKey": "CONTACT:26",
+    "audience": "Giờ làm việc",
+    "title": "Giờ tiếp nhận hồ sơ",
+    "detail": "Website không công bố",
+    "orderNo": 26,
+    "sourceCodes": [],
+    "internalNote": "CẦN BỔ SUNG."
+  }
+]

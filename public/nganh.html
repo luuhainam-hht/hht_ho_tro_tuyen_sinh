@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ngành học – Tuyển sinh HHT</title>
+  <meta name="description" content="Danh sách ngành nghề tuyển sinh năm học 2026–2027, lọc theo hệ đào tạo và khoa.">
+  <meta name="theme-color" content="#c8102e">
+  <link rel="icon" href="/img/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/img/icon-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div data-layout="header"></div>
+  <main id="main">
+    <section class="page-head"><div class="wrap"><p class="crumbs"><a href="/">Trang chủ</a> / Ngành học</p>
+      <h1>Ngành học</h1>
+      <p class="lede">Tra cứu các ngành tuyển sinh năm học 2026–2027 theo hệ đào tạo, khoa và chính sách hỗ trợ học phí.</p>
+    </div></section>
+    <section class="section"><div class="wrap">
+      <form class="filters" data-action="filter-majors" role="search">
+        <label>Tìm ngành <input name="q" placeholder="Ví dụ: ô tô, đồ họa, kế toán" autocomplete="off"></label>
+        <label>Hệ đào tạo <select name="level"><option value="">Tất cả</option></select></label>
+        <label>Khoa <select name="faculty"><option value="">Tất cả</option></select></label>
+        <label>Hỗ trợ học phí <select name="support"><option value="">Không lọc</option><option value="STATE">Nhà nước hỗ trợ</option><option value="ENTERPRISE">Doanh nghiệp hỗ trợ</option></select></label>
+      </form>
+      <p class="small muted" id="major-count" aria-live="polite"></p>
+      <div class="table-wrap"><table class="major-table">
+        <thead><tr><th>Ngành, nghề</th><th>Khoa</th><th>Hệ tuyển sinh</th><th>Hỗ trợ học phí</th></tr></thead>
+        <tbody id="major-rows"></tbody>
+      </table></div>
+      <p class="note small mt-m">Mức hỗ trợ học phí từng ngành khác nhau giữa bảng ngành 03/2026 và 08/2026. Hệ thống hiển thị theo bảng mới nhất và cần Trung tâm Tuyển sinh xác nhận trước khi bạn quyết định.</p>
+    </div></section>
+  </main>
+  <div data-layout="footer"></div>
+  <script src="/js/apiClient.js"></script>
+  <script src="/js/actionDelegate.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/pages/majors.js"></script>
+</body>
+</html>

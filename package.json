@@ -1,0 +1,43 @@
+{
+  "name": "hht-tuyen-sinh-ai",
+  "version": "1.0.0",
+  "description": "HHT Tuyển sinh AI – Hệ thống trợ lý ảo tư vấn tuyển sinh, Trường Cao đẳng Công nghệ cao Hà Nội",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:init": "node src/migrations/runMigrations.js",
+    "test": "node --test --test-concurrency=1 test/unit.test.js test/integration.db.test.js test/appointments.db.test.js test/llm.db.test.js",
+    "import:excel": "node scripts/import-excel.js",
+    "eval:rag": "node scripts/eval-rag.js",
+    "report": "node scripts/export-report.js",
+    "ingest:folder": "node scripts/ingest-folder.js",
+    "admin:reset": "node scripts/reset-admin-password.js",
+    "doctor": "node scripts/doctor.js",
+    "setup": "node scripts/setup-env.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@google/genai": "^3.3.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.3",
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
+    "mammoth": "^1.13.0",
+    "multer": "^2.5.0",
+    "pdf-parse": "^1.1.4",
+    "pg": "^8.23.1",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.2"
+  },
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.10"
+  }
+}
