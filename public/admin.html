@@ -24,10 +24,11 @@
   <div id="change-password" class="login-box hidden">
     <div class="panel">
       <h1>Đổi mật khẩu</h1>
-      <p class="small muted">Tài khoản mới hoặc vừa được đặt lại mật khẩu cần đổi mật khẩu trước khi sử dụng. Mật khẩu ít nhất 10 ký tự, có cả chữ và số.</p>
+      <p class="small muted" id="cp-hint">Tài khoản mới hoặc vừa được đặt lại mật khẩu cần đổi mật khẩu trước khi sử dụng.</p>
       <form class="form" data-action="change-password">
-        <label>Mật khẩu hiện tại <input name="currentPassword" type="password" autocomplete="current-password" required></label>
-        <label>Mật khẩu mới <input name="newPassword" type="password" autocomplete="new-password" minlength="10" required></label>
+        <label>Mật khẩu hiện tại (mật khẩu tạm được cấp) <input name="currentPassword" type="password" autocomplete="current-password" required></label>
+        <div id="cp-new"></div>
+        <label>Nhập lại mật khẩu mới <input name="confirm" type="password" autocomplete="new-password" required></label>
         <button class="btn btn--primary" type="submit">Lưu mật khẩu mới</button>
       </form>
     </div>
@@ -42,6 +43,7 @@
         <h1 id="tab-title"></h1>
         <span class="who" id="who"></span>
         <span class="badge" id="ws-status">…</span>
+        <button class="btn btn--sm btn--ghost" data-action="my-password">Đổi mật khẩu</button>
         <button class="btn btn--sm" data-action="logout">Đăng xuất</button>
       </div>
       <div id="tab"></div>
@@ -58,6 +60,7 @@
   <script src="/js/admin/faq.js"></script>
   <script src="/js/admin/catalog.js"></script>
   <script src="/js/admin/appointments.js"></script>
+  <script src="/js/admin/ai.js"></script>
   <script src="/js/admin/staff.js"></script>
   <script src="/js/admin/system.js"></script>
   <script src="/js/admin/boot.js"></script>

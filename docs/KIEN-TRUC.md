@@ -53,3 +53,12 @@ Mọi chuyển trạng thái đi theo cùng một trình tự: `withTransaction`
 - **Tham số nghiệp vụ có một nguồn duy nhất** (`config/configDefaults.js`). Mỗi lần khởi động chỉ thêm khóa mới và cập nhật metadata, không ghi đè giá trị Admin đã sửa.
 - **Chống đặt vượt chỗ** bằng hai lớp: khóa dòng slot và `CHECK (booked_count <= capacity)`. Khi đổi lịch, hai slot được khóa theo thứ tự id tăng dần để tránh deadlock. Mã hẹn bị trùng thì thử lại trong SAVEPOINT.
 - **Bảo mật:** CSP chặt (không script, style hay onclick nội tuyến). `frame-ancestors` của `chat.html` lấy từ `ALLOWED_EMBED_ORIGINS`. Token phiên chỉ lưu dạng băm. WebSocket chỉ gửi sự kiện nội bộ cho socket đã xác thực. `visitor_hash` là HMAC theo ngày, không lưu IP.
+
+## Cài đặt AI và quản lý tài khoản trên giao diện (bổ sung 11/2026)
+
+- **Khóa API trong CSDL** (`ai_api_keys`): mã hóa AES-256-GCM (`src/utils/secretBox.js`), khóa mã hóa suy ra từ `SECRET_ENCRYPTION_KEY` (mặc định `VISITOR_HASH_SECRET`). Lưu thêm SHA-256 để chống trùng và 4 ký tự đầu/cuối để nhận diện. API không bao giờ trả `key_cipher`.
+- **Nạp lại không khởi động lại:** thêm/sửa/xóa khóa → `aiKeyService.reload()` dựng lại key pool (giữ trạng thái nghỉ của khóa cũ) → phát `AI_KEYS_UPDATED` qua pgBus để các bản chạy khác nạp lại.
+- **Tham số AI đọc mỗi lần gọi** (`configService.getOr`): `AI_ENABLED`, `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_TIMEOUT_SECONDS`, `AI_TONE`, `AI_ANSWER_MAX_WORDS`, `AI_EXTRA_INSTRUCTIONS`, `AI_CACHE_ENABLED`, `AI_RECOMMEND_EXPLAIN`… Lỗi 404 (sai tên mô hình) xếp vào lỗi yêu cầu nên không làm khóa bị "nghỉ" oan, rồi chuyển sang mô hình dự phòng.
+- **Lời nhắc:** quy tắc chống bịa luôn đứng trước "Hướng dẫn bổ sung của Nhà trường" và được ghi rõ là ưu tiên cao hơn; câu trả lời vẫn qua bước kiểm tra trích dẫn bằng mã như trước.
+- **Thử trợ lý** (`POST /api/admin/ai/try`): chạy `answerService.compose` với `dryRun` (không đọc/ghi bộ nhớ đệm, không lấy lịch sử, không ghi log) và `trace` ghi từng bước.
+- **Tài khoản:** `set-password` (không áp dụng cho chính mình để phiên bị đánh cắp không chiếm được tài khoản Admin), `unlock`, `logout-all`; chính sách `PASSWORD_MIN_LENGTH`, `SESSION_TTL_HOURS`, `LOGIN_MAX_FAILED_ATTEMPTS`, `LOGIN_LOCK_MINUTES` trong `system_configs`. Cột mới `staff.last_login_at`, `staff.password_changed_at` (migration `2026-11-16-staff-login-tracking`).

@@ -22,6 +22,18 @@ const MIGRATION_LOCK_KEY = 'hht_ts:migrations';
 // Thêm thay đổi schema mới vào CUỐI; không sửa migration đã phát hành.
 const MIGRATIONS = [
   // { id: '2027-01-10-add-xyz', sql: 'ALTER TABLE … ADD COLUMN IF NOT EXISTS …' },
+  {
+    id: '2026-11-16-staff-login-tracking',
+    sql: `ALTER TABLE staff ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+          ALTER TABLE staff ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;`,
+  },
+  {
+    // CSDL tạo trước bản này có CHECK cũ (thiếu AI, AI_KEY) -> nhật ký cài đặt AI bị từ chối.
+    id: '2026-11-16-audit-ai-targets',
+    sql: `ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS audit_logs_target_type_check;
+          ALTER TABLE audit_logs ADD CONSTRAINT audit_logs_target_type_check CHECK (target_type IN ('KB_DOCUMENT', 'FAQ', 'MAJOR',
+            'HANDOFF', 'CONFIG', 'STAFF', 'SYSTEM', 'APPOINTMENT', 'ADMISSION_ITEM', 'AI', 'AI_KEY'));`,
+  },
 ];
 
 async function upsertConfigDefaults(c) {

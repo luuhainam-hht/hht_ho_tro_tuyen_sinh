@@ -127,7 +127,7 @@ function createRecommendService({ db, configService, llm, logger = console }) {
       reasons: reasonsFor(r, user, answers), careers: r.major.career_paths || [],
     }));
     let explanation = null;
-    if (output.length && llm.available()) {
+    if (output.length && llm.available() && configService.getOr('AI_RECOMMEND_EXPLAIN', true)) {
       try {
         const p = buildRecommendExplainPrompt({
           results: output.map((o) => ({ ten_nganh: o.name, khoa: o.faculty, ly_do: o.reasons })),

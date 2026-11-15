@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   actor_id     BIGINT REFERENCES staff (id) ON DELETE SET NULL,
   action       TEXT NOT NULL,
   target_type  TEXT NOT NULL CHECK (target_type IN ('KB_DOCUMENT', 'FAQ', 'MAJOR', 'HANDOFF', 'CONFIG',
-                                                    'STAFF', 'SYSTEM', 'APPOINTMENT', 'ADMISSION_ITEM')),
+                                                    'STAFF', 'SYSTEM', 'APPOINTMENT', 'ADMISSION_ITEM', 'AI', 'AI_KEY')),
   target_id    TEXT,
   reason       TEXT,
   payload      JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -300,6 +300,24 @@ CREATE TABLE IF NOT EXISTS token_usage_daily (
   requests    INT NOT NULL DEFAULT 0
 );
 
+-- Khóa API AI do Quản trị viên thêm qua giao diện. Chỉ lưu bản MÃ HÓA (AES-256-GCM) + 4 ký tự cuối để nhận diện;
+-- key_hash (SHA-256) chống thêm trùng mà không cần giải mã. Khóa trong .env vẫn dùng song song.
+CREATE TABLE IF NOT EXISTS ai_api_keys (
+  id                 BIGSERIAL PRIMARY KEY,
+  label              TEXT NOT NULL CHECK (char_length(label) BETWEEN 1 AND 60),
+  provider           TEXT NOT NULL DEFAULT 'GEMINI' CHECK (provider IN ('GEMINI')),
+  key_cipher         TEXT NOT NULL,
+  key_hash           TEXT NOT NULL UNIQUE,
+  key_hint           TEXT NOT NULL,
+  is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+  last_test_at       TIMESTAMPTZ,
+  last_test_ok       BOOLEAN,
+  last_test_message  TEXT,
+  created_by         BIGINT REFERENCES staff(id) ON DELETE SET NULL,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Chuyển cán bộ: chỉ lưu liên hệ khi thí sinh tự đồng ý.
 CREATE TABLE IF NOT EXISTS handoff_requests (
   id              BIGSERIAL PRIMARY KEY,
@@ -449,7 +467,7 @@ DO $$
 DECLARE t TEXT;
 BEGIN
   FOREACH t IN ARRAY ARRAY['staff', 'system_configs', 'kb_documents', 'faq_entries', 'majors', 'admission_items',
-                           'handoff_requests', 'jobs', 'appointment_slots', 'appointments']
+                           'handoff_requests', 'jobs', 'appointment_slots', 'appointments', 'ai_api_keys']
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS trg_%1$s_updated_at ON %1$I', t);
     EXECUTE format('CREATE TRIGGER trg_%1$s_updated_at BEFORE UPDATE ON %1$I

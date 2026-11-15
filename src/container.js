@@ -11,6 +11,7 @@ const { createOriginChecker } = require('./config/security');
 const { createWsHub } = require('./websocket/wsHub');
 const { createPgBus } = require('./realtime/pgBus');
 const { createLlmClient } = require('./services/ai/llmClient');
+const { createAiKeyService } = require('./services/ai/aiKeyService');
 const { createAuthService } = require('./services/authService');
 const { createStaffService } = require('./services/staffService');
 const { createIntentClassifier } = require('./services/intentClassifier');
@@ -34,14 +35,19 @@ const { createScheduler } = require('./services/scheduler');
 
 function createContainer({ db = getDb(), logger = console, llmTransport, fetchImpl } = {}) {
   const isOriginAllowed = createOriginChecker();
-  const authService = createAuthService({ db });
+  // authService cần chính sách đăng nhập từ configService, nhưng configService lại cần broadcast của wsHub
+  // (wsHub cần authService) -> truyền tham chiếu lười, đọc khi có yêu cầu đăng nhập.
+  let configService = null;
+  const lazyConfig = { getOr: (k, d) => (configService ? configService.getOr(k, d) : d) };
+  const authService = createAuthService({ db, configService: lazyConfig });
   const wsHub = createWsHub({ isOriginAllowed, resolveToken: (t) => authService.resolveToken(t).catch(() => null), logger });
   const pgBus = createPgBus({ db, logger });
   wsHub.useBus(pgBus);
   const { broadcast } = wsHub;
 
-  const configService = createConfigService({ db, broadcast });
+  configService = createConfigService({ db, broadcast });
   const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, ...(llmTransport ? { transport: llmTransport } : {}) });
+  const aiKeyService = createAiKeyService({ db, llm, secret: env.SECRET_ENCRYPTION_KEY, broadcast, logger });
   const uploadDir = path.resolve(env.UPLOAD_DIR);
 
   // Danh sách ngành cho bộ phân loại: nạp lười, làm mới mỗi 5 phút.
@@ -66,7 +72,7 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const maintenanceService = createMaintenanceService({ db, configService, classifier });
   const appointmentService = createAppointmentService({ db, configService, broadcast });
   const messengerService = createMessengerService({ db, configService, answerService, env, logger, ...(fetchImpl ? { fetchImpl } : {}) });
-  const staffService = createStaffService({ db });
+  const staffService = createStaffService({ db, configService });
   const visitorHash = createVisitorHasher(env.VISITOR_HASH_SECRET);
 
   const jobRunner = createJobRunner({
@@ -90,11 +96,12 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
 
   function onBusEvent(type, payload) {
     if (type === 'CONFIG_UPDATED' && payload?.key) configService.reload(payload.key).catch((err) => logger.warn('[config] reload lỗi:', err.message));
+    if (type === 'AI_KEYS_UPDATED') aiKeyService.reload().catch((err) => logger.warn('[aiKeys] reload lỗi:', err.message));
     wsHub.localBroadcast(type, payload, { remote: true });
   }
 
   return {
-    env, db, logger, isOriginAllowed, wsHub, pgBus, configService, llm, authService, staffService, classifier, faqMatcher, retriever,
+    env, db, logger, isOriginAllowed, wsHub, pgBus, configService, llm, aiKeyService, authService, staffService, classifier, faqMatcher, retriever,
     answerService, ingestService, kbService, faqService, handoffService, handbookService, recommendService, analyticsService,
     maintenanceService, appointmentService, messengerService, visitorHash, jobRunner, scheduler, onBusEvent, refreshMajors,
     pgBusState: () => ({ connected: pgBus.isConnected() }),

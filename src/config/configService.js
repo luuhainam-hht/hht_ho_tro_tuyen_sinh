@@ -5,8 +5,13 @@
  */
 const { HttpError } = require('../utils/httpError');
 const { parseTime } = require('../utils/time');
+const { CONFIG_META, CONFIG_DEFAULTS } = require('./configDefaults');
+// Thứ tự hiển thị = thứ tự khai báo trong configDefaults (đã xếp theo mức quan trọng), không theo bảng chữ cái.
+const ORDER = new Map(CONFIG_DEFAULTS.map((d, i) => [d.key, i]));
 
 const STRING_MAX_LENGTH = 2000;
+// Tham số chuỗi được phép để trống (tùy chọn).
+const EMPTY_ALLOWED = new Set(['AI_EXTRA_INSTRUCTIONS', 'LLM_FALLBACK_MODEL']);
 
 function normalizeByType(row, raw) {
   const input = String(raw ?? '').trim();
@@ -50,6 +55,7 @@ function normalizeByType(row, raw) {
       try { return JSON.stringify(JSON.parse(input)); } catch { return fail('không phải JSON hợp lệ'); }
     }
     case 'STRING': {
+      if (!input && !EMPTY_ALLOWED.has(row.key)) fail('không được để trống');
       if (input.length > STRING_MAX_LENGTH) fail(`không dài quá ${STRING_MAX_LENGTH} ký tự`);
       return input;
     }
@@ -86,6 +92,8 @@ function parseTimeSlots(value) {
   return ranges;
 }
 
+const AI_TONES = ['THAN_THIEN', 'TRANG_TRONG', 'NGAN_GON'];
+const assertModelName = (v) => { if (!/^[a-z0-9.\-_/]{3,80}$/i.test(v)) throw new HttpError(400, 'Tên mô hình không hợp lệ'); };
 const ORIGIN_PATTERN = /^https?:\/\/[a-z0-9.-]+(:\d+)?$/i;
 
 /** Kiểm tra riêng theo khóa, chạy SAU khi đã chuẩn hóa kiểu. */
@@ -103,8 +111,11 @@ const KEY_VALIDATORS = {
     if (!keys.every((k) => typeof w[k] === 'number' && w[k] >= 0)) throw new HttpError(400, 'RECOMMEND_WEIGHTS cần 3 số riasec, subject, preference');
     if (Math.abs(keys.reduce((s, k) => s + w[k], 0) - 1) > 0.001) throw new HttpError(400, 'Tổng trọng số RECOMMEND_WEIGHTS phải bằng 1');
   },
-  LLM_MODEL: (v) => { if (!/^[a-z0-9.\-_/]{3,80}$/i.test(v)) throw new HttpError(400, 'Tên model không hợp lệ'); },
-  EMBEDDING_MODEL: (v) => { if (!/^[a-z0-9.\-_/]{3,80}$/i.test(v)) throw new HttpError(400, 'Tên model không hợp lệ'); },
+  LLM_MODEL: (v) => assertModelName(v),
+  LLM_FALLBACK_MODEL: (v) => { if (v) assertModelName(v); },
+  EMBEDDING_MODEL: (v) => assertModelName(v),
+  AI_TONE: (v) => { if (!AI_TONES.includes(v)) throw new HttpError(400, `AI_TONE chỉ nhận: ${AI_TONES.join(', ')}`); },
+  AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };
 
 function createConfigService({ db, broadcast = () => {}, onChange = () => {} }) {
@@ -137,7 +148,8 @@ function createConfigService({ db, broadcast = () => {}, onChange = () => {} }) 
     minBound: row.min_bound === null ? null : Number(row.min_bound),
     maxBound: row.max_bound === null ? null : Number(row.max_bound),
     description: row.description, updatedAt: row.updated_at,
-  })).sort((a, b) => a.key.localeCompare(b.key));
+    group: CONFIG_META[row.key]?.group || 'GENERAL', label: CONFIG_META[row.key]?.label || row.key,
+  })).sort((a, b) => (ORDER.get(a.key) ?? 999) - (ORDER.get(b.key) ?? 999) || a.key.localeCompare(b.key));
 
   async function update(key, rawValue, { actorId, ip, reason = null }) {
     const updated = await db.withTransaction(async (client) => {
@@ -159,7 +171,13 @@ function createConfigService({ db, broadcast = () => {}, onChange = () => {} }) 
     return updated;
   }
 
-  return { loadAll, reload, get, getPublic, list, update };
+  /** Đọc tham số, chưa có (CSDL cũ chưa chạy migration) thì dùng giá trị dự phòng thay vì lỗi 500. */
+  function getOr(key, fallback) {
+    const e = cache.get(key);
+    return e ? e.parsed : fallback;
+  }
+
+  return { loadAll, reload, get, getOr, getPublic, list, update };
 }
 
-module.exports = { createConfigService, normalizeByType, parseTimeSlots, KEY_VALIDATORS };
+module.exports = { createConfigService, normalizeByType, parseTimeSlots, KEY_VALIDATORS, AI_TONES };

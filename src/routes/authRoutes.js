@@ -14,7 +14,7 @@ module.exports = function authRoutes({ authService }) {
     res.json(await authService.login({ username, password, ip: req.ip, userAgent: req.get('user-agent') || null }));
   }));
   r.post('/logout', authAny, ah(async (req, res) => { await authService.logout(req.authToken); res.json({ ok: true }); }));
-  r.get('/me', authAny, (req, res) => res.json({ user: req.user }));
+  r.get('/me', authAny, (req, res) => res.json({ user: req.user, policy: { passwordMinLength: authService.policy().passwordMinLength } }));
   r.post('/change-password', authAny, ah(async (req, res) => {
     res.json(await authService.changePassword({
       actor: req.user, token: req.authToken, ip: req.ip,

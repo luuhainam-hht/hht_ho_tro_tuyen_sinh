@@ -1,39 +1,156 @@
+/**
+ * Tab Tài khoản cán bộ: tạo tài khoản (mật khẩu tạm hoặc tự đặt), đổi vai trò, đặt mật khẩu,
+ * cấp mật khẩu tạm, gỡ tạm khóa, đăng xuất mọi thiết bị, khóa tài khoản; chính sách mật khẩu & đăng nhập.
+ */
 (function () {
   'use strict';
+  const SECURITY_KEYS = ['PASSWORD_MIN_LENGTH', 'SESSION_TTL_HOURS', 'LOGIN_MAX_FAILED_ATTEMPTS', 'LOGIN_LOCK_MINUTES'];
+  /** Bảng có menu thả xuống: không cắt menu ở màn hình rộng (màn hẹp vẫn cuộn ngang). */
+  const withMenus = (t) => { t.classList.add('table-wrap--menus'); return t; };
+  const isLocked = (u) => u.locked_until && new Date(u.locked_until) > new Date();
+
+  function statusCell(u) {
+    const out = [];
+    if (!u.is_active) out.push(el('span', { class: 'badge badge--stop' }, 'Đã khóa tài khoản'));
+    else if (isLocked(u)) out.push(el('span', { class: 'badge badge--wait' }, `Tạm khóa đến ${admin.dt(u.locked_until)}`));
+    else out.push(el('span', { class: 'badge badge--go' }, 'Hoạt động'));
+    if (u.must_change_password) out.push(el('div', { class: 'small muted' }, 'Chưa đổi mật khẩu được cấp'));
+    else if (u.failed_login_attempts) out.push(el('div', { class: 'small muted' }, `Nhập sai ${u.failed_login_attempts} lần gần đây`));
+    return out;
+  }
+
+  function actionsMenu(u, self) {
+    const item = (action, label, extra = {}) => el('button', { type: 'button', 'data-action': action, 'data-id': u.id, 'data-username': u.username, 'data-name': u.full_name, ...extra }, label);
+    return el('details', { class: 'actions-menu' },
+      el('summary', { class: 'btn btn--sm' }, 'Thao tác'),
+      el('div', {},
+        self
+          ? item('my-password', 'Đổi mật khẩu của tôi')
+          : [
+            item('staff-set-password', 'Đặt mật khẩu mới…'),
+            item('staff-reset', 'Cấp mật khẩu tạm ngẫu nhiên'),
+            isLocked(u) ? item('staff-unlock', 'Gỡ tạm khóa đăng nhập') : null,
+            item('staff-logout-all', 'Đăng xuất khỏi mọi thiết bị'),
+            el('hr'),
+            item('staff-toggle', u.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản', { class: u.is_active ? 'danger' : null, 'data-active': String(u.is_active) }),
+          ]));
+  }
+
+  function createForm() {
+    return el('form', { class: 'panel form mb-m', 'data-action': 'staff-create' },
+      el('h3', { class: 'mb-0' }, 'Thêm tài khoản'),
+      el('div', { class: 'form-grid' },
+        el('label', {}, 'Tên đăng nhập', el('input', { name: 'username', required: true, placeholder: 'vd: nguyenvana', autocomplete: 'off' }), el('span', { class: 'hint' }, 'Chữ thường không dấu, số, dấu chấm hoặc gạch.')),
+        el('label', {}, 'Họ tên', el('input', { name: 'fullName', required: true })),
+        el('label', {}, 'Email', el('input', { name: 'email', type: 'email' })),
+        el('label', {}, 'Vai trò', el('select', { name: 'role' }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === 'ADVISOR' }, v))))),
+      el('fieldset', {},
+        el('legend', {}, 'Mật khẩu ban đầu'),
+        el('label', { class: 'check' }, el('input', { type: 'radio', name: 'pwMode', value: 'temp', checked: true }), el('span', {}, 'Hệ thống tạo mật khẩu tạm (hiện một lần sau khi tạo)')),
+        el('label', { class: 'check' }, el('input', { type: 'radio', name: 'pwMode', value: 'own' }), el('span', {}, 'Tự đặt mật khẩu')),
+        el('div', { class: 'form hidden mt-xs', id: 'staff-own-pw' },
+          admin.passwordInput('password', { label: 'Mật khẩu', generate: true, required: false }),
+          el('label', { class: 'check' }, el('input', { type: 'checkbox', name: 'mustChangePassword', checked: true }), el('span', {}, 'Yêu cầu đổi mật khẩu ở lần đăng nhập đầu')))),
+      el('div', { class: 'btn-row' }, el('button', { class: 'btn btn--primary', type: 'submit' }, 'Tạo tài khoản')),
+      el('div', { id: 'staff-secret' }));
+  }
+
   admin.register({
     id: 'staff', title: 'Tài khoản cán bộ', perm: 'STAFF_MANAGEMENT', events: [],
     async render(root) {
-      const { items } = await apiClient.get('/api/admin/staff');
+      const [{ items }, configs] = await Promise.all([apiClient.get('/api/admin/staff'), admin.configs()]);
+      const me = admin.user();
+      const byKey = new Map(configs.map((c) => [c.key, c]));
       root.replaceChildren(
-        el('form', { class: 'panel form mb-m', 'data-action': 'staff-create' },
-          el('h3', {}, 'Thêm tài khoản'),
-          el('div', { class: 'form-grid' },
-            el('label', {}, 'Tên đăng nhập', el('input', { name: 'username', required: true, placeholder: 'vd: nguyenvana' })),
-            el('label', {}, 'Họ tên', el('input', { name: 'fullName', required: true })),
-            el('label', {}, 'Email', el('input', { name: 'email', type: 'email' })),
-            el('label', {}, 'Vai trò', el('select', { name: 'role' }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === 'ADVISOR' }, v))))),
-          el('button', { class: 'btn btn--primary', type: 'submit' }, 'Tạo tài khoản'),
-          el('div', { id: 'staff-secret' })),
-        admin.table(['Tài khoản', 'Vai trò', 'Trạng thái', ''], items.map((u) => el('tr', {},
-          el('td', {}, el('strong', {}, u.full_name), el('div', { class: 'small muted' }, `${u.username}${u.email ? ` · ${u.email}` : ''}`)),
-          el('td', {}, el('select', { 'data-role-of': u.id }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v)))),
-          el('td', {}, el('span', { class: `badge ${u.is_active ? 'badge--go' : 'badge--stop'}` }, u.is_active ? 'Hoạt động' : 'Đã khóa'), u.must_change_password ? el('div', { class: 'small muted' }, 'chưa đổi mật khẩu') : null),
-          el('td', {}, el('div', { class: 'btn-row' },
-            el('button', { class: 'btn btn--sm', 'data-action': 'staff-toggle', 'data-id': u.id, 'data-active': String(u.is_active) }, u.is_active ? 'Khóa' : 'Mở khóa'),
-            el('button', { class: 'btn btn--sm btn--ghost', 'data-action': 'staff-reset', 'data-id': u.id }, 'Đặt lại mật khẩu')))))));
+        createForm(),
+        withMenus(admin.table(['Tài khoản', 'Vai trò', 'Trạng thái', 'Đăng nhập gần nhất', 'Đổi mật khẩu', ''], items.map((u) => {
+          const self = Number(u.id) === Number(me.id);
+          return el('tr', {},
+            el('td', {}, el('strong', {}, u.full_name, self ? ' (bạn)' : ''), el('div', { class: 'small muted' }, `${u.username}${u.email ? ` · ${u.email}` : ''}`)),
+            el('td', {}, el('select', { 'data-role-of': u.id, 'aria-label': `Vai trò của ${u.full_name}`, disabled: self }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v)))),
+            el('td', {}, statusCell(u)),
+            el('td', { class: 'small' }, u.last_login_at ? admin.dt(u.last_login_at) : el('span', { class: 'muted' }, 'Chưa đăng nhập')),
+            el('td', { class: 'small' }, u.password_changed_at ? admin.dt(u.password_changed_at) : el('span', { class: 'muted' }, '—')),
+            el('td', {}, actionsMenu(u, self)));
+        }))),
+        el('section', { class: 'panel settings mt-m' },
+          el('h3', { class: 'mb-0' }, 'Chính sách mật khẩu và đăng nhập'),
+          el('p', { class: 'hint' }, 'Áp dụng cho mọi tài khoản cán bộ. Độ dài mật khẩu mới chỉ áp dụng khi đặt hoặc đổi mật khẩu; thời hạn phiên áp dụng từ lần đăng nhập tiếp theo.'),
+          el('form', { class: 'settings-form', 'data-action': 'staff-policy-save' },
+            SECURITY_KEYS.filter((k) => byKey.has(k)).map((k) => admin.configField(byKey.get(k))),
+            el('div', { class: 'btn-row' }, el('button', { class: 'btn btn--primary', type: 'submit' }, 'Lưu chính sách')))));
+
       $$('[data-role-of]', root).forEach((s) => s.addEventListener('change', () => apiClient.put(`/api/admin/staff/${s.dataset.roleOf}`, { role: s.value })
-        .then(() => toast('Đã đổi vai trò', 'ok')).catch((e) => { toast(e.message, 'error'); admin.reload(); })));
+        .then(() => toast('Đã đổi vai trò. Tài khoản đó cần đăng nhập lại.', 'ok')).catch((e) => { toast(e.message, 'error'); admin.reload(); })));
+      $$('input[name="pwMode"]', root).forEach((r) => r.addEventListener('change', () => {
+        const own = $('input[name="pwMode"]:checked', root).value === 'own';
+        $('#staff-own-pw').classList.toggle('hidden', !own);
+        $('#staff-own-pw input[name="password"]').required = own;
+      }));
     },
   });
-  const showSecret = (title, pw) => $('#staff-secret').replaceChildren(el('p', { class: 'note' }, `${title}: `, el('strong', {}, pw), '. Mật khẩu chỉ hiện một lần, người dùng phải đổi khi đăng nhập.'));
+
+  // Đóng menu thao tác khi bấm ra ngoài hoặc đã chọn một thao tác (đăng ký một lần cho cả trang).
+  document.addEventListener('click', (e) => $$('.actions-menu[open]').forEach((d) => { if (!d.contains(e.target) || e.target.closest('[data-action]')) d.open = false; }));
+
+  function showSecret(title, pw) {
+    const box = $('#staff-secret');
+    box.replaceChildren(el('div', { class: 'note secret-box' },
+      el('span', {}, `${title}:`), el('code', {}, pw),
+      el('button', { type: 'button', class: 'btn btn--sm', 'data-action': 'copy', 'data-text': pw }, 'Chép'),
+      el('span', { class: 'small' }, 'Mật khẩu chỉ hiện một lần. Gửi trực tiếp cho người dùng (không gửi qua nhóm chat chung).')));
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   actionDelegate.register({
     async 'staff-create'(f) {
-      try { const r = await apiClient.post('/api/admin/staff', Object.fromEntries(new FormData(f))); f.reset(); await admin.reload(); showSecret(`Mật khẩu tạm của ${r.user.username}`, r.temporaryPassword); } catch (e) { toast(e.message, 'error'); }
+      const d = Object.fromEntries(new FormData(f));
+      const own = d.pwMode === 'own';
+      const body = { username: d.username, fullName: d.fullName, email: d.email || null, role: d.role };
+      if (own) Object.assign(body, { password: d.password, mustChangePassword: f.elements.mustChangePassword.checked });
+      try {
+        const r = await apiClient.post('/api/admin/staff', body);
+        await admin.reload();
+        if (r.temporaryPassword) showSecret(`Mật khẩu tạm của ${r.user.username}`, r.temporaryPassword);
+        else toast(`Đã tạo tài khoản ${r.user.username} với mật khẩu bạn đặt`, 'ok');
+      } catch (e) { toast(e.message, 'error'); }
     },
-    'staff-toggle': (b) => apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: b.dataset.active !== 'true' }).then(() => admin.reload()).catch((e) => toast(e.message, 'error')),
+    async 'staff-set-password'(b) {
+      const r = await admin.formDialog({
+        title: `Đặt mật khẩu cho ${b.dataset.name}`,
+        intro: `Tài khoản ${b.dataset.username} sẽ bị đăng xuất khỏi mọi thiết bị và gỡ tạm khóa (nếu có).`,
+        fields: [
+          admin.passwordInput('newPassword', { label: 'Mật khẩu mới', generate: true, username: b.dataset.username }),
+          el('label', {}, 'Nhập lại mật khẩu mới', el('input', { name: 'confirm', type: 'password', autocomplete: 'new-password', required: true })),
+          el('label', { class: 'check' }, el('input', { type: 'checkbox', name: 'requireChange', checked: true }), el('span', {}, 'Yêu cầu người dùng đổi mật khẩu ở lần đăng nhập tiếp theo')),
+        ],
+        okText: 'Đặt mật khẩu',
+        async onSubmit(d) {
+          if (d.newPassword !== d.confirm) { toast('Hai lần nhập mật khẩu không khớp', 'error'); return false; }
+          await apiClient.post(`/api/admin/staff/${b.dataset.id}/set-password`, { newPassword: d.newPassword, requireChange: d.requireChange });
+          return d;
+        },
+      });
+      if (!r) return;
+      await admin.reload();
+      showSecret(`Mật khẩu mới của ${b.dataset.username}`, r.newPassword);
+    },
     async 'staff-reset'(b) {
-      if (!(await confirmDialog('Đặt lại mật khẩu và đăng xuất mọi phiên của tài khoản này?', { okText: 'Đặt lại' }))) return;
-      try { const r = await apiClient.post(`/api/admin/staff/${b.dataset.id}/reset-password`, {}); showSecret('Mật khẩu tạm mới', r.temporaryPassword); } catch (e) { toast(e.message, 'error'); }
+      if (!(await confirmDialog(`Cấp mật khẩu tạm mới cho ${b.dataset.name}? Mật khẩu cũ hết hiệu lực và tài khoản bị đăng xuất khỏi mọi thiết bị.`, { okText: 'Cấp mật khẩu tạm' }))) return;
+      try { const r = await apiClient.post(`/api/admin/staff/${b.dataset.id}/reset-password`, {}); await admin.reload(); showSecret(`Mật khẩu tạm mới của ${b.dataset.username}`, r.temporaryPassword); } catch (e) { toast(e.message, 'error'); }
     },
+    async 'staff-unlock'(b) {
+      try { await apiClient.post(`/api/admin/staff/${b.dataset.id}/unlock`, {}); toast(`${b.dataset.name} đăng nhập lại được ngay`, 'ok'); admin.reload(); } catch (e) { toast(e.message, 'error'); }
+    },
+    async 'staff-logout-all'(b) {
+      if (!(await confirmDialog(`Đăng xuất ${b.dataset.name} khỏi mọi thiết bị? Dùng khi nghi lộ mật khẩu hoặc quên đăng xuất ở máy dùng chung.`, { okText: 'Đăng xuất' }))) return;
+      try { const r = await apiClient.post(`/api/admin/staff/${b.dataset.id}/logout-all`, {}); toast(`Đã đăng xuất ${r.sessions} phiên`, 'ok'); } catch (e) { toast(e.message, 'error'); }
+    },
+    async 'staff-toggle'(b) {
+      const lock = b.dataset.active === 'true';
+      if (lock && !(await confirmDialog(`Khóa tài khoản ${b.dataset.name}? Người này không đăng nhập được cho đến khi mở khóa.`, { okText: 'Khóa tài khoản', danger: true }))) return;
+      try { await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: !lock }); admin.reload(); } catch (e) { toast(e.message, 'error'); }
+    },
+    'staff-policy-save': (form) => admin.saveConfigs(form),
   });
 })();

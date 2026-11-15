@@ -21,6 +21,7 @@ function collectGeminiKeys() {
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 let visitorSecret = process.env.VISITOR_HASH_SECRET || '';
+const secretIsEphemeral = !visitorSecret && !process.env.SECRET_ENCRYPTION_KEY;
 if (!visitorSecret) {
   // Dev/test: sinh ngẫu nhiên mỗi lần chạy (visitor_hash đổi sau restart – chấp nhận được).
   if (NODE_ENV === 'production') console.warn('[env] THIẾU VISITOR_HASH_SECRET – đặt trong .env cho môi trường thật');
@@ -42,6 +43,9 @@ module.exports = Object.freeze({
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'data/uploads',
   GEMINI_API_KEYS: collectGeminiKeys(),
   VISITOR_HASH_SECRET: visitorSecret,
+  // Khóa mã hóa khóa API lưu trong CSDL. Mặc định suy ra từ VISITOR_HASH_SECRET -> ĐỔI bí mật này thì phải nhập lại khóa API.
+  SECRET_ENCRYPTION_KEY: process.env.SECRET_ENCRYPTION_KEY || visitorSecret,
+  SECRET_IS_EPHEMERAL: secretIsEphemeral,
   MESSENGER_VERIFY_TOKEN: process.env.MESSENGER_VERIFY_TOKEN || '',
   MESSENGER_APP_SECRET: process.env.MESSENGER_APP_SECRET || '',
   MESSENGER_PAGE_TOKEN: process.env.MESSENGER_PAGE_TOKEN || '',

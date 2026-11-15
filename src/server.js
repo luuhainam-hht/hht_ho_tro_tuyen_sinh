@@ -64,6 +64,7 @@ function createApp(c) {
   app.use('/api/admin/appointments', staff, require('./routes/adminAppointmentRoutes')(deps));
   app.use('/api/admin/staff', staff, require('./routes/adminStaffRoutes')(deps));
   app.use('/api/admin/system', staff, require('./routes/adminConfigRoutes')(deps));
+  app.use('/api/admin/ai', staff, require('./routes/adminAiRoutes')(deps));
   app.use('/api', require('./routes/publicRoutes')(deps)); // mount trần: luôn SAU CÙNG
 
   app.use(express.static(PUBLIC_DIR, {
@@ -85,10 +86,12 @@ async function start() {
   await runMigrations(c.db, { logger });
   logger.info(`[boot] nạp ${await c.configService.loadAll()} tham số cấu hình`);
   await c.refreshMajors();
+  // Khóa API do Admin thêm (lưu mã hóa). Lỗi ở đây không được chặn khởi động: vẫn còn khóa .env / FAQ.
+  try { await c.aiKeyService.reload(); } catch (err) { logger.warn('[boot] không nạp được khóa API từ CSDL:', err.message); }
   await c.pgBus.start(c.onBusEvent);
   if (env.SCHEDULER_ENABLED) c.scheduler.start();
   if (env.JOB_RUNNER_ENABLED) c.jobRunner.start();
-  if (!c.llm.available()) logger.warn('[boot] Chưa cấu hình GEMINI_API_KEYS: trợ lý trả lời bằng FAQ + trích dẫn văn bản (không dùng LLM).');
+  if (!c.llm.available()) logger.warn('[boot] Chưa có khóa Gemini (thêm ở trang Quản trị > Cài đặt AI hoặc GEMINI_API_KEYS) hoặc AI đang tắt: trợ lý trả lời bằng FAQ + trích dẫn văn bản.');
 
   const server = http.createServer(createApp(c));
   c.wsHub.attach(server);

@@ -14,7 +14,8 @@ const { sha256 } = require('../../utils/crypto');
 const { normalizeVi } = require('../../utils/textNormalize');
 const { vnToday } = require('../../utils/time');
 const { maskPii, forMatching } = require('../piiFilter');
-const { buildSystemPrompt, buildUserPrompt } = require('../ai/promptBuilder');
+const { systemPromptFromConfig, buildUserPrompt } = require('../ai/promptBuilder');
+const { describeLlmError } = require('../ai/llmClient');
 const { validateCitations } = require('./citation');
 const chatRepository = require('../../repositories/chatRepository');
 const kbDocumentRepository = require('../../repositories/kbDocumentRepository');
@@ -66,18 +67,18 @@ function createAnswerService({
   }
 
   async function tryLlm({ question, history, retrieval }) {
-    const system = buildSystemPrompt({ schoolName: configService.get('SCHOOL_NAME'), hotline: configService.get('HOTLINE') });
+    const system = systemPromptFromConfig(configService);
     const res = await llm.generate({ system, history, prompt: buildUserPrompt({ question, chunks: retrieval.chunks }), json: true });
     try {
       await tokenUsageRepository.add(db, vnToday(), res.tokensIn, res.tokensOut);
     } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
     let parsed;
-    try { parsed = JSON.parse(res.text.replace(/^```json\s*|\s*```$/g, '')); } catch { return { ok: false, tokens: res }; }
-    if (parsed.insufficient || typeof parsed.answer !== 'string') return { ok: false, tokens: res };
+    try { parsed = JSON.parse(res.text.replace(/^```json\s*|\s*```$/g, '')); } catch { return { ok: false, tokens: res, reason: 'AI trả về sai định dạng JSON' }; }
+    if (parsed.insufficient || typeof parsed.answer !== 'string') return { ok: false, tokens: res, reason: 'AI báo tài liệu không đủ thông tin' };
     const checked = validateCitations({
       answer: parsed.answer, chunks: retrieval.chunks, allowedNumbers: [configService.get('HOTLINE')],
     });
-    if (!checked.sufficient) return { ok: false, tokens: res };
+    if (!checked.sufficient) return { ok: false, tokens: res, reason: 'Câu trả lời của AI chứa số liệu không có trong tài liệu nên bị loại' };
     return {
       ok: true,
       tokens: res,
@@ -89,17 +90,27 @@ function createAnswerService({
     };
   }
 
-  async function compose({ sessionId, question, majorContext }) {
+  /**
+   * dryRun: trang quản trị thử câu hỏi -> không đọc/ghi bộ nhớ đệm, không lấy lịch sử phiên.
+   * trace: object nhận chi tiết từng bước (điểm FAQ, đoạn tài liệu, mô hình, lý do không dùng AI).
+   */
+  async function compose({ sessionId, question, majorContext, dryRun = false, trace = null }) {
+    const t = trace || {};
     const cls = classifier.classify(question);
     const rule = ruleAssistant.tryAnswer(question);
+    t.rule = Boolean(rule);
     if (rule) return { source: 'RULE', answer: rule.answer, citations: [], intent: rule.intent, topics: [], majorCodes: [] };
 
     const kbVersion = await kbDocumentRepository.kbVersion(db);
-    const llmOn = llm.available() && (await budgetLeft());
+    const budgetOk = await budgetLeft();
+    const llmOn = llm.available() && budgetOk;
+    t.llm = { enabled: llm.enabled(), keys: llm.keyCount(), budgetOk, used: false };
     const queryEmbedding = llmOn ? await safeEmbedQuery(question) : null;
+    t.vectorSearch = Boolean(queryEmbedding);
 
     // c) FAQ
     const { best, candidates } = await faqMatcher.match({ question, queryEmbedding, kbVersion });
+    t.faq = { matched: Boolean(best), score: best?.score ?? null, candidates: candidates.slice(0, 3).map((c) => ({ question: c.faq.question, score: c.score })) };
     if (best) {
       const map = await sources(kbVersion);
       const citations = (best.faq.source_codes || []).map((code, i) => {
@@ -114,15 +125,22 @@ function createAnswerService({
 
     // d) cache
     const questionHash = sha256(normalizeVi(question));
-    try {
-      const hit = await answerCacheRepository.get(db, questionHash, kbVersion);
-      if (hit) return { source: 'CACHE', answer: hit.answer, citations: hit.citations, ...cls, ...hit.meta };
-    } catch (err) { logger.warn('[answer] đọc cache lỗi:', err.message); }
+    const cacheOn = !dryRun && configService.getOr('AI_CACHE_ENABLED', true);
+    if (cacheOn) {
+      try {
+        const hit = await answerCacheRepository.get(db, questionHash, kbVersion);
+        if (hit) return { source: 'CACHE', answer: hit.answer, citations: hit.citations, ...cls, ...hit.meta };
+      } catch (err) { logger.warn('[answer] đọc cache lỗi:', err.message); }
+    }
 
     // e) truy xuất
     const retrievalQuery = majorContext && !cls.majorCodes.includes(majorContext.code) ? `${question} ${majorContext.name}` : question;
     const retrieval = await retriever.retrieve({ question: retrievalQuery, queryEmbedding, kbVersion });
     const suggestions = candidates.map((c) => ({ faqId: c.faq.id, question: c.faq.question }));
+    t.retrieval = {
+      grounded: retrieval.grounded, topScore: retrieval.topScore,
+      chunks: retrieval.chunks.map((c) => ({ title: c.title, heading: c.heading_path || null, cosine: c.cosine ?? null, coverage: c.coverage ?? null })),
+    };
 
     // f) không đủ căn cứ
     if (!retrieval.grounded) {
@@ -132,13 +150,16 @@ function createAnswerService({
     // g–h) LLM
     if (llmOn) {
       try {
-        const history = await chatRepository.recentHistory(db, sessionId, configService.get('MAX_HISTORY_TURNS'));
+        const history = sessionId ? await chatRepository.recentHistory(db, sessionId, configService.get('MAX_HISTORY_TURNS')) : [];
         const out = await tryLlm({ question, history, retrieval });
+        Object.assign(t.llm, { used: true, model: out.tokens?.model || null, fallbackUsed: Boolean(out.tokens?.fallbackUsed), accepted: out.ok, reason: out.reason || null, tokensIn: out.tokens?.tokensIn ?? 0, tokensOut: out.tokens?.tokensOut ?? 0 });
         if (out.ok) {
           const meta = { intent: out.intent || cls.intent, topics: out.topics?.length ? out.topics : cls.topics, majorCodes: out.majorCodes?.length ? out.majorCodes : cls.majorCodes };
-          answerCacheRepository.put(db, {
-            questionHash, kbVersion, answer: out.answer, citations: out.citations, meta, ttlHours: configService.get('CACHE_TTL_HOURS'),
-          }).catch((err) => logger.warn('[answer] ghi cache lỗi:', err.message));
+          if (cacheOn) {
+            answerCacheRepository.put(db, {
+              questionHash, kbVersion, answer: out.answer, citations: out.citations, meta, ttlHours: configService.get('CACHE_TTL_HOURS'),
+            }).catch((err) => logger.warn('[answer] ghi cache lỗi:', err.message));
+          }
           return {
             source: 'RAG', answerMode: 'LLM', answer: out.answer, citations: out.citations, topScore: retrieval.topScore,
             citedChunkIds: out.citations.map((c) => c.chunkId), tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...meta,
@@ -146,6 +167,7 @@ function createAnswerService({
         }
       } catch (err) {
         logger.warn('[answer] LLM lỗi, chuyển sang trích dẫn nguyên văn:', err.message);
+        Object.assign(t.llm, { used: true, accepted: false, reason: describeLlmError(err) });
       }
     }
 
@@ -211,7 +233,19 @@ function createAnswerService({
     };
   }
 
-  return { answer, compose };
+  /** Trang Cài đặt AI: chạy đúng quy trình trả lời nhưng không ghi log, không dùng bộ nhớ đệm. */
+  async function preview({ message }) {
+    const startedAt = Date.now();
+    const { masked } = maskPii(message);
+    const trace = {};
+    const reply = await compose({ sessionId: null, question: forMatching(masked) || masked, majorContext: null, dryRun: true, trace });
+    return {
+      answer: reply.answer, source: reply.source, answerMode: reply.answerMode ?? null, citations: reply.citations,
+      topScore: reply.topScore ?? null, latencyMs: Date.now() - startedAt, trace,
+    };
+  }
+
+  return { answer, compose, preview };
 }
 
 module.exports = { createAnswerService };

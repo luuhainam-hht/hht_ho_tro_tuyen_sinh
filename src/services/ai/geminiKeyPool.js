@@ -5,7 +5,9 @@
  *   401/403                -> nghỉ 1 giờ (key sai/bị thu hồi)
  *   5xx                    -> nghỉ 15s
  *   mạng/timeout           -> nghỉ 10s
- *   400 (lỗi yêu cầu)      -> ném ngay, KHÔNG đổi key (đổi key cũng sai y như vậy)
+ *   400/404 (lỗi yêu cầu, sai tên model) -> ném ngay, KHÔNG đổi key (đổi key cũng sai y như vậy)
+ * Khóa là chuỗi hoặc { key, label, id, source }. Nạp lại danh sách (Admin thêm/xóa khóa) giữ nguyên
+ * trạng thái nghỉ của khóa cũ qua tùy chọn state -> không "hồi sinh" khóa đang bị giới hạn.
  */
 const KEY_COOLDOWN_MS = Object.freeze({ RATE_LIMIT: 60_000, AUTH: 3_600_000, SERVER: 15_000, NETWORK: 10_000 });
 
@@ -24,6 +26,7 @@ function classifyError(err) {
   if (status === 429 || /RESOURCE_EXHAUSTED|quota|rate limit/i.test(msg)) return 'RATE_LIMIT';
   if (status === 401 || status === 403 || /API key not valid|PERMISSION_DENIED|UNAUTHENTICATED/i.test(msg)) return 'AUTH';
   if (status === 400 || /INVALID_ARGUMENT/.test(msg)) return 'BAD_REQUEST';
+  if (status === 404 || /NOT_FOUND|is not found/i.test(msg)) return 'BAD_REQUEST';
   if (status && status >= 500) return 'SERVER';
   return 'NETWORK';
 }
@@ -34,8 +37,18 @@ function retryDelayMs(err) {
   return m ? Math.ceil(Number(m[1]) * 1000) : null;
 }
 
-function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console } = {}) {
-  const entries = [...new Set(keys)].map((key, i) => ({ key, label: `key#${i + 1}`, cooldownUntil: 0, failures: 0 }));
+function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console, state = new Map() } = {}) {
+  const seen = new Set();
+  const entries = [];
+  keys.map((k) => (typeof k === 'string' ? { key: k } : k)).forEach((k) => {
+    if (!k.key || seen.has(k.key)) return;
+    seen.add(k.key);
+    const prev = state.get(k.key);
+    entries.push({
+      key: k.key, label: k.label || `key#${entries.length + 1}`, id: k.id ?? null, source: k.source || 'ENV',
+      cooldownUntil: prev?.cooldownUntil ?? 0, failures: prev?.failures ?? 0, lastError: prev?.lastError ?? null,
+    });
+  });
   let cursor = 0;
 
   function acquire() {
@@ -55,6 +68,7 @@ function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console } 
     const ms = kind === 'RATE_LIMIT' ? (retryDelayMs(err) ?? KEY_COOLDOWN_MS.RATE_LIMIT) : KEY_COOLDOWN_MS[kind];
     entry.cooldownUntil = now() + ms;
     entry.failures += 1;
+    entry.lastError = kind;
     return kind;
   }
 
@@ -82,7 +96,11 @@ function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console } 
     reportFailure,
     size: entries.length,
     available: () => entries.filter((e) => e.cooldownUntil <= now()).length,
-    status: () => entries.map((e) => ({ label: e.label, coolingDownMs: Math.max(0, e.cooldownUntil - now()), failures: e.failures })),
+    status: () => entries.map((e) => ({
+      label: e.label, id: e.id, source: e.source, coolingDownMs: Math.max(0, e.cooldownUntil - now()), failures: e.failures, lastError: e.lastError,
+    })),
+    exportState: () => new Map(entries.map((e) => [e.key, { cooldownUntil: e.cooldownUntil, failures: e.failures, lastError: e.lastError }])),
+    entries: () => entries.map((e) => ({ key: e.key, label: e.label, id: e.id, source: e.source })),
   };
 }
 

@@ -12,7 +12,7 @@ module.exports = function adminConfigRoutes({ db, configService, llm }) {
   r.get('/configs', (_req, res) => res.json({ configs: configService.list(), llmKeys: llm.keyStatus() }));
   r.put('/configs/:key', ah(async (req, res) => {
     const key = v.str(req.params, 'key', { required: true, max: 64, pattern: /^[A-Z][A-Z0-9_]*$/ });
-    const row = await configService.update(key, v.str(req.body, 'value', { label: 'Giá trị', required: true, max: 2000 }), {
+    const row = await configService.update(key, (v.str(req.body, 'value', { label: 'Giá trị', max: 2000 }) ?? ''), {
       actorId: req.user.id, ip: req.ip, reason: v.str(req.body, 'reason', { max: 500 }),
     });
     // Đổi model embedding -> vector cũ không còn so sánh được -> tạo lại toàn bộ.

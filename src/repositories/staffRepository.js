@@ -1,8 +1,8 @@
 'use strict';
 const { updateWhitelisted } = require('../utils/sqlUpdate');
 
-const PUBLIC_COLUMNS = 'id, username, full_name, email, role, is_active, must_change_password, locked_until, created_at, updated_at';
-const UPDATABLE = new Set(['full_name', 'email', 'role', 'is_active', 'password_hash', 'must_change_password', 'failed_login_attempts', 'locked_until']);
+const PUBLIC_COLUMNS = 'id, username, full_name, email, role, is_active, must_change_password, locked_until, failed_login_attempts, last_login_at, password_changed_at, created_at, updated_at';
+const UPDATABLE = new Set(['full_name', 'email', 'role', 'is_active', 'password_hash', 'must_change_password', 'failed_login_attempts', 'locked_until', 'last_login_at', 'password_changed_at']);
 
 const findByUsername = async (c, username) => (await c.query('SELECT * FROM staff WHERE username = ?', [username])).rows[0] || null;
 const findById = async (c, id) => (await c.query(`SELECT ${PUBLIC_COLUMNS} FROM staff WHERE id = ?`, [id])).rows[0] || null;

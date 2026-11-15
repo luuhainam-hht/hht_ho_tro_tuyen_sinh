@@ -14,6 +14,8 @@ module.exports = function adminStaffRoutes({ staffService }) {
     fullName: v.str(req.body, 'fullName', { label: 'Họ tên', required: true, max: 100 }),
     email: v.email(req.body, 'email'),
     role: v.oneOf(req.body, 'role', Object.keys(ROLES), { required: true, label: 'Vai trò' }),
+    password: v.str(req.body, 'password', { label: 'Mật khẩu', max: 200 }) || null,
+    mustChangePassword: v.bool(req.body, 'mustChangePassword') ?? true,
     actor: req.user, ip: req.ip,
   }))));
   r.put('/:id', ah(async (req, res) => res.json({
@@ -26,5 +28,12 @@ module.exports = function adminStaffRoutes({ staffService }) {
     }),
   })));
   r.post('/:id/reset-password', ah(async (req, res) => res.json(await staffService.resetPassword(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
+  r.post('/:id/set-password', ah(async (req, res) => res.json(await staffService.setPassword(v.idParam(req.params), {
+    newPassword: v.str(req.body, 'newPassword', { label: 'Mật khẩu mới', required: true, max: 200 }),
+    requireChange: v.bool(req.body, 'requireChange') ?? true,
+    actor: req.user, ip: req.ip,
+  }))));
+  r.post('/:id/unlock', ah(async (req, res) => res.json(await staffService.unlock(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
+  r.post('/:id/logout-all', ah(async (req, res) => res.json(await staffService.logoutAll(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
   return r;
 };

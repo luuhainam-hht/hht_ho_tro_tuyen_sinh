@@ -1,31 +1,44 @@
+/**
+ * Tab Cấu hình & nhật ký: tham số chung theo nhóm (AI và bảo mật đăng nhập nằm ở tab riêng),
+ * nhật ký thao tác, việc nền.
+ */
 (function () {
   'use strict';
+  const GROUPS = [
+    ['GENERAL', 'Chung'],
+    ['CONTACT', 'Liên hệ, khung chat và kênh'],
+    ['RECOMMEND', 'Gợi ý ngành'],
+    ['APPOINTMENT', 'Đặt lịch nộp hồ sơ'],
+  ];
+  const ACTION_LABEL = {
+    CONFIG_UPDATE: 'Sửa tham số', STAFF_CREATE: 'Tạo tài khoản', STAFF_UPDATE: 'Sửa tài khoản', STAFF_RESET_PASSWORD: 'Cấp mật khẩu tạm',
+    STAFF_SET_PASSWORD: 'Đặt mật khẩu', STAFF_UNLOCK: 'Gỡ tạm khóa', STAFF_LOGOUT_ALL: 'Đăng xuất mọi thiết bị', PASSWORD_CHANGE: 'Tự đổi mật khẩu',
+    AI_KEY_ADD: 'Thêm khóa AI', AI_KEY_UPDATE: 'Sửa khóa AI', AI_KEY_DELETE: 'Xóa khóa AI', AI_CACHE_CLEAR: 'Xóa bộ nhớ đệm AI',
+  };
+
   admin.register({
-    id: 'system', title: 'Cấu hình & nhật ký', perm: 'CONFIG', events: ['CONFIG_UPDATED', 'JOB_UPDATED'],
+    id: 'system', title: 'Cấu hình & nhật ký', perm: 'CONFIG', events: ['JOB_UPDATED'],
     async render(root) {
-      const [{ configs, llmKeys }, audit, jobs] = await Promise.all([
-        apiClient.get('/api/admin/system/configs'), apiClient.get('/api/admin/system/audit?limit=50'), apiClient.get('/api/admin/system/jobs'),
+      const [configs, audit, jobs] = await Promise.all([
+        admin.configs(), apiClient.get('/api/admin/system/audit?limit=50'), apiClient.get('/api/admin/system/jobs'),
       ]);
       root.replaceChildren(
-        el('p', { class: 'small muted' }, `Khóa Gemini: ${llmKeys.length ? llmKeys.map((k) => `${k.label}${k.coolingDownMs ? ` (nghỉ ${Math.ceil(k.coolingDownMs / 1000)}s)` : ''}`).join(', ') : 'chưa cấu hình – trợ lý dùng FAQ và trích dẫn văn bản'}. Thay đổi tham số có hiệu lực ngay trên mọi máy chủ.`),
-        admin.table(['Tham số', 'Mô tả', 'Giá trị', ''], configs.map((c) => el('tr', {},
-          el('td', {}, el('code', {}, c.key), c.isPublic ? el('div', { class: 'small muted' }, 'hiển thị công khai') : null),
-          el('td', { class: 'small' }, c.description, c.minBound !== null || c.maxBound !== null ? el('div', { class: 'muted' }, `Giới hạn: ${c.minBound ?? '…'} – ${c.maxBound ?? '…'}`) : null),
-          el('td', {}, c.value.length > 60 ? el('textarea', { rows: '3', 'data-key': c.key }, c.value) : el('input', { value: c.value, 'data-key': c.key })),
-          el('td', {}, el('button', { class: 'btn btn--sm', 'data-action': 'config-save', 'data-key': c.key }, 'Lưu'))))),
+        el('p', { class: 'small muted' }, 'Thay đổi có hiệu lực ngay trên mọi máy chủ. Tham số AI nằm ở tab "Cài đặt AI"; chính sách mật khẩu ở tab "Tài khoản cán bộ".'),
+        GROUPS.map(([g, title]) => {
+          const rows = configs.filter((c) => c.group === g);
+          if (!rows.length) return null;
+          return el('section', { class: 'panel settings' },
+            el('h3', { class: 'mb-0' }, title),
+            el('form', { class: 'settings-form mt-s', 'data-action': 'config-save-group' }, rows.map(admin.configField),
+              el('div', { class: 'btn-row' }, el('button', { class: 'btn btn--primary', type: 'submit' }, 'Lưu thay đổi'))));
+        }),
         el('div', { class: 'grid-2 mt-m' },
           el('section', {}, el('h3', {}, 'Nhật ký thao tác'), admin.table(['Thời gian', 'Người', 'Thao tác', 'Đối tượng'], audit.items.map((a) => el('tr', {},
-            el('td', { class: 'small' }, admin.dt(a.created_at)), el('td', { class: 'small' }, a.actor_name || 'Hệ thống'), el('td', { class: 'small' }, a.action), el('td', { class: 'small' }, `${a.target_type} ${a.target_id || ''}`))))),
+            el('td', { class: 'small' }, admin.dt(a.created_at)), el('td', { class: 'small' }, a.actor_name || 'Hệ thống'),
+            el('td', { class: 'small' }, ACTION_LABEL[a.action] || a.action), el('td', { class: 'small' }, `${a.target_type} ${a.target_id || ''}`))))),
           el('section', {}, el('h3', {}, 'Việc nền'), admin.table(['#', 'Loại', 'Trạng thái', 'Lỗi'], jobs.items.map((j) => el('tr', {},
             el('td', {}, String(j.id)), el('td', { class: 'small' }, j.type), el('td', {}, el('span', { class: `badge ${j.status === 'DONE' ? 'badge--go' : j.status === 'FAILED' ? 'badge--stop' : 'badge--wait'}` }, j.status)), el('td', { class: 'small' }, j.last_error || '')))))));
     },
   });
-  actionDelegate.register({
-    'config-save'(b) {
-      const input = $(`[data-key="${b.dataset.key}"]:not(button)`);
-      return apiClient.put(`/api/admin/system/configs/${b.dataset.key}`, { value: input.value })
-        .then((r) => { input.value = r.config.value; toast(`Đã lưu ${b.dataset.key}`, 'ok'); })
-        .catch((e) => toast(e.message, 'error'));
-    },
-  });
+  actionDelegate.register({ 'config-save-group': (form) => admin.saveConfigs(form) });
 })();

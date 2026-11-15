@@ -60,10 +60,31 @@ Dữ liệu tuyển sinh thật lấy từ file `docs/HHT_du_lieu_chatbot_tuyen_
 
 Danh sách 16 điểm cần Nhà trường xác minh nằm ở `docs/DU-LIEU.md`.
 
+## Trang quản trị: cài đặt AI và tài khoản
+
+Chỉ tài khoản **Quản trị hệ thống** thấy hai mục này.
+
+**Cài đặt AI** (`/admin.html` › Cài đặt AI):
+
+- Bật/tắt AI tạo sinh. Khi tắt, trợ lý vẫn trả lời bằng câu hỏi thường gặp và trích nguyên văn tài liệu.
+- Khóa API Gemini: thêm, kiểm tra, tạm tắt, đổi tên, xóa ngay trên giao diện, không cần sửa `.env` hay khởi động lại. Khóa được mã hóa AES-256-GCM trước khi lưu; giao diện chỉ hiện 4 ký tự đầu và cuối. Khóa trong `.env` vẫn dùng song song.
+- Mô hình trả lời, mô hình dự phòng (tự chuyển khi mô hình chính lỗi), độ sáng tạo, thời gian chờ, độ dài tối đa, số lượt hội thoại nhớ, ngân sách token mỗi ngày.
+- Cách trả lời: tên trợ lý (hiện trên khung chat), giọng văn, số từ tối đa, lời chào, hướng dẫn bổ sung của Nhà trường. Quy tắc chống bịa số liệu luôn đứng trước hướng dẫn bổ sung; nút "Xem lời nhắc gửi AI" hiện đúng nội dung gửi đi.
+- Ngưỡng tìm tài liệu và khớp câu hỏi thường gặp, bật/tắt và thời gian giữ bộ nhớ đệm, nút xóa bộ nhớ đệm.
+- Thử trợ lý: hỏi một câu, xem câu trả lời và từng bước xử lý (điểm khớp FAQ, đoạn tài liệu tìm được, mô hình đã dùng, lý do không dùng AI). Không ghi vào lịch sử hội thoại.
+- Biểu đồ token 14 ngày, tỉ lệ câu trả lời do AI soạn.
+
+**Tài khoản cán bộ**:
+
+- Tạo tài khoản với mật khẩu tạm ngẫu nhiên hoặc mật khẩu tự đặt.
+- Với từng tài khoản: đặt mật khẩu mới (có nút tạo ngẫu nhiên, tùy chọn bắt đổi ở lần đăng nhập sau), cấp mật khẩu tạm, gỡ tạm khóa do nhập sai, đăng xuất khỏi mọi thiết bị, khóa/mở tài khoản. Mọi thao tác ghi nhật ký.
+- Chính sách: độ dài mật khẩu tối thiểu, thời hạn phiên đăng nhập, số lần nhập sai trước khi khóa, thời gian tạm khóa.
+- Mọi cán bộ tự đổi mật khẩu bằng nút "Đổi mật khẩu" ở góc trên.
+
 ## Kiểm thử
 
 ```bash
-TEST_DATABASE_URL=postgres://…/hht_test npm test   # 40 test: unit + tích hợp với PostgreSQL thật (CSDL tên phải có chữ "test")
+TEST_DATABASE_URL=postgres://…/hht_test npm test   # 52 test: unit + tích hợp với PostgreSQL thật (CSDL tên phải có chữ "test")
 npm run eval:rag                                # đánh giá trợ lý theo test/eval/golden.jsonl (CSV + tóm tắt)
 npm run report -- 2027-01-01 2027-04-30         # xuất số liệu thử nghiệm ra Excel cho báo cáo tổng kết
 ```

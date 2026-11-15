@@ -113,6 +113,7 @@
   (async () => {
     const meta = await hht.meta().catch(() => ({ config: {} }));
     handoffEnabled = meta.config.HANDOFF_ENABLED !== false;
+    if (meta.config.AI_ASSISTANT_NAME) $('#chat-title').textContent = meta.config.AI_ASSISTANT_NAME;
     bubble('bot', meta.config.CHAT_GREETING || 'Xin chào! Bạn cần hỏi gì về tuyển sinh?');
     if (p.get('q')) ask(p.get('q'));
     $('#msg').focus();
