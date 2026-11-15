@@ -20,33 +20,48 @@ const SEED_DIR = path.join(__dirname, '..', '..', 'db', 'seed');
 const SEED_YEAR = 2026; // năm học 2026–2027
 const load = (name) => JSON.parse(fs.readFileSync(path.join(SEED_DIR, name), 'utf8'));
 
+/**
+ * Chạy INSERT … ON CONFLICT DO NOTHING; ở chế độ refresh (cập nhật dữ liệu từ Excel mới) đổi thành
+ * DO UPDATE các cột do bộ dữ liệu quản lý – chỉnh sửa của cán bộ ở các cột đó sẽ bị ghi đè (đã sao lưu trước).
+ */
+function upsert(c, sql, params, { refresh, conflict, update, extra }) {
+  if (!refresh) return c.query(sql, params);
+  const sets = update.map((col) => `${col} = EXCLUDED.${col}`);
+  if (extra) sets.push(extra);
+  const re = new RegExp(`ON CONFLICT \\(${conflict}\\) DO NOTHING`);
+  if (!re.test(sql)) throw new Error(`Không tìm thấy ON CONFLICT (${conflict}) trong câu lệnh seed`);
+  return c.query(sql.replace(re, `ON CONFLICT (${conflict}) DO UPDATE SET ${sets.join(', ')}`), params);
+}
+
 function parseVnDate(s) {
   const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(s || '');
   return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
 }
 
-async function seedSources(c, sources) {
+async function seedSources(c, sources, refresh = false) {
   for (const s of sources) {
     const status = s.usable && !s.outdated ? 'PUBLISHED' : 'ARCHIVED';
-    await c.query(
+    await upsert(c, 
       `INSERT INTO kb_documents (title, source_code, issued_date, admission_year, source_url, status, published_at)
        VALUES (?, ?, ?, ?, ?, ?, now()) ON CONFLICT (source_code) DO NOTHING`,
       [s.title, s.code, parseVnDate(s.dated), SEED_YEAR, s.url, status],
+      { refresh, conflict: 'source_code', update: ['title', 'issued_date', 'source_url', 'status'] },
     );
   }
   const { rows } = await c.query('SELECT id, source_code, status FROM kb_documents WHERE source_code IS NOT NULL');
   return new Map(rows.map((r) => [r.source_code, r]));
 }
 
-async function seedFaq(c, faqs, docs) {
+async function seedFaq(c, faqs, docs, refresh = false) {
   for (const f of faqs) {
     const doc = f.sourceCodes.map((code) => docs.get(code)).find(Boolean);
-    await c.query(
+    await upsert(c, 
       `INSERT INTO faq_entries (code, topic, question, answer, variants, match_text_norm, applies_to, source_codes, reliability,
                                 internal_note, document_id, admission_year, status, approved_at)
        VALUES (?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (code) DO NOTHING`,
       [f.code, f.topic, f.question, f.answer, JSON.stringify(f.variants), normalizeVi([f.question, ...f.variants].join(' | ')),
         f.appliesTo, f.sourceCodes, f.reliability, f.internalNote, doc?.id ?? null, SEED_YEAR, f.status, f.status === 'APPROVED' ? new Date() : null],
+      { refresh, conflict: 'code', update: ['topic', 'question', 'answer', 'variants', 'match_text_norm', 'applies_to', 'source_codes', 'reliability', 'internal_note', 'document_id', 'status', 'approved_at'], extra: 'embedding = NULL' },
     );
   }
 }
@@ -60,7 +75,7 @@ function profileFor(major, profiles) {
   };
 }
 
-async function seedMajors(c, majors, profiles, docs) {
+async function seedMajors(c, majors, profiles, docs, refresh = false) {
   for (const m of majors) {
     const p = profileFor(m, profiles);
     // Hỗ trợ học phí: ưu tiên bảng 08/2026 (mới nhất) nếu ngành còn trong bảng; luôn gắn cờ cần xác minh.
@@ -70,7 +85,7 @@ async function seedMajors(c, majors, profiles, docs) {
     if (m.levels.includes('CAO_DANG')) durationParts.push('Cao đẳng khoảng 3 năm');
     if (m.levels.includes('TRUNG_CAP')) durationParts.push('Trung cấp khoảng 2 năm');
     if (m.levels.includes('HE_9_PLUS')) durationParts.push('Hệ 9+ 4 năm (3 + 1)');
-    await c.query(
+    await upsert(c, 
       `INSERT INTO majors (code, occupation_code, name, faculty, levels, levels_latest, listed_in_latest_table, description,
                            quota_9plus_cs1, quota_9plus_cs2, tuition_per_month_min, tuition_per_month_max, state_support, enterprise_support,
                            support_needs_verify, duration, admission_methods, career_paths, skills, work_styles, riasec_profile, subject_weights,
@@ -84,6 +99,7 @@ async function seedMajors(c, majors, profiles, docs) {
         state, enterprise, durationParts.join('; ') || null,
         JSON.stringify(['Xét học bạ', 'Xét điểm thi tốt nghiệp THPT (hệ Cao đẳng)']), JSON.stringify(p.careers), p.workStyles,
         JSON.stringify(p.riasec), JSON.stringify(p.subjects), m.sourceCodes, m.internalNote, SEED_YEAR, docs.get('S01')?.id ?? null],
+      { refresh, conflict: 'code', update: ['occupation_code', 'name', 'faculty', 'levels', 'levels_latest', 'listed_in_latest_table', 'quota_9plus_cs1', 'quota_9plus_cs2', 'state_support', 'enterprise_support', 'duration', 'source_codes', 'internal_note'] },
     );
   }
 }
@@ -97,19 +113,20 @@ const GUIDE_STEPS = [
   ['Hoàn tất nhập học', 'Hoàn tất thủ tục nhập học trực tiếp tại trường theo đợt nhập học.', ['S01']],
 ];
 
-async function seedAdmissionItems(c, items, docs) {
+async function seedAdmissionItems(c, items, docs, refresh = false) {
   const all = [
     ...items,
     ...GUIDE_STEPS.map(([title, detail, src], i) => ({ kind: 'ONLINE_GUIDE_STEP', itemKey: `GUIDE:${i + 1}`, audience: 'ALL', title, detail, orderNo: i + 1, sourceCodes: src })),
   ];
   for (const it of all) {
-    await c.query(
+    await upsert(c, 
       `INSERT INTO admission_items (item_key, kind, audience, code, title, detail, is_mandatory, copy_type, quantity, note, internal_note,
                                     order_no, date_from, date_to, source_codes, document_id, admission_year)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (item_key) DO NOTHING`,
       [it.itemKey, it.kind, it.audience || 'ALL', it.code ?? null, it.title, it.detail || '', it.isMandatory ?? null, it.copyType ?? null,
         it.quantity ?? null, null, it.internalNote ?? null, it.orderNo ?? 0, it.dateFrom ?? null, it.dateTo ?? null,
         it.sourceCodes || [], docs.get((it.sourceCodes || [])[0])?.id ?? null, SEED_YEAR],
+      { refresh, conflict: 'item_key', update: ['kind', 'audience', 'code', 'title', 'detail', 'is_mandatory', 'copy_type', 'quantity', 'order_no', 'date_from', 'date_to', 'source_codes', 'document_id'] },
     );
   }
 }
@@ -153,8 +170,9 @@ function buildSeedChunks({ faqs, majors, items, docs }) {
   return byDoc;
 }
 
-async function seedChunks(c, byDoc) {
+async function seedChunks(c, byDoc, refresh = false) {
   for (const [docId, entries] of byDoc) {
+    if (refresh) await c.query('DELETE FROM kb_chunks WHERE document_id = ?', [docId]);
     const { rows } = await c.query('SELECT COUNT(*)::int AS n FROM kb_chunks WHERE document_id = ?', [docId]);
     if (rows[0].n > 0) continue;
     const lines = entries.flatMap((e) => [{ heading: 1, text: e.heading }, ...e.text.split('\n').map((t) => ({ text: t }))]);
@@ -173,17 +191,17 @@ async function seedChunks(c, byDoc) {
   }
 }
 
-async function seedAll(c) {
+async function seedAll(c, { refresh = false } = {}) {
   const sources = load('sources.json');
   const faqs = load('faq.json');
   const majors = load('majors.json');
   const items = load('admission-items.json');
   const profiles = load('major-profiles.json');
-  const docs = await seedSources(c, sources);
-  await seedFaq(c, faqs, docs);
-  await seedMajors(c, majors, profiles, docs);
-  await seedAdmissionItems(c, items, docs);
-  await seedChunks(c, buildSeedChunks({ faqs, majors, items, docs }));
+  const docs = await seedSources(c, sources, refresh);
+  await seedFaq(c, faqs, docs, refresh);
+  await seedMajors(c, majors, profiles, docs, refresh);
+  await seedAdmissionItems(c, items, docs, refresh);
+  await seedChunks(c, buildSeedChunks({ faqs, majors, items, docs }), refresh);
 }
 
 module.exports = { seedAll, buildSeedChunks, SEED_YEAR };

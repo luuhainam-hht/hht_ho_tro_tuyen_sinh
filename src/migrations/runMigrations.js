@@ -45,7 +45,14 @@ async function ensureInitialAdmin(c, logger) {
     logger.warn('[migrate] Chưa có quản trị viên. Đặt ADMIN_INITIAL_PASSWORD trong .env rồi khởi động lại (hoặc chạy scripts/reset-admin-password.js).');
     return;
   }
-  assertStrongPassword(env.ADMIN_INITIAL_PASSWORD, env.ADMIN_INITIAL_USERNAME);
+  // Mật khẩu yếu: KHÔNG làm sập khởi động (máy chủ vẫn phục vụ thí sinh), chỉ bỏ qua việc tạo admin.
+  try {
+    assertStrongPassword(env.ADMIN_INITIAL_PASSWORD, env.ADMIN_INITIAL_USERNAME);
+  } catch (err) {
+    logger.warn(`[migrate] Chưa tạo quản trị viên: ADMIN_INITIAL_PASSWORD không hợp lệ (${err.message}). `
+      + 'Đặt mật khẩu ≥10 ký tự, có cả chữ và số, không chứa tên đăng nhập, rồi khởi động lại.');
+    return;
+  }
   await c.query(
     `INSERT INTO staff (username, password_hash, full_name, role, must_change_password)
      VALUES (?, ?, 'Quản trị hệ thống', 'SUPER_ADMIN', TRUE) ON CONFLICT (username) DO NOTHING`,
@@ -54,7 +61,7 @@ async function ensureInitialAdmin(c, logger) {
   logger.info(`[migrate] Đã tạo quản trị viên "${env.ADMIN_INITIAL_USERNAME}" (phải đổi mật khẩu lần đầu).`);
 }
 
-async function runMigrations(db, { logger = console, seed = true } = {}) {
+async function runMigrations(db, { logger = console, seed = true, refreshSeed = false } = {}) {
   await db.withTransaction(async (c) => {
     await c.query('SELECT pg_advisory_xact_lock(hashtext(?))', [MIGRATION_LOCK_KEY]);
     await c.raw(fs.readFileSync(SCHEMA_FILE, 'utf8'));
@@ -66,7 +73,7 @@ async function runMigrations(db, { logger = console, seed = true } = {}) {
       await c.query('INSERT INTO schema_migrations (id) VALUES (?) ON CONFLICT DO NOTHING', [m.id]);
       logger.info(`[migrate] áp dụng ${m.id}`);
     }
-    if (seed) await seedAll(c);
+    if (seed) await seedAll(c, { refresh: refreshSeed });
     await ensureInitialAdmin(c, logger);
   });
 }
@@ -74,7 +81,9 @@ async function runMigrations(db, { logger = console, seed = true } = {}) {
 if (require.main === module) {
   const { getDb } = require('../config/db');
   const db = getDb();
-  runMigrations(db).then(() => { console.log('[migrate] xong'); return db.end(); })
+  // --refresh-seed: ghi đè FAQ/ngành/mục cẩm nang bằng dữ liệu db/seed mới nhất (dùng sau khi nhập lại Excel)
+  const refreshSeed = process.argv.includes('--refresh-seed');
+  runMigrations(db, { refreshSeed }).then(() => { console.log(refreshSeed ? '[migrate] xong (đã cập nhật dữ liệu tuyển sinh từ db/seed)' : '[migrate] xong'); return db.end(); })
     .catch((err) => { console.error('[migrate] lỗi:', err); process.exit(1); });
 }
 

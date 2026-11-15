@@ -28,6 +28,11 @@ Nhấp đúp **`hht-tuyen-sinh.bat`** để mở menu:
 
 Có thể gọi thẳng: `hht-tuyen-sinh.bat install | start | test | doctor | push | docker`.
 
+Hai công cụ cơ sở dữ liệu (cần Docker Desktop, không cần cài PostgreSQL):
+
+- **`dong-bo-neon-docker.bat`**: xem trạng thái hai bên; kéo dữ liệu Neon → Docker; đẩy Docker → Neon; sao lưu; khôi phục. Trước mỗi lần ghi đè đều sao lưu bên bị ghi vào `backups/`. Dữ liệu được nạp trong một transaction, lỗi giữa chừng thì bên đích giữ nguyên.
+- **`cap-nhat-database-docker.bat`**: cập nhật bảng và nạp dữ liệu còn thiếu (giữ chỉnh sửa của cán bộ); ghi đè dữ liệu tuyển sinh bằng bản mới nhất của dự án; nhập lại file Excel dữ liệu rồi ghi đè; đặt lại mật khẩu quản trị trong Docker.
+
 ## Chạy nhanh (dòng lệnh)
 
 ```bash

@@ -6,3 +6,4 @@ data
 test
 docs/*.xlsx
 *.log
+backups

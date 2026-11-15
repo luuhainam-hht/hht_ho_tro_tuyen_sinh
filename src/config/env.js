@@ -31,7 +31,7 @@ module.exports = Object.freeze({
   NODE_ENV,
   PORT: int('PORT', 3000),
   DATABASE_URL: process.env.DATABASE_URL || '',
-  DATABASE_SSL: process.env.DATABASE_SSL === 'true' || /neon\.tech/.test(process.env.DATABASE_URL || ''),
+  DATABASE_SSL: process.env.DATABASE_SSL === 'true' || /neon\.tech|sslmode=require/.test(process.env.DATABASE_URL || ''),
   DB_POOL_MAX: int('DB_POOL_MAX', 10),
   INSTANCE_ID: process.env.INSTANCE_ID || `${process.pid}-${crypto.randomBytes(4).toString('hex')}`,
   TRUST_PROXY: int('TRUST_PROXY', 1),

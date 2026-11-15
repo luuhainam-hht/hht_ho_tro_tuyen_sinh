@@ -148,9 +148,23 @@ function createDb(pool, { logger = console } = {}) {
   return { query, withTransaction, acquire, end: () => pool.end(), pool };
 }
 
+/**
+ * Bỏ tham số sslmode/channel_binding khỏi chuỗi kết nối (Neon dán sẵn "?sslmode=require&channel_binding=require"):
+ * SSL đã cấu hình bằng đối tượng `ssl` bên dưới; để nguyên thì pg in cảnh báo SECURITY WARNING mỗi lần khởi động.
+ */
+function cleanConnectionString(raw = '') {
+  try {
+    const u = new URL(raw);
+    for (const k of ['sslmode', 'channel_binding', 'sslrootcert', 'uselibpqcompat']) u.searchParams.delete(k);
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
+
 function createPool(connectionString = env.DATABASE_URL) {
   return new Pool({
-    connectionString,
+    connectionString: cleanConnectionString(connectionString),
     max: env.DB_POOL_MAX,
     keepAlive: true,
     connectionTimeoutMillis: DB_CONNECTION_TIMEOUT_MS,
@@ -171,6 +185,7 @@ module.exports = {
   createDb,
   createPool,
   toPgPlaceholders,
+  cleanConnectionString,
   isConnectionError,
   DB_MAX_ATTEMPTS,
 };

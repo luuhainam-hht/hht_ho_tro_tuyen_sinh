@@ -8,6 +8,7 @@
  */
 const { Client } = require('pg');
 const env = require('../config/env');
+const { cleanConnectionString } = require('../config/db');
 
 const PG_BUS_CHANNEL = 'hht_ts_realtime';
 // Giới hạn payload NOTIFY của Postgres là 8000 byte; chừa lề cho phong bì JSON.
@@ -50,7 +51,7 @@ function createPgBus({ db, connectionString = env.DATABASE_URL, instanceId = env
     if (stopped) return;
     const client = new Client({
       // Neon: LISTEN không hoạt động qua PgBouncer (host "-pooler") -> nối thẳng compute.
-      connectionString: connectionString.replace('-pooler.', '.'),
+      connectionString: cleanConnectionString(connectionString).replace('-pooler.', '.'),
       keepAlive: true,
       ssl: env.DATABASE_SSL ? { rejectUnauthorized: true } : undefined,
     });

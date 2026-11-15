@@ -70,8 +70,9 @@ function explainDbError(err, url) {
 
 async function tryConnect(connectionString) {
   const { Client } = require('pg');
-  const ssl = process.env.DATABASE_SSL === 'true' || /neon\.tech/.test(connectionString) ? { rejectUnauthorized: true } : undefined;
-  const c = new Client({ connectionString, ssl, connectionTimeoutMillis: 15000 });
+  const { cleanConnectionString } = require('../src/config/db');
+  const ssl = process.env.DATABASE_SSL === 'true' || /neon\.tech|sslmode=require/.test(connectionString) ? { rejectUnauthorized: true } : undefined;
+  const c = new Client({ connectionString: cleanConnectionString(connectionString), ssl, connectionTimeoutMillis: 15000 });
   await c.connect();
   return c;
 }
