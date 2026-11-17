@@ -47,6 +47,7 @@ function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console, s
     entries.push({
       key: k.key, label: k.label || `key#${entries.length + 1}`, id: k.id ?? null, source: k.source || 'ENV',
       cooldownUntil: prev?.cooldownUntil ?? 0, failures: prev?.failures ?? 0, lastError: prev?.lastError ?? null,
+      calls: prev?.calls ?? 0, errors: prev?.errors ?? 0, successes: prev?.successes ?? 0, lastUsedAt: prev?.lastUsedAt ?? null,
     });
   });
   let cursor = 0;
@@ -78,9 +79,14 @@ function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console, s
     for (let attempt = 0; attempt < entries.length; attempt += 1) {
       const entry = acquire();
       if (!entry) break;
+      entry.calls += 1;
+      entry.lastUsedAt = now();
       try {
-        return await fn(entry.key);
+        const out = await fn(entry.key, entry);
+        entry.successes += 1;
+        return out;
       } catch (err) {
+        entry.errors += 1;
         const kind = reportFailure(entry, err);
         logger.warn(`[keyPool] ${entry.label} lỗi ${kind}: ${String(err.message).slice(0, 160)}`);
         if (kind === 'BAD_REQUEST') throw err;
@@ -98,8 +104,9 @@ function createGeminiKeyPool(keys, { now = () => Date.now(), logger = console, s
     available: () => entries.filter((e) => e.cooldownUntil <= now()).length,
     status: () => entries.map((e) => ({
       label: e.label, id: e.id, source: e.source, coolingDownMs: Math.max(0, e.cooldownUntil - now()), failures: e.failures, lastError: e.lastError,
+      calls: e.calls, errors: e.errors, successes: e.successes, lastUsedAt: e.lastUsedAt ? new Date(e.lastUsedAt).toISOString() : null,
     })),
-    exportState: () => new Map(entries.map((e) => [e.key, { cooldownUntil: e.cooldownUntil, failures: e.failures, lastError: e.lastError }])),
+    exportState: () => new Map(entries.map((e) => [e.key, { cooldownUntil: e.cooldownUntil, failures: e.failures, lastError: e.lastError, calls: e.calls, errors: e.errors, successes: e.successes, lastUsedAt: e.lastUsedAt }])),
     entries: () => entries.map((e) => ({ key: e.key, label: e.label, id: e.id, source: e.source })),
   };
 }

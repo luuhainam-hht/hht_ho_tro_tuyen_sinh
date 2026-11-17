@@ -31,7 +31,9 @@ function createMaintenanceService({ db, configService, classifier }) {
     );
     const cache = await answerCacheRepository.purgeExpired(db);
     const jobs = await db.query("DELETE FROM jobs WHERE status = 'DONE' AND updated_at < now() - interval '30 days'");
-    return { anonymized, handoffs: handoffs.rowCount, appointments: appts.rowCount, cache, jobs: jobs.rowCount };
+    // Nhật ký gọi AI chỉ để thống kê: giữ 180 ngày.
+    const aiCalls = await db.query("DELETE FROM ai_calls WHERE created_at < now() - interval '180 days'");
+    return { anonymized, handoffs: handoffs.rowCount, appointments: appts.rowCount, cache, jobs: jobs.rowCount, aiCalls: aiCalls.rowCount };
   }
 
   return { classifyMessages, purgeOldData };

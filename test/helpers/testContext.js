@@ -40,10 +40,10 @@ async function createStaff(db, username, role, { mustChange = false, faculty = n
   return Number(rows[0].id);
 }
 
-async function createTestContext({ llmTransport } = {}) {
+async function createTestContext({ llmTransport, groqTransport } = {}) {
   const db = createDb(createPool(process.env.DATABASE_URL), { logger: silent });
   await resetDatabase(db);
-  const c = createContainer({ db, logger: silent, llmTransport });
+  const c = createContainer({ db, logger: silent, llmTransport, groqTransport });
   await c.configService.loadAll();
   await c.refreshMajors();
   const app = createApp(c);

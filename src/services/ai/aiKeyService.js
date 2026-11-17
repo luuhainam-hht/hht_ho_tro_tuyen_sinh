@@ -11,8 +11,11 @@ const { sha256 } = require('../../utils/crypto');
 const { createSecretBox, maskSecret } = require('../../utils/secretBox');
 const aiKeyRepository = require('../../repositories/aiKeyRepository');
 const auditRepository = require('../../repositories/auditRepository');
+const { isGroqKey } = require('./groqClient');
 
 const KEY_PATTERN = /^[A-Za-z0-9_-]{20,200}$/;
+/** Khóa Groq bắt đầu bằng "gsk_" -> tự nhận nhà cung cấp, không cần cán bộ chọn. */
+const providerOf = (key) => (isGroqKey(key) ? 'GROQ' : 'GEMINI');
 
 function createAiKeyService({ db, llm, secret, broadcast = () => {}, logger = console }) {
   const box = createSecretBox(secret);
@@ -22,12 +25,14 @@ function createAiKeyService({ db, llm, secret, broadcast = () => {}, logger = co
   async function reload() {
     const rows = await aiKeyRepository.listActiveSecrets(db);
     const keys = [];
+    const groqKeys = [];
     undecryptable = [];
     for (const r of rows) {
       const key = box.decrypt(r.key_cipher);
-      if (key) keys.push({ key, label: r.label, id: Number(r.id), source: 'ADMIN' });
-      else undecryptable.push(Number(r.id));
+      if (!key) { undecryptable.push(Number(r.id)); continue; }
+      (providerOf(key) === 'GROQ' ? groqKeys : keys).push({ key, label: r.label, id: Number(r.id), source: 'ADMIN' });
     }
+    if (llm.setGroqKeys) llm.setGroqKeys(groqKeys);
     if (undecryptable.length) logger.warn(`[aiKeys] ${undecryptable.length} khóa không giải mã được (đã đổi SECRET_ENCRYPTION_KEY/VISITOR_HASH_SECRET?) – nhập lại trên trang Cài đặt AI`);
     return llm.setKeys(keys);
   }
@@ -47,7 +52,7 @@ function createAiKeyService({ db, llm, secret, broadcast = () => {}, logger = co
     const key = String(apiKey || '').trim();
     if (!KEY_PATTERN.test(key)) throw new HttpError(400, 'Khóa API không đúng định dạng (chỉ gồm chữ, số, "-", "_", dài 20–200 ký tự)');
     const row = await db.withTransaction(async (c) => {
-      const r = await aiKeyRepository.insert(c, { label, keyCipher: box.encrypt(key), keyHash: sha256(key), keyHint: maskSecret(key), createdBy: actor.id });
+      const r = await aiKeyRepository.insert(c, { label, provider: providerOf(key), keyCipher: box.encrypt(key), keyHash: sha256(key), keyHint: maskSecret(key), createdBy: actor.id });
       if (!r) throw new HttpError(409, 'Khóa API này đã có trong danh sách');
       await auditRepository.insert(c, { actorId: actor.id, action: 'AI_KEY_ADD', targetType: 'AI_KEY', targetId: r.id, payload: { label, hint: r.key_hint }, ip });
       return r;

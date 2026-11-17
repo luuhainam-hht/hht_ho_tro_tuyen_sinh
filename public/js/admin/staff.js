@@ -9,13 +9,21 @@
   const withMenus = (t) => { t.classList.add('table-wrap--menus'); return t; };
   const isLocked = (u) => u.locked_until && new Date(u.locked_until) > new Date();
 
-  function statusCell(u) {
+  function statusCell(u, self) {
     const out = [];
     if (!u.is_active) out.push(el('span', { class: 'badge badge--stop' }, 'Đã khóa tài khoản'));
     else if (isLocked(u)) out.push(el('span', { class: 'badge badge--wait' }, `Tạm khóa đến ${admin.dt(u.locked_until)}`));
     else out.push(el('span', { class: 'badge badge--go' }, 'Hoạt động'));
     if (u.must_change_password) out.push(el('div', { class: 'small muted' }, 'Chưa đổi mật khẩu được cấp'));
     else if (u.failed_login_attempts) out.push(el('div', { class: 'small muted' }, `Nhập sai ${u.failed_login_attempts} lần gần đây`));
+    // Khóa / mở khóa ngay tại cột Trạng thái (không phải mở menu Thao tác).
+    if (!self) {
+      const btn = (action, label, cls = '', extra = {}) => el('button', { type: 'button', class: `link-btn ${cls}`, 'data-action': action, 'data-id': u.id, 'data-name': u.full_name, 'data-username': u.username, ...extra }, label);
+      out.push(el('div', { class: 'status-actions' },
+        btn('staff-toggle', u.is_active ? 'Khóa' : 'Mở khóa', u.is_active ? 'danger' : '', { 'data-active': String(u.is_active) }),
+        isLocked(u) && u.is_active ? btn('staff-unlock', 'Gỡ tạm khóa') : null,
+        btn('staff-delete', 'Xóa', 'danger')));
+    }
     return out;
   }
 
@@ -33,6 +41,7 @@
             item('staff-logout-all', 'Đăng xuất khỏi mọi thiết bị'),
             el('hr'),
             item('staff-toggle', u.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản', { class: u.is_active ? 'danger' : null, 'data-active': String(u.is_active) }),
+            item('staff-delete', 'Xóa (đóng) tài khoản…', { class: 'danger' }),
           ]));
   }
 
@@ -102,7 +111,7 @@
             el('td', {}, el('strong', {}, u.full_name, self ? ' (bạn)' : ''), el('div', { class: 'small muted' }, `${u.username}${u.email ? ` · ${u.email}` : ''}`)),
             el('td', {}, el('select', { 'data-role-of': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '', 'aria-label': `Vai trò của ${u.full_name}`, disabled: self }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v))),
               u.role === 'FACULTY' ? el('div', { class: 'small mt-xs' }, 'Khoa: ', el('strong', {}, u.faculty || '—'), ' ', el('button', { type: 'button', class: 'link-btn', 'data-action': 'staff-faculty', 'data-id': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '' }, 'Đổi khoa')) : null),
-            el('td', {}, statusCell(u)),
+            el('td', {}, statusCell(u, self)),
             el('td', { class: 'small' }, u.last_login_at ? admin.dt(u.last_login_at) : el('span', { class: 'muted' }, 'Chưa đăng nhập')),
             el('td', { class: 'small' }, u.password_changed_at ? admin.dt(u.password_changed_at) : el('span', { class: 'muted' }, '—')),
             el('td', {}, actionsMenu(u, self)));
@@ -208,7 +217,15 @@
     async 'staff-toggle'(b) {
       const lock = b.dataset.active === 'true';
       if (lock && !(await confirmDialog(`Khóa tài khoản ${b.dataset.name}? Người này không đăng nhập được cho đến khi mở khóa.`, { okText: 'Khóa tài khoản', danger: true }))) return;
-      try { await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: !lock }); admin.reload(); } catch (e) { toast(e.message, 'error'); }
+      try {
+        await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: !lock });
+        toast(lock ? `Đã khóa tài khoản ${b.dataset.name} và đăng xuất khỏi mọi thiết bị` : `Đã mở khóa tài khoản ${b.dataset.name}`, 'ok');
+        admin.reload();
+      } catch (e) { toast(e.message, 'error'); }
+    },
+    async 'staff-delete'(b) {
+      if (!(await confirmDialog(`Xóa vĩnh viễn tài khoản ${b.dataset.name} (${b.dataset.username})? Không thể hoàn tác. FAQ, tài liệu, nhật ký do người này tạo vẫn được giữ. Nếu chỉ muốn tạm ngưng, hãy chọn "Khóa".`, { okText: 'Xóa tài khoản', danger: true }))) return;
+      try { await apiClient.del(`/api/admin/staff/${b.dataset.id}`); toast(`Đã xóa tài khoản ${b.dataset.username}`, 'ok'); admin.reload(); } catch (e) { toast(e.message, 'error'); }
     },
     'staff-policy-save': (form) => admin.saveConfigs(form),
     async 'staff-export-list'() {

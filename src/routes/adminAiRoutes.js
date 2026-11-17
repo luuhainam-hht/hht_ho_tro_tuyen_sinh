@@ -14,7 +14,7 @@ const auditRepository = require('../repositories/auditRepository');
 
 const USAGE_DAYS = 14;
 
-module.exports = function adminAiRoutes({ db, env, configService, llm, aiKeyService, answerService }) {
+module.exports = function adminAiRoutes({ db, env, configService, llm, aiKeyService, answerService, aiMeter }) {
   const r = express.Router();
   r.use(requirePermission('CONFIG'));
 
@@ -40,6 +40,8 @@ module.exports = function adminAiRoutes({ db, env, configService, llm, aiKeyServ
       available: llm.available(),
       model: configService.get('LLM_MODEL'),
       fallbackModel: configService.get('LLM_FALLBACK_MODEL') || null,
+      providers: llm.providers ? llm.providers() : null,
+      groqModel: configService.getOr('GROQ_MODEL', null),
       embeddingModel: configService.get('EMBEDDING_MODEL'),
       budget: configService.get('DAILY_TOKEN_BUDGET'),
       todayTokens: days[days.length - 1].tokens,
@@ -49,6 +51,24 @@ module.exports = function adminAiRoutes({ db, env, configService, llm, aiKeyServ
       keys,
       envKeys: llm.keyStatus().filter((k) => k.source === 'ENV'),
       secretIsEphemeral: env.SECRET_IS_EPHEMERAL,
+    });
+  }));
+
+  /** Thống kê chi tiết: theo ngày × nhà cung cấp, theo việc, độ trễ, lỗi, tự chuyển bên, khóa, nguồn trả lời, chi phí. */
+  r.get('/stats', ah(async (req, res) => {
+    const days = Math.min(Math.max(Number.parseInt(req.query.days, 10) || 14, 1), 90);
+    const [meter, sources] = await Promise.all([
+      aiMeter ? aiMeter.stats(days) : null,
+      db.query(`SELECT COALESCE(source, '?') AS source, COUNT(*)::int AS n FROM chat_messages
+                 WHERE role = 'ASSISTANT' AND created_at >= now() - make_interval(days => ?) GROUP BY 1 ORDER BY n DESC`, [days]),
+    ]);
+    res.json({
+      ...(meter || {}),
+      routing: llm.providers ? llm.providers() : null,
+      keys: llm.keyStatus().map(({ label, id, source, provider, calls = 0, errors = 0, successes = 0, coolingDownMs, failures, lastError, lastUsedAt }) => ({
+        label, id, source, provider, calls, errors, successes, coolingDownMs, failures, lastError, lastUsedAt,
+      })),
+      sources: sources.rows,
     });
   }));
 

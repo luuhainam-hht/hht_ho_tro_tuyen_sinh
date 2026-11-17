@@ -327,10 +327,29 @@ CREATE TABLE IF NOT EXISTS token_usage_daily (
 
 -- Khóa API AI do Quản trị viên thêm qua giao diện. Chỉ lưu bản MÃ HÓA (AES-256-GCM) + 4 ký tự cuối để nhận diện;
 -- key_hash (SHA-256) chống thêm trùng mà không cần giải mã. Khóa trong .env vẫn dùng song song.
+-- Nhật ký từng lần gọi AI (không lưu nội dung câu hỏi/trả lời): thống kê theo nhà cung cấp, việc, mô hình,
+-- độ trễ, lỗi, lần tự chuyển nhà cung cấp, token; ngân sách token riêng từng nhà cung cấp; ước tính chi phí.
+CREATE TABLE IF NOT EXISTS ai_calls (
+  id           BIGSERIAL PRIMARY KEY,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  provider     TEXT NOT NULL CHECK (provider IN ('GROQ', 'GEMINI')),
+  task         TEXT NOT NULL CHECK (task IN ('CHAT', 'WEB_SEARCH', 'OCR', 'RECOMMEND', 'ANALYTICS', 'EMBED', 'TEST', 'OTHER')),
+  model        TEXT,
+  key_label    TEXT,
+  ok           BOOLEAN NOT NULL,
+  latency_ms   INT NOT NULL DEFAULT 0 CHECK (latency_ms >= 0),
+  tokens_in    INT NOT NULL DEFAULT 0 CHECK (tokens_in >= 0),
+  tokens_out   INT NOT NULL DEFAULT 0 CHECK (tokens_out >= 0),
+  fallback     BOOLEAN NOT NULL DEFAULT FALSE,
+  error_kind   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_ai_calls_created ON ai_calls (created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_calls_provider_created ON ai_calls (provider, created_at);
+
 CREATE TABLE IF NOT EXISTS ai_api_keys (
   id                 BIGSERIAL PRIMARY KEY,
   label              TEXT NOT NULL CHECK (char_length(label) BETWEEN 1 AND 60),
-  provider           TEXT NOT NULL DEFAULT 'GEMINI' CHECK (provider IN ('GEMINI')),
+  provider           TEXT NOT NULL DEFAULT 'GEMINI' CHECK (provider IN ('GEMINI', 'GROQ')),
   key_cipher         TEXT NOT NULL,
   key_hash           TEXT NOT NULL UNIQUE,
   key_hint           TEXT NOT NULL,

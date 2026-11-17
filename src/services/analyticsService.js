@@ -7,6 +7,8 @@ const ExcelJS = require('exceljs');
 const { features, setCosine } = require('../utils/textNormalize');
 const { vnToday, addDays } = require('../utils/time');
 const { TOPICS } = require('../constants/catalog');
+const tokenUsageRepository = require('../repositories/tokenUsageRepository');
+const { HttpError } = require('../utils/httpError');
 
 const TZ = "'Asia/Ho_Chi_Minh'";
 const CLUSTER_SIMILARITY = 0.45;
@@ -23,7 +25,19 @@ function clusterQuestions(questions, threshold = CLUSTER_SIMILARITY) {
   return clusters.sort((a, b) => b.count - a.count).map(({ features: _f, ...c }) => c);
 }
 
-function createAnalyticsService({ db, configService }) {
+const INSIGHT_TTL_MS = 10 * 60 * 1000;
+const INSIGHT_SYSTEM = [
+  'Bạn là chuyên viên phân tích dữ liệu tư vấn tuyển sinh của một trường cao đẳng công lập tại Hà Nội.',
+  'Đọc số liệu JSON (đã ẩn thông tin cá nhân) về hoạt động của trợ lý tư vấn và lịch hẹn nộp hồ sơ, rồi viết nhận định cho ban lãnh đạo và Phòng Tuyển sinh.',
+  'QUY TẮC: chỉ dùng số liệu được cung cấp, không bịa số; nêu con số cụ thể khi nhận xét; so sánh với kỳ trước nếu có; ngắn gọn, tiếng Việt, giọng chuyên nghiệp.',
+  'Ưu tiên phát hiện: câu hỏi trợ lý chưa trả lời được (cần bổ sung FAQ/tài liệu), ngành và chủ đề được quan tâm, giờ cao điểm cần bố trí người trực, câu hỏi chờ cán bộ quá hạn, tỉ lệ vắng lịch hẹn, giấy tờ hay thiếu.',
+  'Trả về JSON đúng cấu trúc: {"summary": "2-3 câu tổng quan", "highlights": ["điểm nổi bật"], "issues": ["vấn đề cần lưu ý"],',
+  '"actions": [{"title": "việc nên làm", "detail": "làm thế nào, vì sao", "owner": "Phòng Tuyển sinh | Khoa | Lãnh đạo | Quản trị hệ thống"}],',
+  '"faqSuggestions": [{"question": "câu hỏi nên bổ sung vào FAQ", "reason": "vì sao"}]}. Mỗi mảng tối đa 5 mục. Số liệu trống thì nói rõ là chưa đủ dữ liệu.',
+].join('\n');
+
+function createAnalyticsService({ db, configService, llm = null, logger = console }) {
+  const insightCache = new Map();
   function range({ from, to } = {}) {
     const today = vnToday();
     return { from: from || addDays(today, -29), to: to || today };
@@ -142,7 +156,63 @@ function createAnalyticsService({ db, configService }) {
     return wb.xlsx.writeBuffer();
   }
 
-  return { summary, unanswered, missingDocs, exportXlsx };
+  /**
+   * AI phân tích trang Tổng quan: gom số liệu đã tổng hợp (không có dữ liệu cá nhân – câu hỏi đã được che
+   * SĐT/email/CCCD khi lưu) gửi cho AI (Groq ưu tiên, Gemini dự phòng), nhận nhận định + việc nên làm.
+   * Lưu tạm 10 phút theo khoảng ngày để nhiều cán bộ mở trang không tốn token.
+   */
+  async function aiInsights(opts = {}, { refresh = false } = {}) {
+    const { from, to } = range(opts);
+    const key = `${from}|${to}`;
+    const hit = insightCache.get(key);
+    if (!refresh && hit && Date.now() - hit.at < INSIGHT_TTL_MS) return { ...hit.value, cached: true };
+    if (!llm || !llm.available()) {
+      throw new HttpError(409, 'Chưa có khóa AI (Groq hoặc Gemini) hoặc AI đang tắt – thêm khóa ở trang Cài đặt AI');
+    }
+    const days = Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1);
+    const prevTo = addDays(from, -1);
+    const prevFrom = addDays(prevTo, -(days - 1));
+    const [s, prev, u, miss] = await Promise.all([
+      summary({ from, to }), summary({ from: prevFrom, to: prevTo }), unanswered({ from, to }), missingDocs({ from, to }),
+    ]);
+    const dayTotals = new Map();
+    for (const r of s.byDay) dayTotals.set(r.day, (dayTotals.get(r.day) || 0) + r.n);
+    const data = {
+      khoangThoiGian: { tu: from, den: to, soNgay: days },
+      cauHoi: s.questions, cauHoiKyTruoc: prev.questions,
+      kenh: s.sessionsByChannel,
+      cachTraLoi: s.sourceShare.map((x) => ({ nguon: x.source, soLuot: x.n, phanTram: x.percent })),
+      chuThichNguon: { FAQ: 'câu hỏi thường gặp', RAG: 'tài liệu tuyển sinh', WEB: 'tra Internet', FALLBACK: 'chưa trả lời được', HANDOFF: 'chuyển cán bộ', RULE: 'chào hỏi/ngoài phạm vi', CACHE: 'bộ nhớ đệm' },
+      danhGia: s.ratings, doTreMs: s.latency,
+      cauHoiTheoNgay: [...dayTotals.entries()].map(([ngay, n]) => ({ ngay, n })),
+      gioCaoDiem: [...s.heatmap].sort((a, b) => b.n - a.n).slice(0, 6).map((h) => ({ thu: h.dow === 7 ? 'CN' : `T${h.dow + 1}`, gio: h.hour, n: h.n })),
+      chuDe: s.topTopics.slice(0, 8).map((t) => ({ chuDe: t.label, n: t.n })),
+      nganhQuanTam: s.topMajors.slice(0, 8).map((m) => ({ nganh: m.name || m.code, n: m.n })),
+      nganhDuocGoiY: s.recommendedMajors.slice(0, 5).map((m) => ({ nganh: m.name || m.code, n: m.n })),
+      cauHoiChuaTraLoi: { tong: u.total, nhom: u.clusters.slice(0, 10).map((c) => ({ cauHoi: c.representative, soLan: c.count })) },
+      cauHoiChoCanBo: s.handoff,
+      lichHen: s.appointments, giayToHayThieu: miss.map((d) => ({ giayTo: d.title, n: d.n })),
+    };
+    const res = await llm.generate({ task: 'ANALYTICS',
+      system: INSIGHT_SYSTEM, prompt: `Số liệu:\n${JSON.stringify(data)}`, json: true, maxTokens: 1800, timeoutMs: 60_000, temperature: 0.3,
+    });
+    try { await tokenUsageRepository.add(db, vnToday(), res.tokensIn || 0, res.tokensOut || 0); } catch (err) { logger.warn('[analytics] không ghi được token:', err.message); }
+    let parsed;
+    try { parsed = JSON.parse(String(res.text).replace(/^```(?:json)?\s*|\s*```$/g, '')); } catch { parsed = { summary: String(res.text).slice(0, 2000) }; }
+    const list = (x, n = 5) => (Array.isArray(x) ? x.slice(0, n) : []);
+    const value = {
+      range: { from, to }, generatedAt: new Date().toISOString(), model: res.model, provider: res.provider || null,
+      summary: String(parsed.summary || ''),
+      highlights: list(parsed.highlights).map(String),
+      issues: list(parsed.issues).map(String),
+      actions: list(parsed.actions).map((a) => (typeof a === 'string' ? { title: a } : { title: String(a.title || ''), detail: String(a.detail || ''), owner: String(a.owner || '') })),
+      faqSuggestions: list(parsed.faqSuggestions).map((f) => (typeof f === 'string' ? { question: f } : { question: String(f.question || ''), reason: String(f.reason || '') })),
+    };
+    insightCache.set(key, { at: Date.now(), value });
+    return value;
+  }
+
+  return { summary, unanswered, missingDocs, exportXlsx, aiInsights };
 }
 
 module.exports = { createAnalyticsService, clusterQuestions };

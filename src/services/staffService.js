@@ -48,6 +48,7 @@ function createStaffService({ db, configService = null }) {
     return db.withTransaction(async (c) => {
       const u = await staffRepository.findByIdForUpdate(c, id);
       if (!u) throw new HttpError(404, 'Không tìm thấy tài khoản');
+      if (isActive === false && Number(id) === Number(actor.id)) throw new HttpError(400, 'Không thể tự khóa tài khoản của chính bạn');
       // Không để hệ thống mất quản trị viên cuối cùng.
       const demoting = u.role === 'SUPER_ADMIN' && ((role && role !== 'SUPER_ADMIN') || isActive === false);
       if (demoting && (await staffRepository.countActiveByRole(c, 'SUPER_ADMIN')) <= 1) {
@@ -193,7 +194,26 @@ function createStaffService({ db, configService = null }) {
     return { buffer: Buffer.from(buffer), count: rows.length, withPasswords: withPw };
   }
 
-  return { create, update, resetPassword, setPassword, unlock, logoutAll, exportWorkbook, list: () => staffRepository.list(db) };
+  /**
+   * Đóng (xóa vĩnh viễn) tài khoản. Dữ liệu người đó đã tạo (FAQ, tài liệu, nhật ký) vẫn giữ, chỉ bỏ liên kết
+   * người tạo. Không xóa chính mình và không xóa quản trị viên cuối cùng. Muốn tạm ngưng thì dùng "Khóa".
+   */
+  async function remove(id, { actor, ip }) {
+    if (Number(id) === Number(actor.id)) throw new HttpError(400, 'Không thể xóa tài khoản của chính bạn');
+    return db.withTransaction(async (c) => {
+      const u = await staffRepository.findByIdForUpdate(c, id);
+      if (!u) throw new HttpError(404, 'Không tìm thấy tài khoản');
+      if (u.role === 'SUPER_ADMIN' && u.is_active && (await staffRepository.countActiveByRole(c, 'SUPER_ADMIN')) <= 1) {
+        throw new HttpError(409, 'Không thể xóa quản trị viên cuối cùng');
+      }
+      await sessionRepository.removeAllForStaff(c, id);
+      await c.query('DELETE FROM staff WHERE id = ?', [id]);
+      await auditRepository.insert(c, { actorId: actor.id, action: 'STAFF_DELETE', targetType: 'STAFF', targetId: id, payload: { username: u.username, fullName: u.full_name, role: u.role }, ip });
+      return { ok: true };
+    });
+  }
+
+  return { create, update, remove, resetPassword, setPassword, unlock, logoutAll, exportWorkbook, list: () => staffRepository.list(db) };
 }
 
 module.exports = { createStaffService, temporaryPassword, assertStrongPassword };

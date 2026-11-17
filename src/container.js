@@ -21,6 +21,8 @@ const { createRetriever } = require('./services/rag/retriever');
 const { createLiveKnowledge } = require('./services/rag/liveKnowledge');
 const { createAnswerService } = require('./services/rag/answerService');
 const { createSecurityGuard } = require('./services/securityGuard');
+const { createGroqClient } = require('./services/ai/groqClient');
+const { createAiUsageMeter } = require('./services/ai/aiUsageMeter');
 const { createIngestService } = require('./services/rag/ingestService');
 const { createKbService } = require('./services/kbService');
 const { createFaqService } = require('./services/faqService');
@@ -35,7 +37,7 @@ const { createVisitorHasher } = require('./services/visitor');
 const { createJobRunner } = require('./services/jobRunner');
 const { createScheduler } = require('./services/scheduler');
 
-function createContainer({ db = getDb(), logger = console, llmTransport, fetchImpl } = {}) {
+function createContainer({ db = getDb(), logger = console, llmTransport, groqTransport, fetchImpl } = {}) {
   const isOriginAllowed = createOriginChecker();
   // authService cần chính sách đăng nhập từ configService, nhưng configService lại cần broadcast của wsHub
   // (wsHub cần authService) -> truyền tham chiếu lười, đọc khi có yêu cầu đăng nhập.
@@ -48,7 +50,10 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const { broadcast } = wsHub;
 
   configService = createConfigService({ db, broadcast });
-  const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, ...(llmTransport ? { transport: llmTransport } : {}) });
+  // Groq: sinh câu trả lời/phân tích (nhanh); Gemini: tra Google, vector, đọc ảnh/PDF. Khóa Groq chỉ ở .env / CSDL (mã hóa).
+  const aiMeter = createAiUsageMeter({ db, configService, logger });
+  const groq = createGroqClient({ apiKeys: groqTransport?.keys || env.GROQ_API_KEYS, configService, logger, meter: aiMeter, ...(groqTransport ? { transport: groqTransport } : {}) });
+  const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, groq, meter: aiMeter, ...(llmTransport ? { transport: llmTransport } : {}) });
   const aiKeyService = createAiKeyService({ db, llm, secret: env.SECRET_ENCRYPTION_KEY, broadcast, logger });
   const uploadDir = path.resolve(env.UPLOAD_DIR);
 
@@ -79,7 +84,7 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const handoffService = createHandoffService({ db, configService, broadcast, classifier });
   const handbookService = createHandbookService({ db, configService });
   const recommendService = createRecommendService({ db, configService, llm, logger });
-  const analyticsService = createAnalyticsService({ db, configService });
+  const analyticsService = createAnalyticsService({ db, configService, llm, logger });
   const maintenanceService = createMaintenanceService({ db, configService, classifier });
   const appointmentService = createAppointmentService({ db, configService, broadcast });
   const messengerService = createMessengerService({ db, configService, answerService, env, logger, ...(fetchImpl ? { fetchImpl } : {}) });
@@ -121,7 +126,7 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   }
 
   return {
-    env, db, logger, isOriginAllowed, wsHub, broadcast, pgBus, configService, llm, aiKeyService, authService, staffService, classifier, faqMatcher, retriever, liveKnowledge,
+    env, db, logger, isOriginAllowed, wsHub, broadcast, pgBus, configService, llm, aiMeter, aiKeyService, authService, staffService, classifier, faqMatcher, retriever, liveKnowledge,
     answerService, ingestService, kbService, faqService, handoffService, handbookService, recommendService, analyticsService,
     maintenanceService, appointmentService, messengerService, visitorHash, jobRunner, scheduler, onBusEvent, refreshMajors,
     pgBusState: () => ({ connected: pgBus.isConnected() }),

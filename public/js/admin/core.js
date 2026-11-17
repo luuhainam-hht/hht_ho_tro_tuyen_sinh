@@ -16,8 +16,12 @@
   // Lựa chọn có sẵn cho một số tham số (máy chủ vẫn kiểm tra lại).
   const ENUMS = {
     AI_TONE: { THAN_THIEN: 'Thân thiện, gần gũi', TRANG_TRONG: 'Lịch sự, trang trọng', NGAN_GON: 'Ngắn gọn, đi thẳng vào ý' },
+    ...Object.fromEntries(['AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND', 'AI_PROVIDER_ANALYTICS'].map((k) => [k, {
+      GROQ: 'Groq (lỗi thì chuyển Gemini)', GEMINI: 'Gemini (lỗi thì chuyển Groq)', AUTO: 'Tự động (Groq trước nếu có khóa)',
+    }])),
   };
   const MODEL_SUGGESTIONS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  const GROQ_MODEL_SUGGESTIONS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
   const LONG_TEXT = new Set(['AI_EXTRA_INSTRUCTIONS', 'CHAT_GREETING', 'SUBMISSION_ADDRESS']);
 
   /** Một dòng cài đặt: tên + mô tả bên trái, ô nhập bên phải. data-config/data-initial để biết ô nào đã sửa. */
@@ -37,7 +41,7 @@
       control = el('textarea', { ...common, rows: c.key === 'AI_EXTRA_INSTRUCTIONS' ? '5' : '3', maxlength: '2000' }, c.value);
     } else {
       control = el('input', { ...common, value: c.value });
-      if (/MODEL$/.test(c.key)) control.setAttribute('list', 'model-suggestions');
+      if (/MODEL$/.test(c.key)) control.setAttribute('list', /^GROQ_/.test(c.key) ? 'groq-model-suggestions' : 'model-suggestions');
     }
     const range = c.minBound !== null || c.maxBound !== null ? ` Giới hạn ${c.minBound ?? '…'} – ${c.maxBound ?? '…'}.` : '';
     return el('div', { class: 'setting-row' },
@@ -163,7 +167,8 @@
   };
 
   /** Gợi ý tên mô hình cho mọi ô *_MODEL (thẻ datalist dùng chung). */
-  document.body.append(el('datalist', { id: 'model-suggestions' }, MODEL_SUGGESTIONS.map((m) => el('option', { value: m }))));
+  document.body.append(el('datalist', { id: 'model-suggestions' }, MODEL_SUGGESTIONS.map((m) => el('option', { value: m }))),
+    el('datalist', { id: 'groq-model-suggestions' }, GROQ_MODEL_SUGGESTIONS.map((m) => el('option', { value: m }))));
 
   async function startApp(u) {
     user = u;

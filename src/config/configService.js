@@ -11,7 +11,7 @@ const ORDER = new Map(CONFIG_DEFAULTS.map((d, i) => [d.key, i]));
 
 const STRING_MAX_LENGTH = 2000;
 // Tham số chuỗi được phép để trống (tùy chọn).
-const EMPTY_ALLOWED = new Set(['AI_EXTRA_INSTRUCTIONS', 'LLM_FALLBACK_MODEL']);
+const EMPTY_ALLOWED = new Set(['AI_EXTRA_INSTRUCTIONS', 'LLM_FALLBACK_MODEL', 'GROQ_FALLBACK_MODEL']);
 
 function normalizeByType(row, raw) {
   const input = String(raw ?? '').trim();
@@ -122,6 +122,9 @@ const KEY_VALIDATORS = {
       if (!k.trim() || typeof url !== 'string' || !/^https:\/\/[^\s"'<>]+$/i.test(url)) throw new HttpError(400, `FACULTY_PAGES: đường dẫn của khoa "${k}" phải bắt đầu bằng https://`);
     }
   },
+  ...Object.fromEntries(['AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND', 'AI_PROVIDER_ANALYTICS'].map((k) => [k, (v) => {
+    if (!['AUTO', 'GROQ', 'GEMINI'].includes(String(v).toUpperCase())) throw new HttpError(400, `${k} chỉ nhận AUTO, GROQ hoặc GEMINI`);
+  }])),
   AI_OFFICIAL_SITE: (v) => { if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v)) throw new HttpError(400, 'AI_OFFICIAL_SITE chỉ ghi tên miền, vd: hht.edu.vn'); },
   AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };

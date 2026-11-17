@@ -129,7 +129,9 @@ function createAnswerService({
     };
   }
 
-  const webSearchOn = (llmOn) => llmOn && configService.getOr('AI_WEB_SEARCH_ENABLED', true) !== false;
+  // Tra Google cần Gemini (Groq không có công cụ tìm kiếm).
+  const geminiOn = () => (llm.geminiAvailable ? llm.geminiAvailable() : llm.available());
+  const webSearchOn = (llmOn) => llmOn && geminiOn() && configService.getOr('AI_WEB_SEARCH_ENABLED', true) !== false;
   const generalWebOn = (llmOn) => webSearchOn(llmOn) && configService.getOr('AI_WEB_GENERAL_ENABLED', true) !== false;
 
   async function webOrNull({ question, contextChunks, t, cls, retrieval, general = false }) {
@@ -151,7 +153,7 @@ function createAnswerService({
 
   async function tryLlm({ question, history, retrieval }) {
     const system = systemPromptFromConfig(configService);
-    const res = await llm.generate({ system, history, prompt: buildUserPrompt({ question, chunks: retrieval.chunks }), json: true });
+    const res = await llm.generate({ system, history, prompt: buildUserPrompt({ question, chunks: retrieval.chunks }), json: true, task: 'CHAT' });
     try {
       await tokenUsageRepository.add(db, vnToday(), res.tokensIn, res.tokensOut);
     } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
@@ -200,7 +202,7 @@ function createAnswerService({
     }
 
     const kbVersion = await kbDocumentRepository.kbVersion(db);
-    const queryEmbedding = llmOn ? await safeEmbedQuery(question) : null;
+    const queryEmbedding = llmOn && geminiOn() ? await safeEmbedQuery(question) : null;
     t.vectorSearch = Boolean(queryEmbedding);
 
     // c) FAQ
@@ -256,7 +258,7 @@ function createAnswerService({
       try {
         const history = sessionId ? await chatRepository.recentHistory(db, sessionId, configService.get('MAX_HISTORY_TURNS')) : [];
         const out = await tryLlm({ question, history, retrieval });
-        Object.assign(t.llm, { used: true, model: out.tokens?.model || null, fallbackUsed: Boolean(out.tokens?.fallbackUsed), accepted: out.ok, reason: out.reason || null, tokensIn: out.tokens?.tokensIn ?? 0, tokensOut: out.tokens?.tokensOut ?? 0 });
+        Object.assign(t.llm, { used: true, model: out.tokens?.model || null, provider: out.tokens?.provider || null, fallbackUsed: Boolean(out.tokens?.fallbackUsed), accepted: out.ok, reason: out.reason || null, tokensIn: out.tokens?.tokensIn ?? 0, tokensOut: out.tokens?.tokensOut ?? 0 });
         if (out.ok) {
           const meta = { intent: out.intent || cls.intent, topics: out.topics?.length ? out.topics : cls.topics, majorCodes: out.majorCodes?.length ? out.majorCodes : cls.majorCodes };
           if (cacheOn) {

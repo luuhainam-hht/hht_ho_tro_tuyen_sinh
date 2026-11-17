@@ -13,6 +13,29 @@
     }) : el('p', { class: 'empty' }, 'Chưa có dữ liệu'));
   }
 
+  /** Khung "AI phân tích": bấm để AI đọc số liệu kỳ đang xem và đưa nhận định + việc nên làm. */
+  function aiPanel() {
+    return el('section', { class: 'panel ai-insight mt-m', id: 'ai-insight' },
+      el('div', { class: 'panel-head' },
+        el('div', {}, el('h3', { class: 'mb-0' }, 'AI phân tích'),
+          el('p', { class: 'small muted mb-0' }, 'AI đọc số liệu của khoảng ngày đang xem (đã ẩn thông tin cá nhân), so với kỳ trước và gợi ý việc nên làm.')),
+        el('button', { class: 'btn btn--primary btn--sm', type: 'button', 'data-action': 'ai-insight' }, 'Phân tích bằng AI')),
+      el('div', { id: 'ai-insight-body' }));
+  }
+
+  function renderInsight(r) {
+    const list = (title, items, fn) => (items.length ? [el('h4', {}, title), el('ul', {}, items.map(fn))] : null);
+    return [
+      r.summary ? el('p', { class: 'ai-summary' }, r.summary) : null,
+      el('div', { class: 'grid-2' },
+        el('div', {}, list('Điểm nổi bật', r.highlights, (x) => el('li', {}, x))),
+        el('div', {}, list('Cần lưu ý', r.issues, (x) => el('li', {}, x)))),
+      list('Việc nên làm', r.actions, (a) => el('li', {}, el('strong', {}, a.title), a.owner ? el('span', { class: 'badge ml-s' }, a.owner) : null, a.detail ? el('div', { class: 'small' }, a.detail) : null)),
+      list('Nên bổ sung vào Hỏi đáp (FAQ)', r.faqSuggestions, (f) => el('li', {}, f.question, f.reason ? el('div', { class: 'small muted' }, f.reason) : null)),
+      el('p', { class: 'tiny muted mt-s' }, `Phân tích lúc ${admin.dt(r.generatedAt)} · ${r.provider === 'GROQ' ? 'Groq' : 'Gemini'} ${r.model || ''}${r.cached ? ' · bản lưu trong 10 phút' : ''} · AI có thể nhầm, hãy đối chiếu số liệu bên dưới.`),
+    ];
+  }
+
   admin.register({
     id: 'dashboard', title: 'Tổng quan', perm: 'ANALYTICS', events: ['QUESTION_LOGGED', 'HANDOFF_CREATED', 'APPOINTMENT_BOOKED'],
     async render(root) {
@@ -44,6 +67,7 @@
           kpi('Đánh giá của thí sinh', `${s.ratings.up} / ${s.ratings.down}`, 'hữu ích / chưa đúng'),
           kpi('Câu hỏi chờ cán bộ', String(s.handoff.backlog), s.handoff.overdue ? `${s.handoff.overdue} quá 24 giờ` : 'không có quá hạn'),
           kpi('Lịch hẹn nộp hồ sơ', String(s.appointments.total), `${s.appointments.attended} đã đến · ${s.appointments.no_show} vắng`)),
+        aiPanel(),
         el('div', { class: 'grid-2' },
           el('section', { class: 'panel' }, el('h3', {}, 'Số câu hỏi theo ngày'),
             days.length ? el('div', { class: 'spark', role: 'img', 'aria-label': 'Biểu đồ số câu hỏi theo ngày' }, days.map(([d, n]) => {
@@ -76,6 +100,24 @@
   });
 
   actionDelegate.register({
+    async 'ai-insight'(b) {
+      const root = $('#tab');
+      const body = $('#ai-insight-body');
+      const refresh = b.dataset.done === '1';
+      b.disabled = true;
+      const old = b.textContent;
+      b.textContent = 'AI đang phân tích…';
+      body.replaceChildren(el('p', { class: 'small muted' }, 'Đang gửi số liệu cho AI, thường mất 3–15 giây…'));
+      try {
+        const r = await apiClient.post('/api/admin/analytics/ai-insights', { from: root.dataset.from || $('input[name=from]', root)?.value || undefined, to: root.dataset.to || $('input[name=to]', root)?.value || undefined, refresh });
+        body.replaceChildren(...renderInsight(r).filter(Boolean));
+        b.dataset.done = '1';
+        b.textContent = 'Phân tích lại';
+      } catch (e) {
+        body.replaceChildren(el('p', { class: 'note' }, e.message));
+        b.textContent = old;
+      } finally { b.disabled = false; }
+    },
     'dash-range'(form) { const root = $('#tab'); root.dataset.from = form.from.value; root.dataset.to = form.to.value; admin.reload(); },
     async 'export-xlsx'() {
       const root = $('#tab');

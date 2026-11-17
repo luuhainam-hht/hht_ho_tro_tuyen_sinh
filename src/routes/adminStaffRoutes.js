@@ -51,6 +51,7 @@ module.exports = function adminStaffRoutes({ staffService }) {
     requireChange: v.bool(req.body, 'requireChange') ?? true,
     actor: req.user, ip: req.ip,
   }))));
+  r.delete('/:id', ah(async (req, res) => res.json(await staffService.remove(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
   r.post('/:id/unlock', ah(async (req, res) => res.json(await staffService.unlock(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
   r.post('/:id/logout-all', ah(async (req, res) => res.json(await staffService.logoutAll(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
   return r;

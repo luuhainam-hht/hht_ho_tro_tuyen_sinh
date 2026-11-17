@@ -19,6 +19,14 @@ function collectGeminiKeys() {
   return [...new Set(keys)];
 }
 
+// Khóa Groq: GROQ_API_KEYS (phẩy), GROQ_API_KEY, GROQ_API_KEY_1..n. Test bỏ qua để không gọi mạng thật.
+function collectGroqKeys() {
+  if (process.env.TEST_FAKE_LLM) return [];
+  const keys = [...list('GROQ_API_KEYS'), ...list('GROQ_API_KEY')];
+  for (const [k, v] of Object.entries(process.env)) if (/^GROQ_API_KEY_\d+$/.test(k) && v) keys.push(v.trim());
+  return [...new Set(keys)];
+}
+
 const NODE_ENV = process.env.NODE_ENV || 'development';
 let visitorSecret = process.env.VISITOR_HASH_SECRET || '';
 const secretIsEphemeral = !visitorSecret && !process.env.SECRET_ENCRYPTION_KEY;
@@ -42,6 +50,7 @@ module.exports = Object.freeze({
   PUBLIC_BASE_URL: (process.env.PUBLIC_BASE_URL || '').replace(/\/$/, ''),
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'data/uploads',
   GEMINI_API_KEYS: collectGeminiKeys(),
+  GROQ_API_KEYS: collectGroqKeys(),
   VISITOR_HASH_SECRET: visitorSecret,
   // Khóa mã hóa khóa API lưu trong CSDL. Mặc định suy ra từ VISITOR_HASH_SECRET -> ĐỔI bí mật này thì phải nhập lại khóa API.
   SECRET_ENCRYPTION_KEY: process.env.SECRET_ENCRYPTION_KEY || visitorSecret,

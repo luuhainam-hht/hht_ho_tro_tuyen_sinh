@@ -28,6 +28,8 @@ const OCR_SYSTEM = [
 ].join('\n');
 
 function createIngestService({ db, llm, broadcast, uploadDir, logger = console, configService = null }) {
+  // Vector và đọc ảnh/PDF chỉ Gemini làm được (Groq chỉ sinh chữ).
+  const gemini = () => (llm.geminiAvailable ? llm.geminiAvailable() : llm.available());
   const ocrOn = () => !configService || configService.getOr('AI_OCR_ENABLED', true) !== false;
 
   /** AI đọc ảnh / PDF scan thành chữ. Trả [] nếu không đọc được (để báo lỗi rõ ràng phía trên). */
@@ -67,7 +69,7 @@ function createIngestService({ db, llm, broadcast, uploadDir, logger = console, 
       let lines = await extract(filePath, doc.mime);
       let ocrUsed = false;
       if (OCR_MIME.has(doc.mime) && needsOcr(doc.mime, lines)) {
-        if (!ocrOn() || !llm.available()) {
+        if (!ocrOn() || !gemini()) {
           if (IMAGE_MIME.has(doc.mime) || !lines.length) {
             throw new Error('Tài liệu là ảnh/bản scan: cần bật AI (có khóa API) và "AI đọc tài liệu scan/ảnh" để trợ lý đọc được, rồi bấm Xử lý lại');
           }
@@ -79,7 +81,7 @@ function createIngestService({ db, llm, broadcast, uploadDir, logger = console, 
       const chunks = chunkLines(lines);
       if (!chunks.length) throw new Error('Không trích được nội dung chữ từ tài liệu');
       let model = null;
-      if (llm.available()) {
+      if (gemini()) {
         try {
           const vectors = await llm.embed(chunks.map((ch) => `${ch.headingPath}\n${ch.content}`));
           model = llm.modelName();
@@ -103,7 +105,7 @@ function createIngestService({ db, llm, broadcast, uploadDir, logger = console, 
 
   /** Bổ sung vector cho đoạn và FAQ chưa có (sau khi thêm key hoặc đổi model). */
   async function reembedMissing({ reset = false } = {}) {
-    if (!llm.available()) return { skipped: 'Chưa cấu hình API key' };
+    if (!gemini()) return { skipped: 'Chưa cấu hình API key' };
     if (reset) {
       await kbChunkRepository.clearAllEmbeddings(db);
       await db.query('UPDATE faq_entries SET embedding = NULL, embedding_model = NULL');

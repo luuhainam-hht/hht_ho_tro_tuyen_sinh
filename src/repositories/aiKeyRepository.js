@@ -9,11 +9,11 @@ const list = async (c) => (await c.query(`SELECT ${PUBLIC_COLUMNS} FROM ai_api_k
 const findSecret = async (c, id) => (await c.query('SELECT id, label, key_cipher FROM ai_api_keys WHERE id = ?', [id])).rows[0] || null;
 const listActiveSecrets = async (c) => (await c.query('SELECT id, label, key_cipher FROM ai_api_keys WHERE is_active ORDER BY id')).rows;
 
-async function insert(c, { label, keyCipher, keyHash, keyHint, createdBy }) {
+async function insert(c, { label, provider = 'GEMINI', keyCipher, keyHash, keyHint, createdBy }) {
   const { rows } = await c.query(
-    `INSERT INTO ai_api_keys (label, key_cipher, key_hash, key_hint, created_by) VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO ai_api_keys (label, provider, key_cipher, key_hash, key_hint, created_by) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT (key_hash) DO NOTHING RETURNING ${PUBLIC_COLUMNS}`,
-    [label, keyCipher, keyHash, keyHint, createdBy],
+    [label, provider, keyCipher, keyHash, keyHint, createdBy],
   );
   return rows[0] || null;
 }

@@ -49,6 +49,19 @@ const MIGRATIONS = [
           ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_source_check CHECK (source IN ('RULE', 'FAQ', 'RAG', 'CACHE', 'FALLBACK', 'HANDOFF', 'WEB'));`,
   },
   {
+    // Khóa Groq thêm trên trang Cài đặt AI (provider GROQ).
+    id: '2026-11-17-ai-keys-groq',
+    sql: `ALTER TABLE ai_api_keys DROP CONSTRAINT IF EXISTS ai_api_keys_provider_check;
+          ALTER TABLE ai_api_keys ADD CONSTRAINT ai_api_keys_provider_check CHECK (provider IN ('GEMINI', 'GROQ'));`,
+  },
+  {
+    // Phân việc AI theo nhà cung cấp: bỏ cấu hình chung AI_CHAT_PROVIDER; llama-3.3-70b của Groq đã chuyển gói
+    // doanh nghiệp/ngừng -> mô hình dự phòng mặc định đổi sang openai/gpt-oss-20b.
+    id: '2026-11-17-ai-provider-per-task',
+    sql: `DELETE FROM system_configs WHERE key = 'AI_CHAT_PROVIDER';
+          UPDATE system_configs SET value = 'openai/gpt-oss-20b' WHERE key = 'GROQ_FALLBACK_MODEL' AND value = 'llama-3.3-70b-versatile';`,
+  },
+  {
     // Bật KB_AUTO_PUBLISH: tài liệu đã tải lên và xử lý xong (READY) nhưng chưa ai bấm Công bố -> đưa vào kho
     // trả lời một lần, để trợ lý dùng được mọi tài liệu đã cập nhật. Bản bị thay thế chuyển ARCHIVED.
     id: '2026-11-17-publish-ready-documents',

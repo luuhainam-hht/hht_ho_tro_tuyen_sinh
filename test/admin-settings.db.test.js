@@ -208,3 +208,24 @@ test('xuất Excel tài khoản: danh sách không có mật khẩu; cấp mật
   assert.deepEqual(audit.rows[0].payload.ids.map(Number), [Number(target)]);
   assert.doesNotMatch(JSON.stringify(audit.rows[0].payload), new RegExp(pw), 'nhật ký không ghi mật khẩu');
 });
+
+test('khóa / mở khóa / xóa tài khoản: khóa thì đăng xuất ngay và không đăng nhập được; xóa vĩnh viễn giữ nhật ký', async () => {
+  await createStaff(ctx.db, 'canbokhoa1', 'ADVISOR');
+  const id = (await ctx.db.query("SELECT id FROM staff WHERE username = 'canbokhoa1'")).rows[0].id;
+  const self = (await ctx.db.query("SELECT id FROM staff WHERE username = 'quantri'")).rows[0].id;
+  const s = await ctx.login('canbokhoa1');
+  await request(app).put(`/api/admin/staff/${id}`).set(H.admin).send({ isActive: false }).expect(200);
+  await request(app).get('/api/auth/me').set(s).expect(401);
+  await request(app).post('/api/auth/login').send({ username: 'canbokhoa1', password: PASSWORD }).expect((r) => assert.ok(r.status >= 400));
+  await request(app).put(`/api/admin/staff/${id}`).set(H.admin).send({ isActive: true }).expect(200);
+  await ctx.login('canbokhoa1');
+  await request(app).put(`/api/admin/staff/${self}`).set(H.admin).send({ isActive: false }).expect(400);
+  await request(app).delete(`/api/admin/staff/${self}`).set(H.admin).expect(400);
+  await request(app).delete(`/api/admin/staff/${id}`).set(H.leader).expect(403);
+  await request(app).delete(`/api/admin/staff/${id}`).set(H.admin).expect(200);
+  assert.equal((await ctx.db.query('SELECT COUNT(*)::int AS n FROM staff WHERE id = ?', [id])).rows[0].n, 0);
+  await request(app).post('/api/auth/login').send({ username: 'canbokhoa1', password: PASSWORD }).expect((r) => assert.ok(r.status >= 400));
+  const audit = await ctx.db.query("SELECT payload FROM audit_logs WHERE action = 'STAFF_DELETE' ORDER BY id DESC LIMIT 1");
+  assert.equal(audit.rows[0].payload.username, 'canbokhoa1');
+  await request(app).delete(`/api/admin/staff/${id}`).set(H.admin).expect(404);
+});

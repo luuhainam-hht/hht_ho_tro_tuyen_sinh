@@ -133,7 +133,7 @@ function createRecommendService({ db, configService, llm, logger = console }) {
           results: output.map((o) => ({ ten_nganh: o.name, khoa: o.faculty, ly_do: o.reasons })),
           answersSummary: `Trình độ: ${EDUCATION[answers.education].label}; nhóm sở thích cao nhất: ${TYPES.slice().sort((a, b) => user[b] - user[a]).slice(0, 2).map((t) => RIASEC[t]).join(', ')}`,
         });
-        explanation = (await llm.generate({ system: p.system, prompt: p.prompt, maxTokens: 400 })).text || null;
+        explanation = (await llm.generate({ system: p.system, prompt: p.prompt, maxTokens: 400, task: 'RECOMMEND' })).text || null;
       } catch (err) { logger.warn('[recommend] LLM giải thích lỗi:', err.message); }
     }
     const id = uuid();

@@ -91,7 +91,11 @@ async function start() {
   await c.pgBus.start(c.onBusEvent);
   if (env.SCHEDULER_ENABLED) c.scheduler.start();
   if (env.JOB_RUNNER_ENABLED) c.jobRunner.start();
-  if (!c.llm.available()) logger.warn('[boot] Chưa có khóa Gemini (thêm ở trang Quản trị > Cài đặt AI hoặc GEMINI_API_KEYS) hoặc AI đang tắt: trợ lý trả lời bằng FAQ + trích dẫn văn bản.');
+  if (!c.llm.available()) logger.warn('[boot] Chưa có khóa AI (Groq/Gemini – thêm ở trang Quản trị > Cài đặt AI hoặc GROQ_API_KEYS/GEMINI_API_KEYS) hoặc AI đang tắt: trợ lý trả lời bằng FAQ + trích dẫn văn bản.');
+  else if (c.llm.providers) {
+    const p = c.llm.providers();
+    logger.info(`[boot] AI: chat ưu tiên ${p.chat} · Groq ${p.groqKeys} khóa · Gemini ${p.geminiKeys} khóa${p.geminiKeys ? '' : ' (chưa tra Google/vector/đọc ảnh được)'}`);
+  }
 
   const server = http.createServer(createApp(c));
   c.wsHub.attach(server);

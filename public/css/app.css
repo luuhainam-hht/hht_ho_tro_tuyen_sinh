@@ -503,3 +503,44 @@ pre.chunk { white-space: pre-wrap; background: #f1f4f9; padding: 10px; border-ra
 .faculty-link:hover, .faculty-link:focus-visible { color: var(--brand); text-decoration-style: solid; }
 .faculty-link .ext { font-size: 0.8em; color: var(--steel); }
 .faculty h3 .faculty-link { color: var(--ink); }
+
+/* Khóa / Mở khóa / Xóa ngay ở cột Trạng thái (tab Tài khoản cán bộ) */
+.status-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; font-size: 0.85rem; }
+.status-actions .link-btn.danger { color: var(--danger, #b42318); }
+
+/* AI phân tích ở trang Tổng quan */
+.ai-insight { border-top: 3px solid var(--brand); }
+.ai-insight h4 { margin: 14px 0 6px; }
+.ai-insight ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.ai-summary { font-size: 1.02rem; background: var(--section); border-radius: var(--radius-s); padding: 10px 14px; margin: 12px 0 0; }
+.ml-s { margin-left: 8px; }
+
+/* ----- Thống kê AI (Groq / Gemini) ----- */
+:root { --groq: #f55036; --gemini: #1a73e8; }
+.spark--stack { gap: 4px; }
+.spark--stack .stack { flex: 1; display: flex; flex-direction: column-reverse; height: 100%; background: transparent; min-height: 0; border-radius: 0; }
+.spark--stack .seg { display: block; width: 100%; }
+.spark--stack .seg:last-child { border-radius: 2px 2px 0 0; }
+.seg--groq { background: var(--groq); }
+.seg--gemini { background: var(--gemini); }
+.ai-legend { display: flex; gap: 16px; margin: 6px 0 4px; color: var(--steel); }
+.ai-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.kpi--groq { border-top: 3px solid var(--groq); }
+.kpi--gemini { border-top: 3px solid var(--gemini); }
+.kpi .kpi-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
+.kpi .kpi-dl dt { color: var(--steel); }
+.kpi .kpi-dl dd { margin: 0; color: var(--ink); }
+.kpi strong.kpi-sm { font-size: 1.05rem; margin: 4px 0; }
+.badge--groq { background: #feece9; color: #a3301d; }
+.badge--gemini { background: #e8f0fe; color: #1557b0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.share { display: grid; gap: 8px; margin-top: 8px; }
+.share-row { display: grid; grid-template-columns: minmax(140px, 240px) 1fr auto; gap: 12px; align-items: center; }
+.share-track { background: var(--section); border-radius: 3px; height: 12px; overflow: hidden; }
+.share-bar { display: block; height: 100%; }
+.share-bar--0 { background: var(--go); }
+.share-bar--1 { background: var(--gemini); }
+.share-bar--2 { background: var(--wait); }
+.share-bar--3 { background: var(--stop); }
+.share-val { font-variant-numeric: tabular-nums; color: var(--steel); font-size: 0.9rem; }
+@media (max-width: 560px) { .share-row { grid-template-columns: 1fr auto; } .share-track { grid-column: 1 / -1; grid-row: 2; } }
