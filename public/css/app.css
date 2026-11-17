@@ -497,3 +497,9 @@ pre.chunk { white-space: pre-wrap; background: #f1f4f9; padding: 10px; border-ra
 .program-grid input:not([type='checkbox']), .program-grid textarea { width: 100%; min-width: 0; padding: 6px 8px; font-size: 0.9rem; }
 .program-grid textarea { resize: vertical; }
 .program-grid [disabled] { background: var(--section); opacity: 0.55; }
+
+/* Tên khoa liên kết tới trang giới thiệu khoa trên hht.edu.vn */
+.faculty-link { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; }
+.faculty-link:hover, .faculty-link:focus-visible { color: var(--brand); text-decoration-style: solid; }
+.faculty-link .ext { font-size: 0.8em; color: var(--steel); }
+.faculty h3 .faculty-link { color: var(--ink); }

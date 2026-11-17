@@ -115,6 +115,13 @@ const KEY_VALIDATORS = {
   LLM_FALLBACK_MODEL: (v) => { if (v) assertModelName(v); },
   EMBEDDING_MODEL: (v) => assertModelName(v),
   AI_TONE: (v) => { if (!AI_TONES.includes(v)) throw new HttpError(400, `AI_TONE chỉ nhận: ${AI_TONES.join(', ')}`); },
+  FACULTY_PAGES: (v) => {
+    const o = JSON.parse(v);
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new HttpError(400, 'FACULTY_PAGES phải có dạng {"Tên khoa": "https://…"}');
+    for (const [k, url] of Object.entries(o)) {
+      if (!k.trim() || typeof url !== 'string' || !/^https:\/\/[^\s"'<>]+$/i.test(url)) throw new HttpError(400, `FACULTY_PAGES: đường dẫn của khoa "${k}" phải bắt đầu bằng https://`);
+    }
+  },
   AI_OFFICIAL_SITE: (v) => { if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v)) throw new HttpError(400, 'AI_OFFICIAL_SITE chỉ ghi tên miền, vd: hht.edu.vn'); },
   AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };

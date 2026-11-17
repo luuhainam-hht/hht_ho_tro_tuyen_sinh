@@ -65,6 +65,18 @@
   let metaPromise = null;
   const meta = () => (metaPromise ||= apiClient.get('/api/meta'));
 
+  /**
+   * Tên khoa -> liên kết tới trang giới thiệu khoa trên hht.edu.vn (cấu hình FACULTY_PAGES, Phòng Tuyển sinh sửa được).
+   * So khớp không phân biệt hoa thường/dấu gạch; khoa chưa có trang thì trả chữ thường.
+   */
+  const facultyKey = (s) => String(s || '').toLowerCase().replace(/^khoa\s+/, '').replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
+  function facultyLink(name, config, { label = name, cls = 'faculty-link' } = {}) {
+    const pages = config?.FACULTY_PAGES || {};
+    const hit = Object.entries(pages).find(([k]) => facultyKey(k) === facultyKey(name));
+    if (!hit) return document.createTextNode(label);
+    return el('a', { class: cls, href: hit[1], target: '_blank', rel: 'noopener noreferrer', title: `Giới thiệu Khoa ${name} trên website trường (mở tab mới)` }, label, el('span', { class: 'ext', 'aria-hidden': 'true' }, ' ↗'));
+  }
+
   // ---------- Khung trang ----------
   const NAV = [
     ['/', 'Trang chủ'], ['/nganh.html', 'Ngành học'], ['/ho-so.html', 'Hồ sơ'], ['/lich-tuyen-sinh.html', 'Lịch tuyển sinh'],
@@ -188,5 +200,5 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
 
-  Object.assign(window, { $, $$, el, toast, confirmDialog, openChat, hht: { LEVEL_SHORT, fmtDate, weekday, money, params, meta } });
+  Object.assign(window, { $, $$, el, toast, confirmDialog, openChat, hht: { LEVEL_SHORT, fmtDate, weekday, money, params, meta, facultyLink } });
 })();

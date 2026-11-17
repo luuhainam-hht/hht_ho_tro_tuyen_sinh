@@ -36,13 +36,14 @@
         el('span', {}, el('strong', {}, String(ov.faculties.length)), ' khoa đào tạo'),
         el('span', {}, 'Xét tuyển, không thi đầu vào'));
       $('#steps').replaceChildren(...guide.steps.map((s) => el('li', {}, el('h3', {}, s.title), el('p', {}, s.detail))));
+      const siteCfg = (await hht.meta().catch(() => ({}))).config || {};
       const groups = new Map();
       for (const m of majors.majors) {
         if (!groups.has(m.faculty)) groups.set(m.faculty, []);
         groups.get(m.faculty).push(m);
       }
       $('#faculties').replaceChildren(...[...groups].map(([fac, list]) => el('div', { class: 'faculty' },
-        el('h3', {}, el('span', {}, fac), el('small', {}, `${list.length} ngành`)),
+        el('h3', {}, el('span', {}, hht.facultyLink(fac, siteCfg)), el('small', {}, `${list.length} ngành`)),
         el('ul', {}, list.map((m) => el('li', {}, el('a', { href: `/nganh-chi-tiet.html?code=${encodeURIComponent(m.code)}` },
           m.name, ' ', el('span', { class: 'small muted' }, m.levels.map((l) => LEVEL_SHORT[l]).join(', ')))))))));
     } catch (err) {

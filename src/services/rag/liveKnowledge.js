@@ -130,12 +130,17 @@ function createLiveKnowledge({ db, configService, logger = console }) {
       add(`Ngành học › ${m.name}`, lines.join('\n'), `/nganh-chi-tiet.html?code=${encodeURIComponent(m.code)}`);
     }
 
-    // 2) Ngành theo khoa
+    // 2) Ngành theo khoa (+ trang giới thiệu khoa trên website trường, cấu hình FACULTY_PAGES)
+    let pages = {};
+    try { pages = configService.getOr('FACULTY_PAGES', {}) || {}; } catch { pages = {}; }
+    const fkey = (x) => String(x || '').toLowerCase().replace(/^khoa\s+/, '').replace(/[–—-]/g, '-').replace(/\s+/g, ' ').trim();
+    const facultyPage = (f) => Object.entries(pages).find(([k]) => fkey(k) === fkey(f))?.[1] || null;
     const faculties = [...new Set(majors.map((m) => m.faculty))];
     for (const f of faculties) {
       const list = majors.filter((m) => m.faculty === f && m.levels.length)
         .map((m) => `- ${m.name}: ${LEVEL_ORDER.filter((l) => m.levels.includes(l)).map((l) => LEVEL_SHORT[l]).join(', ')}`);
-      if (list.length) add(`Ngành học › Khoa ${f}`, `Khoa ${f} tuyển sinh năm học ${yearLabel} các ngành:\n${list.join('\n')}`, `/nganh.html?faculty=${encodeURIComponent(f)}`);
+      const page = facultyPage(f);
+      if (list.length) add(`Ngành học › Khoa ${f}`, `Khoa ${f} tuyển sinh năm học ${yearLabel} các ngành:\n${list.join('\n')}${page ? `\nTrang giới thiệu Khoa ${f}: ${page}` : ''}`, `/nganh.html?faculty=${encodeURIComponent(f)}`);
     }
 
     // 3) Ngành theo hệ + giải thích hệ
@@ -213,7 +218,7 @@ function createLiveKnowledge({ db, configService, logger = console }) {
 
   async function all(kbVersion) {
     // Tham số liên hệ không nằm trong kb_version -> đưa vào khóa để sửa hotline/email là có hiệu lực ngay.
-    const contactKey = ['HOTLINE', 'ADMISSION_EMAIL', 'SUBMISSION_ADDRESS', 'OFFICIAL_REGISTER_URL', 'SCHOOL_NAME', 'CURRENT_ADMISSION_YEAR'].map((k) => configService.getOr(k, '')).join('|');
+    const contactKey = ['HOTLINE', 'ADMISSION_EMAIL', 'SUBMISSION_ADDRESS', 'OFFICIAL_REGISTER_URL', 'SCHOOL_NAME', 'CURRENT_ADMISSION_YEAR', 'FACULTY_PAGES'].map((k) => JSON.stringify(configService.getOr(k, ''))).join('|');
     const key = `${kbVersion}|${vnToday()}|${contactKey}`;
     if (cache.key !== key) {
       try {

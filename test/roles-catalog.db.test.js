@@ -221,3 +221,16 @@ test('Khoa: thêm/sửa mục tuyển sinh gắn với ngành của khoa mình; 
   assert.equal((await request(app).put(`/api/admin/catalog/admission-items/${o.id}`).set(H.office).send({ majorCode: '' }).expect(200)).body.item.major_code, null);
   await request(app).post('/api/admin/catalog/admission-items').set(H.office).send({ kind: 'CONTACT', audience: 'x', title: 'y', majorCode: 'KHONG-CO' }).expect(400);
 });
+
+test('trang giới thiệu khoa: công khai cho trang Ngành học, Phòng Tuyển sinh sửa được, trợ lý biết đường dẫn', async () => {
+  const meta = (await request(app).get('/api/meta').expect(200)).body.config;
+  assert.equal(meta.FACULTY_PAGES['Chăm sóc sắc đẹp'], 'https://hht.edu.vn/khoa-hoc/khoa-cham-soc-sac-dep/');
+  const faculties = (await ctx.db.query('SELECT DISTINCT faculty FROM majors')).rows.map((r) => r.faculty);
+  for (const f of faculties) assert.ok(meta.FACULTY_PAGES[f], `khoa ${f} có trang giới thiệu`);
+  const pages = { ...meta.FACULTY_PAGES, 'Chăm sóc sắc đẹp': 'https://hht.edu.vn/khoa-hoc/khoa-csd-moi/' };
+  await request(app).put('/api/admin/catalog/contact-configs/FACULTY_PAGES').set(H.office).send({ value: JSON.stringify(pages) }).expect(200);
+  await request(app).put('/api/admin/catalog/contact-configs/FACULTY_PAGES').set(H.office).send({ value: '{"Khoa X": "javascript:alert(1)"}' }).expect(400);
+  assert.equal((await request(app).get('/api/meta').expect(200)).body.config.FACULTY_PAGES['Chăm sóc sắc đẹp'], 'https://hht.edu.vn/khoa-hoc/khoa-csd-moi/');
+  const r = await chat('Khoa Chăm sóc sắc đẹp tuyển những ngành nào?');
+  assert.match(r.answer, /khoa-csd-moi/);
+});

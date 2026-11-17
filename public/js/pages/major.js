@@ -98,7 +98,8 @@
     const { major: m } = await apiClient.get(`/api/handbook/majors/${encodeURIComponent(code)}`);
     document.title = `${m.name} – Tuyển sinh HHT`;
     $('#major-name').textContent = m.name;
-    $('#major-faculty').textContent = `Khoa ${m.faculty}${m.occupation_code ? ` · Mã nghề ${m.occupation_code}` : ''}`;
+    const cfg = (await hht.meta().catch(() => ({}))).config || {};
+    $('#major-faculty').replaceChildren(hht.facultyLink(m.faculty, cfg, { label: `Khoa ${m.faculty}` }), m.occupation_code ? ` · Mã nghề ${m.occupation_code}` : '');
 
     const support = el('dl', { class: 'spec mt-m' });
     const srow = (k, v) => v && support.append(el('dt', {}, k), el('dd', {}, v));

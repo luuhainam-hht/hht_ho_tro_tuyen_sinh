@@ -2,6 +2,7 @@
   'use strict';
   const { params } = hht;
   const form = $('form[data-action="filter-majors"]');
+  let siteConfig = {};
   let timer;
 
   /** Cột hệ tuyển sinh theo thứ tự yêu cầu: SC, Hệ 9+, TC, CĐ. */
@@ -101,7 +102,7 @@
     const rows = majors.map((m) => el('tr', {},
       el('td', { class: 'name-cell' }, el('a', { href: `/nganh-chi-tiet.html?code=${encodeURIComponent(m.code)}` }, m.name),
         m.listed_in_latest_table ? null : el('div', { class: 'small muted' }, 'Không có trong bảng ngành 08/2026 – hỏi lại trường')),
-      el('td', { class: 'small' }, m.faculty),
+      el('td', { class: 'small' }, hht.facultyLink(m.faculty, siteConfig)),
       levelCells(m),
       supportCells(m)));
     $('#major-rows').replaceChildren(...(rows.length ? rows : [el('tr', {}, el('td', { colspan: '9', class: 'empty' }, 'Không có ngành phù hợp. Thử bỏ bớt bộ lọc.'))]));
@@ -111,6 +112,7 @@
     renderHead();
     renderLegend();
     const meta = await hht.meta();
+    siteConfig = meta.config || {};
     for (const [k, v] of Object.entries(meta.levels)) form.level.append(el('option', { value: k }, v));
     const { faculties } = await apiClient.get('/api/handbook/overview');
     for (const f of faculties) form.faculty.append(el('option', { value: f.faculty }, f.faculty));

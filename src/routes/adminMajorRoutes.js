@@ -24,7 +24,7 @@ const LEVEL_CODES = Object.keys(LEVELS);
 const ITEM_KINDS = ['DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT', 'LEVEL_INFO', 'SUPPORT_INFO'];
 const MAJOR_CODE = /^[A-Za-z0-9._-]{2,30}$/;
 /** Tham số liên hệ Phòng Tuyển sinh được sửa (không gồm tham số kỹ thuật như nhúng iframe, lưu dữ liệu). */
-const CONTACT_KEYS = ['HOTLINE', 'ADMISSION_EMAIL', 'SUBMISSION_ADDRESS', 'OFFICIAL_REGISTER_URL', 'FANPAGE_URL', 'SCHOOL_NAME', 'CHAT_GREETING', 'HANDOFF_ENABLED'];
+const CONTACT_KEYS = ['HOTLINE', 'ADMISSION_EMAIL', 'SUBMISSION_ADDRESS', 'OFFICIAL_REGISTER_URL', 'FANPAGE_URL', 'FACULTY_PAGES', 'SCHOOL_NAME', 'CHAT_GREETING', 'HANDOFF_ENABLED'];
 
 const scopedFaculty = (user) => (FACULTY_SCOPED_ROLES.includes(user.role) ? user.faculty : null);
 
