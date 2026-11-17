@@ -107,15 +107,15 @@
     srow('Doanh nghiệp hỗ trợ', m.enterprise_support);
 
     const main = el('div', {},
+      el('div', { class: 'panel' }, el('h2', {}, 'Giới thiệu'), el('p', {}, m.description || 'Đang cập nhật.'),
+        m.career_paths?.length ? [el('h3', {}, 'Cơ hội việc làm'), el('ul', {}, m.career_paths.map((c) => el('li', {}, c)))] : null,
+        m.profile_is_sample ? el('p', { class: 'small muted' }, 'Mô tả và hướng nghề nghiệp mang tính tham khảo, đang được cán bộ tư vấn hoàn thiện.') : null),
       el('div', { class: 'panel' }, el('h2', {}, 'Thông tin tuyển sinh'), programTable(m), programCards(m),
         support.childElementCount ? [el('h3', { class: 'mt-m' }, 'Hỗ trợ học phí'), support] : null,
         (m.state_support || m.enterprise_support) && m.support_needs_verify
           ? el('p', { class: 'note small mt-m' }, 'Mức hỗ trợ học phí của ngành này khác nhau giữa các bảng ngành đã công bố. Vui lòng xác nhận với Trung tâm Tuyển sinh.') : null,
         !m.listed_in_latest_table ? el('p', { class: 'note note--stop small mt-m' }, 'Ngành không có trong bảng ngành tháng 08/2026 (có thể đã hết chỉ tiêu đợt trước). Hãy gọi hotline để biết còn tuyển hay không.') : null),
-      majorItems(m),
-      el('div', { class: 'panel' }, el('h2', {}, 'Giới thiệu'), el('p', {}, m.description || 'Đang cập nhật.'),
-        m.career_paths?.length ? [el('h3', {}, 'Cơ hội việc làm'), el('ul', {}, m.career_paths.map((c) => el('li', {}, c)))] : null,
-        m.profile_is_sample ? el('p', { class: 'small muted' }, 'Mô tả và hướng nghề nghiệp mang tính tham khảo, đang được cán bộ tư vấn hoàn thiện.') : null));
+      majorItems(m));
     const side = el('div', {},
       el('div', { class: 'panel' }, el('h3', {}, 'Bạn còn thắc mắc?'),
         el('p', { class: 'small' }, 'Hỏi thêm về học phí, thời gian học, cơ hội việc làm của ngành này.'),

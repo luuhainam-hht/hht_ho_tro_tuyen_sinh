@@ -57,6 +57,34 @@
       el('div', { id: 'staff-secret' }));
   }
 
+  /** Xuất Excel: danh sách tài khoản, hoặc cấp mật khẩu tạm mới cho tài khoản đã tích chọn rồi xuất kèm mật khẩu. */
+  function exportPanel() {
+    return el('section', { class: 'panel mb-m' },
+      el('h3', { class: 'mb-0' }, 'Xuất tài khoản ra Excel'),
+      el('p', { class: 'hint' }, 'Mật khẩu được mã hóa một chiều nên không ai xem lại được mật khẩu cũ. Muốn có tệp kèm mật khẩu: tích chọn cán bộ trong bảng dưới, bấm "Cấp mật khẩu tạm & xuất Excel" – hệ thống tạo mật khẩu tạm mới, cán bộ phải đổi ở lần đăng nhập đầu.'),
+      el('div', { class: 'btn-row' },
+        el('button', { class: 'btn btn--sm', type: 'button', 'data-action': 'staff-export-list' }, 'Xuất danh sách tài khoản'),
+        el('button', { class: 'btn btn--sm btn--primary', type: 'button', 'data-action': 'staff-export-passwords' }, 'Cấp mật khẩu tạm & xuất Excel'),
+        el('span', { class: 'small muted', id: 'export-count' }, 'Chưa chọn tài khoản nào')));
+  }
+
+  async function downloadExport(body, fallbackName) {
+    const res = await apiClient.raw('POST', '/api/admin/staff/export.xlsx', body);
+    const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '')?.[1] || fallbackName;
+    const url = URL.createObjectURL(await res.blob());
+    const a = el('a', { href: url, download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+  const selectedIds = () => [...document.querySelectorAll('[data-export-id]:checked')].map((x) => Number(x.dataset.exportId));
+  document.addEventListener('change', (e) => {
+    if (e.target.matches?.('[data-export-all]')) document.querySelectorAll('[data-export-id]').forEach((x) => { x.checked = e.target.checked; });
+    if (e.target.matches?.('[data-export-all], [data-export-id]')) {
+      const n = selectedIds().length; const out = document.getElementById('export-count');
+      if (out) out.textContent = n ? `Đã chọn ${n} tài khoản` : 'Chưa chọn tài khoản nào';
+    }
+  });
+
   admin.register({
     id: 'staff', title: 'Tài khoản cán bộ', perm: 'STAFF_MANAGEMENT', events: [],
     async render(root) {
@@ -66,9 +94,11 @@
       const byKey = new Map(configs.map((c) => [c.key, c]));
       root.replaceChildren(
         createForm(),
-        withMenus(admin.table(['Tài khoản', 'Vai trò', 'Trạng thái', 'Đăng nhập gần nhất', 'Đổi mật khẩu', ''], items.map((u) => {
+        exportPanel(),
+        withMenus(admin.table([el('input', { type: 'checkbox', 'data-export-all': '', 'aria-label': 'Chọn tất cả tài khoản để cấp mật khẩu tạm' }), 'Tài khoản', 'Vai trò', 'Trạng thái', 'Đăng nhập gần nhất', 'Đổi mật khẩu', ''], items.map((u) => {
           const self = Number(u.id) === Number(me.id);
           return el('tr', {},
+            el('td', {}, self ? null : el('input', { type: 'checkbox', 'data-export-id': u.id, 'aria-label': `Chọn ${u.full_name}` })),
             el('td', {}, el('strong', {}, u.full_name, self ? ' (bạn)' : ''), el('div', { class: 'small muted' }, `${u.username}${u.email ? ` · ${u.email}` : ''}`)),
             el('td', {}, el('select', { 'data-role-of': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '', 'aria-label': `Vai trò của ${u.full_name}`, disabled: self }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v))),
               u.role === 'FACULTY' ? el('div', { class: 'small mt-xs' }, 'Khoa: ', el('strong', {}, u.faculty || '—'), ' ', el('button', { type: 'button', class: 'link-btn', 'data-action': 'staff-faculty', 'data-id': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '' }, 'Đổi khoa')) : null),
@@ -181,6 +211,19 @@
       try { await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: !lock }); admin.reload(); } catch (e) { toast(e.message, 'error'); }
     },
     'staff-policy-save': (form) => admin.saveConfigs(form),
+    async 'staff-export-list'() {
+      try { await downloadExport({ mode: 'LIST' }, 'tai-khoan-can-bo.xlsx'); toast('Đã xuất danh sách tài khoản', 'ok'); } catch (e) { toast(e.message, 'error'); }
+    },
+    async 'staff-export-passwords'() {
+      const ids = selectedIds();
+      if (!ids.length) { toast('Tích chọn ít nhất một cán bộ trong bảng (ô đầu mỗi dòng)', 'error'); return; }
+      if (!(await confirmDialog(`Cấp mật khẩu tạm MỚI cho ${ids.length} tài khoản và xuất ra Excel? Mật khẩu cũ của họ hết hiệu lực ngay, họ bị đăng xuất và phải đổi mật khẩu ở lần đăng nhập đầu. Tệp Excel là tài liệu mật: phát riêng từng người rồi xóa tệp.`, { okText: 'Cấp & xuất Excel', danger: true }))) return;
+      try {
+        await downloadExport({ mode: 'NEW_PASSWORDS', ids, confirm: true }, 'mat-khau-tam-can-bo.xlsx');
+        toast(`Đã cấp mật khẩu tạm cho ${ids.length} tài khoản và tải tệp Excel`, 'ok');
+        admin.reload();
+      } catch (e) { toast(e.message, 'error'); }
+    },
     async 'staff-faculty'(b) {
       const faculty = await askFaculty(b.dataset.name, b.dataset.faculty);
       if (!faculty) return;

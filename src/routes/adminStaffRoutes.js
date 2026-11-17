@@ -4,6 +4,7 @@ const v = require('../utils/validate');
 const ah = require('../utils/asyncHandler');
 const { requirePermission } = require('../middleware/auth');
 const { ROLES } = require('../constants/roles');
+const { HttpError } = require('../utils/httpError');
 
 module.exports = function adminStaffRoutes({ staffService }) {
   const r = express.Router();
@@ -29,6 +30,21 @@ module.exports = function adminStaffRoutes({ staffService }) {
       actor: req.user, ip: req.ip,
     }),
   })));
+  /**
+   * Xuất Excel: { mode: 'LIST' } danh sách (không mật khẩu – mật khẩu băm một chiều, không xem lại được);
+   * { mode: 'NEW_PASSWORDS', ids: [...], confirm: true } cấp mật khẩu tạm mới cho tài khoản đã chọn và ghi vào tệp.
+   */
+  r.post('/export.xlsx', ah(async (req, res) => {
+    const mode = v.oneOf(req.body, 'mode', ['LIST', 'NEW_PASSWORDS'], { label: 'Kiểu xuất' }) || 'LIST';
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter((x) => Number.isInteger(Number(x)) && Number(x) > 0) : [];
+    if (mode === 'NEW_PASSWORDS' && req.body?.confirm !== true) throw new HttpError(400, 'Cần xác nhận: cấp mật khẩu tạm mới sẽ làm mật khẩu cũ hết hiệu lực');
+    const out = await staffService.exportWorkbook({ mode, ids, actor: req.user, ip: req.ip });
+    const day = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${out.withPasswords ? 'mat-khau-tam-can-bo' : 'tai-khoan-can-bo'}-${day}.xlsx"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(out.buffer);
+  }));
   r.post('/:id/reset-password', ah(async (req, res) => res.json(await staffService.resetPassword(v.idParam(req.params), { actor: req.user, ip: req.ip }))));
   r.post('/:id/set-password', ah(async (req, res) => res.json(await staffService.setPassword(v.idParam(req.params), {
     newPassword: v.str(req.body, 'newPassword', { label: 'Mật khẩu mới', required: true, max: 200 }),

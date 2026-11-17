@@ -170,3 +170,41 @@ test('chính sách mật khẩu & phiên theo cấu hình: độ dài tối thi�
   const hours = (new Date(res.body.expiresAt) - Date.now()) / 3_600_000;
   assert.ok(hours > 1.9 && hours <= 2.01);
 });
+
+test('xuất Excel tài khoản: danh sách không có mật khẩu; cấp mật khẩu tạm & xuất -> đăng nhập được bằng mật khẩu trong tệp', async () => {
+  const ExcelJS = require('exceljs');
+  const binary = (res, cb) => { const chunks = []; res.on('data', (c) => chunks.push(c)); res.on('end', () => cb(null, Buffer.concat(chunks))); };
+  const read = async (buf) => { const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); return wb.worksheets[0]; };
+
+  await request(app).post('/api/admin/staff/export.xlsx').set(H.leader).send({ mode: 'LIST' }).expect(403);
+  const list = await request(app).post('/api/admin/staff/export.xlsx').set(H.admin).send({ mode: 'LIST' }).buffer().parse(binary).expect(200);
+  assert.match(list.headers['content-disposition'], /tai-khoan-can-bo/);
+  assert.equal(list.headers['cache-control'], 'no-store');
+  const ws = await read(list.body);
+  const header = ws.getRow(3).values.slice(1);
+  assert.ok(header.includes('Tên đăng nhập') && !header.includes('Mật khẩu tạm'));
+  const names = []; ws.eachRow((r, i) => { if (i > 3) names.push(r.getCell(2).value); });
+  assert.ok(names.includes('quantri') && names.includes('lanhdao'));
+  const text = JSON.stringify(ws.getSheetValues());
+  assert.doesNotMatch(text, /\$2[aby]\$/, 'không lộ mã băm mật khẩu');
+
+  await createStaff(ctx.db, 'xuatexcel', 'ADVISOR');
+  const target = (await ctx.db.query("SELECT id FROM staff WHERE username = 'xuatexcel'")).rows[0].id;
+  const self = (await ctx.db.query("SELECT id FROM staff WHERE username = 'quantri'")).rows[0].id;
+  const before = await ctx.login('xuatexcel');
+  await request(app).post('/api/admin/staff/export.xlsx').set(H.admin).send({ mode: 'NEW_PASSWORDS', ids: [target] }).expect(400); // thiếu xác nhận
+  await request(app).post('/api/admin/staff/export.xlsx').set(H.admin).send({ mode: 'NEW_PASSWORDS', ids: [self], confirm: true }).expect(400); // không tự cấp cho mình
+  const out = await request(app).post('/api/admin/staff/export.xlsx').set(H.admin)
+    .send({ mode: 'NEW_PASSWORDS', ids: [target, self], confirm: true }).buffer().parse(binary).expect(200);
+  const ws2 = await read(out.body);
+  assert.equal(ws2.getRow(3).getCell(3).value, 'Mật khẩu tạm');
+  assert.equal(ws2.rowCount, 4, 'chỉ tài khoản được chọn, bỏ qua chính mình');
+  assert.equal(ws2.getRow(4).getCell(2).value, 'xuatexcel');
+  const pw = ws2.getRow(4).getCell(3).value;
+  await request(app).get('/api/auth/me').set(before).expect(401); // phiên cũ bị đăng xuất
+  const login = await request(app).post('/api/auth/login').send({ username: 'xuatexcel', password: pw }).expect(200);
+  assert.equal(login.body.user.mustChangePassword ?? login.body.mustChangePassword, true);
+  const audit = await ctx.db.query("SELECT payload FROM audit_logs WHERE action = 'STAFF_EXPORT_PASSWORDS' ORDER BY id DESC LIMIT 1");
+  assert.deepEqual(audit.rows[0].payload.ids.map(Number), [Number(target)]);
+  assert.doesNotMatch(JSON.stringify(audit.rows[0].payload), new RegExp(pw), 'nhật ký không ghi mật khẩu');
+});

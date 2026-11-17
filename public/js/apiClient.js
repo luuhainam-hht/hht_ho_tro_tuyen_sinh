@@ -54,6 +54,11 @@
     const headers = {};
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Đối tượng thường -> gửi JSON (vd: xuất Excel theo lựa chọn); FormData/Blob gửi nguyên.
+    if (body && typeof body === 'object' && !(body instanceof FormData) && !(body instanceof Blob)) {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(body);
+    }
     const res = await fetch(path, { method, headers, body });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
