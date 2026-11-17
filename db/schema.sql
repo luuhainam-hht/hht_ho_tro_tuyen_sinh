@@ -332,7 +332,7 @@ CREATE TABLE IF NOT EXISTS token_usage_daily (
 CREATE TABLE IF NOT EXISTS ai_calls (
   id           BIGSERIAL PRIMARY KEY,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  provider     TEXT NOT NULL CHECK (provider IN ('GROQ', 'GEMINI')),
+  provider     TEXT NOT NULL CHECK (provider IN ('GROQ', 'GEMINI', 'MINDTEK')),
   task         TEXT NOT NULL CHECK (task IN ('CHAT', 'WEB_SEARCH', 'OCR', 'RECOMMEND', 'ANALYTICS', 'EMBED', 'TEST', 'OTHER')),
   model        TEXT,
   key_label    TEXT,

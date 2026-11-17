@@ -123,8 +123,10 @@ const KEY_VALIDATORS = {
     }
   },
   ...Object.fromEntries(['AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND', 'AI_PROVIDER_ANALYTICS'].map((k) => [k, (v) => {
-    if (!['BALANCE', 'AUTO', 'GROQ', 'GEMINI'].includes(String(v).toUpperCase())) throw new HttpError(400, `${k} chỉ nhận BALANCE, AUTO, GROQ hoặc GEMINI`);
+    if (!['BALANCE', 'AUTO', 'GROQ', 'GEMINI', 'MINDTEK'].includes(String(v).toUpperCase())) throw new HttpError(400, `${k} chỉ nhận BALANCE, AUTO, GROQ, GEMINI hoặc MINDTEK`);
   }])),
+  MINDTEK_BOT_ID: (v) => { if (v && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) throw new HttpError(400, 'Bot ID Mindtek có dạng xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (lấy trong mã nhúng /embed/…)'); },
+  MINDTEK_BASE_URL: (v) => { if (!/^https:\/\/[a-z0-9.-]+(:\d+)?\/?$/i.test(v)) throw new HttpError(400, 'Địa chỉ Mindtek phải dạng https://ten-mien (không kèm /embed/…)'); },
   AI_OFFICIAL_SITE: (v) => { if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v)) throw new HttpError(400, 'AI_OFFICIAL_SITE chỉ ghi tên miền, vd: hht.edu.vn'); },
   AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };

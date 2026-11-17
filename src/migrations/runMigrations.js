@@ -67,6 +67,12 @@ const MIGRATIONS = [
           UPDATE system_configs SET value = 'openai/gpt-oss-20b' WHERE key = 'GROQ_FALLBACK_MODEL' AND value = 'llama-3.3-70b-versatile';`,
   },
   {
+    // Mindtek (bot.mindtek.ai) là nhà cung cấp AI thứ 3: đồng hồ đo ghi được lượt gọi Mindtek.
+    id: '2026-11-17-ai-provider-mindtek',
+    sql: `ALTER TABLE ai_calls DROP CONSTRAINT IF EXISTS ai_calls_provider_check;
+          ALTER TABLE ai_calls ADD CONSTRAINT ai_calls_provider_check CHECK (provider IN ('GROQ', 'GEMINI', 'MINDTEK'));`,
+  },
+  {
     // Bật KB_AUTO_PUBLISH: tài liệu đã tải lên và xử lý xong (READY) nhưng chưa ai bấm Công bố -> đưa vào kho
     // trả lời một lần, để trợ lý dùng được mọi tài liệu đã cập nhật. Bản bị thay thế chuyển ARCHIVED.
     id: '2026-11-17-publish-ready-documents',

@@ -10,9 +10,11 @@
   const MODE_LABEL = { LLM: 'AI soạn', EXTRACTIVE: 'trích nguyên văn' };
   const ROUTE_KEYS = ['AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND', 'AI_PROVIDER_ANALYTICS'];
   const MODEL_KEYS = ['GROQ_MODEL', 'GROQ_FALLBACK_MODEL', 'GROQ_SMALL_MODEL', 'LLM_MODEL', 'LLM_FALLBACK_MODEL', 'EMBEDDING_MODEL', 'EMBEDDING_DIM'];
-  const LIMIT_KEYS = ['DAILY_TOKEN_BUDGET', 'GROQ_DAILY_TOKEN_BUDGET', 'GEMINI_DAILY_TOKEN_BUDGET', 'LLM_TEMPERATURE', 'LLM_TIMEOUT_SECONDS', 'MAX_ANSWER_TOKENS', 'MAX_HISTORY_TURNS'];
+  const LIMIT_KEYS = ['DAILY_TOKEN_BUDGET', 'GROQ_DAILY_TOKEN_BUDGET', 'GEMINI_DAILY_TOKEN_BUDGET', 'MINDTEK_DAILY_TOKEN_BUDGET', 'LLM_TEMPERATURE', 'LLM_TIMEOUT_SECONDS', 'MAX_ANSWER_TOKENS', 'MAX_HISTORY_TURNS'];
   const PRICE_KEYS = ['PRICE_GROQ_IN', 'PRICE_GROQ_OUT', 'PRICE_GEMINI_IN', 'PRICE_GEMINI_OUT', 'PRICE_GEMINI_SEARCH_PER_1000', 'USD_VND_RATE'];
-  const PROVIDER_NAME = { GROQ: 'Groq', GEMINI: 'Gemini' };
+  const PROVIDER_NAME = { GROQ: 'Groq', GEMINI: 'Gemini', MINDTEK: 'Mindtek' };
+  const PROVIDERS = ['GROQ', 'GEMINI', 'MINDTEK'];
+  const MINDTEK_KEYS = ['MINDTEK_ENABLED', 'MINDTEK_BOT_ID', 'MINDTEK_BASE_URL', 'MINDTEK_TIMEOUT_SECONDS'];
   const TASK_LABEL = {
     CHAT: 'Trả lời chat', WEB_SEARCH: 'Tra Google', OCR: 'Đọc ảnh/PDF scan', RECOMMEND: 'Gợi ý ngành',
     ANALYTICS: 'Phân tích Tổng quan', EMBED: 'Vector (tìm theo nghĩa)', TEST: 'Kiểm tra khóa', OTHER: 'Khác',
@@ -87,17 +89,18 @@
     else if (!s.available) state = el('p', { class: 'note' }, 'Tất cả khóa đang tạm nghỉ do hết hạn mức. Trợ lý tạm trích nguyên văn tài liệu và sẽ tự dùng lại AI khi khóa hồi.');
     else {
       const p = s.providers || {};
+      const on = PROVIDERS.filter((pv) => p[pv.toLowerCase()]);
       const who = (pref) => {
-        if (pref === 'BALANCE' && p.groq && p.gemini) return 'chia đều Groq + Gemini';
-        if (pref === 'GEMINI' && p.gemini) return 'Gemini';
-        if (p.groq && (pref !== 'GEMINI' || !p.gemini)) return 'Groq';
-        return p.gemini ? 'Gemini' : 'Groq';
+        if (pref === 'BALANCE' && on.length > 1) return `chia đều ${on.map((pv) => PROVIDER_NAME[pv]).join(' + ')}`;
+        if (on.includes(pref)) return PROVIDER_NAME[pref];
+        return PROVIDER_NAME[on[0]] || '—';
       };
       state = el('p', { class: 'note note--go' },
         `AI đang hoạt động. Trả lời chat: ${who(p.chat)} · Gợi ý ngành: ${who(p.recommend)} · Phân tích Tổng quan: ${who(p.analytics)}`,
-        p.groq && p.gemini ? ' (lỗi tự chuyển bên còn lại). ' : '. ',
+        on.length > 1 ? ' (lỗi tự chuyển bên còn lại). ' : '. ',
         p.gemini ? `Tra Google, vector, đọc ảnh/PDF: Gemini (${p.geminiKeys} khóa).` : 'Chưa có khóa Gemini nên chưa tra Google, tìm theo nghĩa và đọc ảnh/PDF scan được.',
-        ` Groq: ${p.groqKeys || 0} khóa.`);
+        ` Groq: ${p.groqKeys || 0} khóa.`,
+        p.mindtekConfigured ? ` Mindtek: ${p.mindtek ? 'sẵn sàng' : 'đang tạm nghỉ do lỗi'}.` : ' Mindtek: chưa bật.');
     }
     return el('section', { class: 'panel' },
       el('div', { class: 'panel-head' }, el('h3', { class: 'mb-0' }, 'Tình trạng'),
@@ -119,10 +122,11 @@
   // ---------- Thống kê AI ----------
   function dualChart(st) {
     const tok = (d, pv) => d[pv].tokensIn + d[pv].tokensOut;
-    const max = Math.max(1, ...st.daily.map((d) => tok(d, 'GROQ') + tok(d, 'GEMINI')));
+    const pvs = PROVIDERS.filter((pv) => st.daily[0]?.[pv]);
+    const max = Math.max(1, ...st.daily.map((d) => pvs.reduce((n, pv) => n + tok(d, pv), 0)));
     const cols = st.daily.map((d) => {
-      const col = el('span', { class: 'stack', title: `${hht.fmtDate(d.day)}\nGroq: ${nf.format(tok(d, 'GROQ'))} token, ${d.GROQ.calls} lượt\nGemini: ${nf.format(tok(d, 'GEMINI'))} token, ${d.GEMINI.calls} lượt` });
-      for (const pv of ['GEMINI', 'GROQ']) {
+      const col = el('span', { class: 'stack', title: [hht.fmtDate(d.day), ...pvs.map((pv) => `${PROVIDER_NAME[pv]}: ${nf.format(tok(d, pv))} token, ${d[pv].calls} lượt`)].join('\n') });
+      for (const pv of [...pvs].reverse()) {
         const seg = el('i', { class: `seg seg--${pv.toLowerCase()}` });
         seg.style.height = `${(tok(d, pv) / max) * 100}%`;
         col.append(seg);
@@ -130,8 +134,8 @@
       return col;
     });
     return el('div', {},
-      el('div', { class: 'ai-legend small' }, el('span', {}, el('i', { class: 'dot seg--groq' }), 'Groq'), el('span', {}, el('i', { class: 'dot seg--gemini' }), 'Gemini')),
-      el('div', { class: 'spark spark--stack', role: 'img', 'aria-label': 'Biểu đồ token theo ngày, tách Groq và Gemini' }, cols),
+      el('div', { class: 'ai-legend small' }, pvs.map((pv) => el('span', {}, el('i', { class: `dot seg--${pv.toLowerCase()}` }), PROVIDER_NAME[pv]))),
+      el('div', { class: 'spark spark--stack', role: 'img', 'aria-label': `Biểu đồ token theo ngày, tách ${pvs.map((pv) => PROVIDER_NAME[pv]).join(', ')}` }, cols),
       el('div', { class: 'panel-head small muted' }, el('span', {}, hht.fmtDate(st.from)), el('span', {}, 'hôm nay')));
   }
 
@@ -166,7 +170,7 @@
 
   function keyStatsTable(st) {
     const rows = st.keys.map((k) => el('tr', {},
-      el('td', {}, el('strong', {}, k.label), el('div', { class: 'small muted' }, `${PROVIDER_NAME[k.provider]} · ${k.source === 'ENV' ? '.env' : 'trang quản trị'}`)),
+      el('td', {}, el('strong', {}, k.label), el('div', { class: 'small muted' }, `${PROVIDER_NAME[k.provider]} · ${k.source === 'ENV' ? '.env' : k.source === 'CONFIG' ? 'Bot ID trong mục Mindtek' : 'trang quản trị'}`)),
       el('td', { class: 'num' }, nf.format(k.calls)),
       el('td', { class: 'num' }, nf.format(k.successes)),
       el('td', { class: `num ${k.errors ? 'stop-text' : ''}` }, nf.format(k.errors)),
@@ -202,7 +206,7 @@
       el('div', { class: 'kpis' },
         el('div', { class: 'kpi' }, el('span', {}, `Chi phí ${st.days} ngày (ước tính)`), el('strong', {}, usd(c.totalUsd)), el('span', {}, `≈ ${nf.format(c.totalVnd)} đ`)),
         el('div', { class: 'kpi' }, el('span', {}, 'Dự kiến 30 ngày'), el('strong', {}, usd(c.monthlyUsd)), el('span', {}, `≈ ${nf.format(c.monthlyVnd)} đ`)),
-        el('div', { class: 'kpi' }, el('span', {}, 'Tách theo bên'), el('strong', { class: 'kpi-sm' }, `Groq ${usd(c.groqUsd)} · Gemini ${usd(c.geminiUsd)}`),
+        el('div', { class: 'kpi' }, el('span', {}, 'Tách theo bên'), el('strong', { class: 'kpi-sm' }, `Groq ${usd(c.groqUsd)} · Gemini ${usd(c.geminiUsd)} · Mindtek ${usd(c.mindtekUsd)}`),
           el('span', {}, `Tra Google: ${nf.format(c.searches)} lượt${c.paidSearches ? `, ${nf.format(c.paidSearches)} lượt tính phí (${usd(c.searchUsd)})` : ' (trong mức miễn phí 1.500/ngày)'}`))),
       el('p', { class: 'hint' }, 'Ước tính nếu dùng gói trả phí, theo giá ở mục "Giá tham khảo". Gói miễn phí hiện tại không mất tiền nhưng bị giới hạn số lượt/phút và token/ngày. Token vector được ước lượng theo độ dài văn bản.'));
   }
@@ -210,7 +214,7 @@
   function statsView(st) {
     const errRows = st.errors.map((e) => el('li', {}, `${PROVIDER_NAME[e.provider]}: ${ERROR_LABEL[e.kind] || e.kind} – ${nf.format(e.n)} lần`));
     return el('div', {},
-      el('div', { class: 'kpis' }, providerKpi('GROQ', st.providers.GROQ, st.today.GROQ), providerKpi('GEMINI', st.providers.GEMINI, st.today.GEMINI)),
+      el('div', { class: 'kpis' }, PROVIDERS.filter((pv) => st.providers[pv]).map((pv) => providerKpi(pv, st.providers[pv], st.today[pv]))),
       el('h4', { class: 'mb-0' }, `Token theo ngày (${st.days} ngày)`),
       dualChart(st),
       el('h4', { class: 'mt-m mb-0' }, 'Theo từng việc'),
@@ -246,7 +250,7 @@
       ['Vector – tìm tài liệu theo nghĩa', 'Chỉ Gemini có mô hình vector'],
       ['Đọc ảnh, PDF scan, bảng chụp khi nạp tài liệu', 'Chỉ Gemini đọc được ảnh/PDF'],
     ];
-    return section('Phân việc cho AI', 'Chọn nhà cung cấp chính cho từng việc. Khi bên chính lỗi, hết hạn mức hoặc vượt ngân sách riêng, hệ thống tự chuyển sang bên còn lại (nếu có khóa).',
+    return section('Phân việc cho AI', 'Chọn nhà cung cấp chính cho từng việc (Groq, Gemini, Mindtek hoặc chia đều cả ba). Khi bên chính lỗi, hết hạn mức hoặc vượt ngân sách riêng, hệ thống tự chuyển lần lượt sang các bên còn lại. Thí sinh luôn dùng khung chat của HHT, không thấy bên nào đang trả lời.',
       settingsForm('ai-route-form', configs, ROUTE_KEYS),
       el('h4', { class: 'mt-m mb-0' }, 'Việc luôn do Gemini làm'),
       admin.table(['Việc', 'Lý do'], fixed.map(([a, b]) => el('tr', {}, el('td', {}, a), el('td', { class: 'small muted' }, b))), ''));
@@ -307,6 +311,8 @@
             el('div', { class: 'btn-row' },
               el('button', { class: 'btn btn--primary', type: 'submit' }, 'Kiểm tra và lưu'),
               el('button', { class: 'btn', type: 'button', 'data-action': 'ai-key-try' }, 'Chỉ kiểm tra')))),
+        section('Mindtek (bot.mindtek.ai)', 'Mindtek là nhà cung cấp thứ 3: máy chủ HHT gửi câu hỏi kèm tài liệu tuyển sinh tới bot Mindtek rồi hiển thị câu trả lời trong khung chat của HHT (không nhúng giao diện Mindtek). Câu trả lời của Mindtek vẫn qua bước kiểm tra số liệu và trích dẫn như Groq/Gemini. Bot ID lấy ở Mindtek → Web Deployment → Display Inside Website (Embed): đoạn sau /embed/ trong mã nhúng.',
+          settingsForm('ai-mindtek-form', configs, MINDTEK_KEYS, { extraButtons: [el('button', { class: 'btn', type: 'button', 'data-action': 'ai-test-all' }, 'Kiểm tra kết nối')] })),
         section('Mô hình', 'Tên mô hình của Groq và Gemini; có hiệu lực ngay cho câu hỏi tiếp theo. Nhà cung cấp ngừng mô hình nào thì đổi tên ở đây. Đổi mô hình vector hoặc số chiều sẽ tạo lại vector cho toàn bộ kho (chạy nền, mất vài phút).',
           settingsForm('ai-model-form', configs, MODEL_KEYS)),
         section('Giới hạn và ngân sách', 'Ngân sách chung hết thì trợ lý chỉ trả lời bằng câu hỏi thường gặp và trích nguyên văn tài liệu. Ngân sách riêng của một bên hết thì việc của bên đó chuyển sang bên còn lại.',

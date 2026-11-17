@@ -22,6 +22,7 @@ const { createLiveKnowledge } = require('./services/rag/liveKnowledge');
 const { createAnswerService } = require('./services/rag/answerService');
 const { createSecurityGuard } = require('./services/securityGuard');
 const { createGroqClient } = require('./services/ai/groqClient');
+const { createMindtekClient } = require('./services/ai/mindtekClient');
 const { createAiUsageMeter } = require('./services/ai/aiUsageMeter');
 const { createIngestService } = require('./services/rag/ingestService');
 const { createKbService } = require('./services/kbService');
@@ -37,7 +38,7 @@ const { createVisitorHasher } = require('./services/visitor');
 const { createJobRunner } = require('./services/jobRunner');
 const { createScheduler } = require('./services/scheduler');
 
-function createContainer({ db = getDb(), logger = console, llmTransport, groqTransport, fetchImpl } = {}) {
+function createContainer({ db = getDb(), logger = console, llmTransport, groqTransport, mindtekTransport, fetchImpl } = {}) {
   const isOriginAllowed = createOriginChecker();
   // authService cần chính sách đăng nhập từ configService, nhưng configService lại cần broadcast của wsHub
   // (wsHub cần authService) -> truyền tham chiếu lười, đọc khi có yêu cầu đăng nhập.
@@ -53,7 +54,9 @@ function createContainer({ db = getDb(), logger = console, llmTransport, groqTra
   // Groq: sinh câu trả lời/phân tích (nhanh); Gemini: tra Google, vector, đọc ảnh/PDF. Khóa Groq chỉ ở .env / CSDL (mã hóa).
   const aiMeter = createAiUsageMeter({ db, configService, logger });
   const groq = createGroqClient({ apiKeys: groqTransport?.keys || env.GROQ_API_KEYS, configService, logger, meter: aiMeter, ...(groqTransport ? { transport: groqTransport } : {}) });
-  const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, groq, meter: aiMeter, ...(llmTransport ? { transport: llmTransport } : {}) });
+  // Mindtek: nhà cung cấp thứ 3 (bot.mindtek.ai) gọi ngầm từ máy chủ. Test không có transport giả -> không gọi mạng thật.
+  const mindtek = createMindtekClient({ configService, logger, meter: aiMeter, ...(mindtekTransport ? { transport: mindtekTransport } : {}) });
+  const llm = createLlmClient({ apiKeys: env.GEMINI_API_KEYS, configService, logger, groq, meter: aiMeter, mindtek: mindtekTransport || !process.env.HHT_TEST ? mindtek : null, ...(llmTransport ? { transport: llmTransport } : {}) });
   const aiKeyService = createAiKeyService({ db, llm, secret: env.SECRET_ENCRYPTION_KEY, broadcast, logger });
   const uploadDir = path.resolve(env.UPLOAD_DIR);
 

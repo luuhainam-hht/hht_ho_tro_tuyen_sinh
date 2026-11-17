@@ -7,11 +7,13 @@
  * transport có thể thay (test dùng bản giả; đổi nhà cung cấp chỉ viết transport mới).
  *
  * Phân việc giữa hai nhà cung cấp (Admin chọn trên trang Cài đặt AI):
- *  - CHAT (trả lời thí sinh)      : AI_PROVIDER_CHAT      (mặc định GROQ)
+ *  Ba nhà cung cấp sinh câu trả lời: Groq, Gemini, Mindtek (bot.mindtek.ai, gọi ngầm – giao diện chat vẫn của HHT).
+ *  - CHAT (trả lời thí sinh)      : AI_PROVIDER_CHAT      (mặc định BALANCE)
  *  - RECOMMEND (gợi ý ngành)      : AI_PROVIDER_RECOMMEND (mặc định GROQ, mô hình nhỏ GROQ_SMALL_MODEL)
  *  - ANALYTICS (phân tích Tổng quan): AI_PROVIDER_ANALYTICS (mặc định GEMINI)
- *    Giá trị BALANCE | GROQ | GEMINI | AUTO. BALANCE = chia đều tải: mỗi câu đi bên đang dùng ít token hôm nay hơn
- *    (tính theo % ngân sách riêng nếu cả hai bên có đặt), bằng nhau thì xoay vòng. AUTO = Groq trước nếu có khóa. Lỗi / hết ngân sách riêng -> tự chuyển bên còn lại.
+ *    Giá trị BALANCE | AUTO | GROQ | GEMINI | MINDTEK. BALANCE = chia đều tải cho mọi bên đang dùng được: mỗi câu đi bên
+ *    dùng ít token hôm nay nhất (theo % ngân sách riêng nếu mọi bên có đặt), bằng nhau thì xoay vòng.
+ *    AUTO = Groq → Gemini → Mindtek. Lỗi / hết ngân sách riêng -> tự chuyển lần lượt sang các bên còn lại.
  *  - WEB_SEARCH (tra Google), OCR (đọc ảnh/PDF scan), EMBED (vector): chỉ Gemini làm được.
  * Mỗi lần gọi được ghi vào ai_calls (aiUsageMeter) để thống kê, tính ngân sách và chi phí.
  */
@@ -115,8 +117,12 @@ function describeLlmError(err) {
 
 const TASK_PROVIDER_KEY = { CHAT: 'AI_PROVIDER_CHAT', RECOMMEND: 'AI_PROVIDER_RECOMMEND', ANALYTICS: 'AI_PROVIDER_ANALYTICS' };
 const TASK_DEFAULT = { CHAT: 'BALANCE', RECOMMEND: 'BALANCE', ANALYTICS: 'GEMINI' };
+/** Thứ tự ưu tiên khi AUTO và thứ tự dự phòng: Groq (nhanh) → Gemini → Mindtek. */
+const CHAT_PROVIDERS = ['GROQ', 'GEMINI', 'MINDTEK'];
+const PROVIDER_LABEL = { GROQ: 'Groq', GEMINI: 'Gemini', MINDTEK: 'Mindtek' };
+const ROUTE_VALUES = ['BALANCE', 'AUTO', ...CHAT_PROVIDERS];
 
-function createLlmClient({ apiKeys = [], configService, transport = createGeminiTransport(), logger = console, groq = null, meter = null }) {
+function createLlmClient({ apiKeys = [], configService, transport = createGeminiTransport(), logger = console, groq = null, meter = null, mindtek = null }) {
   const envKeys = apiKeys.map((key, i) => ({ key, label: `.env #${i + 1}`, source: 'ENV' }));
   let pool = createGeminiKeyPool(envKeys, { logger });
   const cfg = (key, fallback) => (configService.getOr ? configService.getOr(key, fallback) : configService.get(key));
@@ -131,29 +137,34 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
   /** Gemini sẵn sàng: cần cho tra Google, vector, đọc ảnh/PDF. */
   const geminiAvailable = () => enabled() && pool.size > 0 && pool.available() > 0;
   const groqAvailable = () => enabled() && Boolean(groq?.available());
+  const mindtekAvailable = () => enabled() && Boolean(mindtek?.available());
+  const isAvailable = { GROQ: groqAvailable, GEMINI: geminiAvailable, MINDTEK: mindtekAvailable };
   /** Có ít nhất một nhà cung cấp sinh câu trả lời. */
-  const available = () => geminiAvailable() || groqAvailable();
-  /** Nhà cung cấp chính đã cấu hình cho một việc: GROQ | GEMINI | AUTO. */
+  const available = () => geminiAvailable() || groqAvailable() || mindtekAvailable();
+  /** Nhà cung cấp chính đã cấu hình cho một việc: BALANCE | AUTO | GROQ | GEMINI | MINDTEK. */
   const providerFor = (task) => {
     const v = String(cfg(TASK_PROVIDER_KEY[task], TASK_DEFAULT[task] || 'GEMINI') || 'AUTO').toUpperCase();
-    return ['GROQ', 'GEMINI', 'AUTO', 'BALANCE'].includes(v) ? v : 'BALANCE';
+    return ROUTE_VALUES.includes(v) ? v : 'BALANCE';
   };
   let turn = 0;
-  /** Chia đều: chọn bên đang "nhẹ tải" hơn hôm nay. */
-  async function pickBalanced() {
+  /**
+   * Chia đều: chọn bên đang "nhẹ tải" nhất hôm nay trong các bên dùng được
+   * (theo % ngân sách riêng nếu mọi bên đều đặt ngân sách, không thì theo số token). Ngang nhau -> xoay vòng.
+   */
+  async function pickBalanced(cands) {
     turn += 1;
-    const alternate = turn % 2 ? 'GROQ' : 'GEMINI';
-    if (!meter?.tokensToday) return alternate;
+    const rr = cands[(turn - 1) % cands.length];
+    if (!meter?.tokensToday) return rr;
     try {
-      const [g, m] = await Promise.all([meter.tokensToday('GROQ'), meter.tokensToday('GEMINI')]);
-      const gb = Number(cfg('GROQ_DAILY_TOKEN_BUDGET', 0)) || 0;
-      const mb = Number(cfg('GEMINI_DAILY_TOKEN_BUDGET', 0)) || 0;
-      const [lg, lm] = gb && mb ? [g / gb, m / mb] : [g, m];
-      const max = Math.max(lg, lm);
-      if (!max || Math.abs(lg - lm) / max < 0.02) return alternate;
-      return lg < lm ? 'GROQ' : 'GEMINI';
+      const used = await Promise.all(cands.map((p) => meter.tokensToday(p)));
+      const budgets = cands.map((p) => Number(cfg(`${p}_DAILY_TOKEN_BUDGET`, 0)) || 0);
+      const load = budgets.every(Boolean) ? used.map((u, i) => u / budgets[i]) : used;
+      const min = Math.min(...load);
+      const max = Math.max(...load);
+      if (!max || (max - min) / max < 0.02) return rr;
+      return cands[load.indexOf(min)];
     } catch {
-      return alternate;
+      return rr;
     }
   }
   const inBudget = (provider) => (meter ? meter.withinBudget(provider) : Promise.resolve(true));
@@ -180,38 +191,43 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
     ];
     const opts = { system, contents, json, maxTokens, search, timeoutMs, temperature, task: t };
     const geminiOnly = Boolean(search || attachments.length || !TASK_PROVIDER_KEY[t]);
-    const [groqBudget, geminiBudget] = await Promise.all([inBudget('GROQ'), inBudget('GEMINI')]);
-    const groqCan = !geminiOnly && groqAvailable() && groqBudget;
-    const geminiCan = geminiAvailable() && geminiBudget;
-    if (geminiOnly && geminiAvailable() && !geminiBudget) throw budgetError('GEMINI');
-    let pref = providerFor(t);
-    if (pref === 'BALANCE') pref = groqCan && geminiCan ? await pickBalanced() : 'AUTO';
-    const groqFirst = groqCan && (pref !== 'GEMINI' || !geminiCan);
-    const viaGroq = (crossFallback) => groq.generate({ system, history, prompt, json, maxTokens, timeoutMs, temperature, task: t, small: t === 'RECOMMEND', crossFallback });
-    if (groqFirst) {
+    if (geminiOnly) {
+      if (geminiAvailable() && !(await inBudget('GEMINI'))) throw budgetError('GEMINI');
+      return viaGemini(opts, false);
+    }
+
+    const budgets = await Promise.all(CHAT_PROVIDERS.map(inBudget));
+    const can = CHAT_PROVIDERS.filter((p, i) => isAvailable[p]() && budgets[i]);
+    if (!can.length) {
+      const over = CHAT_PROVIDERS.find((p, i) => isAvailable[p]() && !budgets[i]);
+      if (over) throw budgetError(over);
+      return viaGemini(opts, false); // không bên nào dùng được -> Gemini ném lỗi "không còn khóa" như trước
+    }
+    const pref = providerFor(t);
+    let first;
+    if (pref === 'BALANCE') first = can.length > 1 ? await pickBalanced(can) : can[0];
+    else first = can.includes(pref) ? pref : can[0]; // AUTO = theo thứ tự Groq → Gemini → Mindtek
+    const order = [first, ...can.filter((p) => p !== first)];
+
+    const call = (p, crossFallback) => {
+      if (p === 'GROQ') return groq.generate({ system, history, prompt, json, maxTokens, timeoutMs, temperature, task: t, small: t === 'RECOMMEND', crossFallback });
+      if (p === 'MINDTEK') return mindtek.generate({ system, history, prompt, json, task: t, crossFallback });
+      return viaGemini(opts, crossFallback);
+    };
+    let lastErr;
+    for (let i = 0; i < order.length; i += 1) {
       try {
-        return await viaGroq(false);
+        return await call(order[i], i > 0);
       } catch (err) {
-        if (!geminiCan) throw err;
-        logger.warn(`[llm] Groq lỗi (${String(err.message).slice(0, 120)}), chuyển sang Gemini`);
-        return viaGemini(opts, true);
+        lastErr = err;
+        if (i < order.length - 1) logger.warn(`[llm] ${PROVIDER_LABEL[order[i]]} lỗi (${String(err.message).slice(0, 120)}), chuyển sang ${PROVIDER_LABEL[order[i + 1]]}`);
       }
     }
-    if (!geminiCan) {
-      if (!geminiBudget && geminiAvailable()) throw budgetError('GEMINI');
-      if (!groqBudget && groqAvailable() && !geminiOnly) throw budgetError('GROQ');
-    }
-    try {
-      return await viaGemini(opts, false);
-    } catch (err) {
-      if (!groqCan) throw err;
-      logger.warn(`[llm] Gemini lỗi (${String(err.message).slice(0, 120)}), chuyển sang Groq`);
-      return viaGroq(true);
-    }
+    throw lastErr;
   }
 
   function budgetError(provider) {
-    const err = new Error(`${provider === 'GROQ' ? 'Groq' : 'Gemini'} đã dùng hết ngân sách token hôm nay`);
+    const err = new Error(`${PROVIDER_LABEL[provider] || provider} đã dùng hết ngân sách token hôm nay`);
     err.code = 'PROVIDER_BUDGET';
     return err;
   }
@@ -291,21 +307,24 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
     const out = [];
     for (const e of pool.entries()) out.push({ label: e.label, id: e.id, source: e.source, provider: 'GEMINI', ...(await testKey(e.key)) });
     for (const e of groq ? groq.entries() : []) out.push({ label: e.label, id: e.id, source: e.source, provider: 'GROQ', ...(await groq.testKey(e.key)) });
+    if (mindtek?.configured()) out.push({ label: 'Mindtek', id: 'mindtek', source: 'CONFIG', ...(await mindtek.test()) });
     return out;
   }
 
   return {
     available, enabled, generate, embed, setKeys, testKey, testAll,
-    geminiAvailable, groqAvailable,
+    geminiAvailable, groqAvailable, mindtekAvailable,
+    /** Kiểm tra kết nối Mindtek (trang Cài đặt AI). */
+    testMindtek: () => (mindtek ? mindtek.test() : Promise.resolve({ ok: false, provider: 'MINDTEK', message: 'Chưa cấu hình Mindtek' })),
     /** Nạp lại khóa Groq do Admin thêm trên giao diện. */
     setGroqKeys: (keys) => (groq ? groq.setKeys(keys) : 0),
-    keyStatus: () => [...pool.status().map((s) => ({ ...s, provider: 'GEMINI' })), ...(groq ? groq.keyStatus() : [])],
+    keyStatus: () => [...pool.status().map((s) => ({ ...s, provider: 'GEMINI' })), ...(groq ? groq.keyStatus() : []), ...(mindtek ? mindtek.status() : [])],
     /** Giá trị khóa thật – CHỈ để bộ lọc bảo mật xóa khỏi câu trả lời nếu bị lộ. */
     secretValues: () => [...pool.entries().map((e) => e.key), ...(groq ? groq.secretValues() : [])],
-    keyCount: () => pool.size + (groq ? groq.size() : 0),
+    keyCount: () => pool.size + (groq ? groq.size() : 0) + (mindtek?.configured() ? 1 : 0),
     providerFor,
     meter,
-    providers: () => ({ chat: providerFor('CHAT'), recommend: providerFor('RECOMMEND'), analytics: providerFor('ANALYTICS'), gemini: geminiAvailable(), groq: groqAvailable(), geminiKeys: pool.size, groqKeys: groq ? groq.size() : 0 }),
+    providers: () => ({ chat: providerFor('CHAT'), recommend: providerFor('RECOMMEND'), analytics: providerFor('ANALYTICS'), gemini: geminiAvailable(), groq: groqAvailable(), mindtek: mindtekAvailable(), mindtekConfigured: Boolean(mindtek?.configured()), geminiKeys: pool.size, groqKeys: groq ? groq.size() : 0 }),
     modelName: () => cfg('EMBEDDING_MODEL', 'gemini-embedding-001'),
   };
 }
@@ -324,4 +343,4 @@ function dot(a, b) {
   return s;
 }
 
-module.exports = { GEMINI_API_VERSION, createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };
+module.exports = { CHAT_PROVIDERS, ROUTE_VALUES, GEMINI_API_VERSION, createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };

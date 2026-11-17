@@ -23,7 +23,7 @@ const CONFIG_DEFAULTS = [
   C('LLM_MODEL', 'gemini-2.5-flash', 'STRING', 'Mô hình trả lời', 'Tên mô hình Gemini dùng để soạn câu trả lời'),
   C('LLM_FALLBACK_MODEL', 'gemini-2.5-flash-lite', 'STRING', 'Mô hình dự phòng', 'Dùng khi mô hình chính lỗi hoặc quá tải. Để trống nếu không dùng'),
   // Phân việc: mỗi việc chọn nhà cung cấp chính; lỗi/hết ngân sách tự chuyển sang bên còn lại.
-  C('AI_PROVIDER_CHAT', 'BALANCE', 'STRING', 'Trả lời chat của thí sinh', 'Chia đều: mỗi câu đi bên đang dùng ít token hôm nay hơn để giảm tải cho nhau. Lỗi/hết hạn mức tự chuyển bên còn lại'),
+  C('AI_PROVIDER_CHAT', 'BALANCE', 'STRING', 'Trả lời chat của thí sinh', 'Chia đều: mỗi câu đi bên (Groq, Gemini, Mindtek) đang dùng ít token hôm nay nhất để giảm tải cho nhau. Lỗi/hết hạn mức tự chuyển lần lượt sang bên còn lại'),
   C('AI_PROVIDER_RECOMMEND', 'BALANCE', 'STRING', 'Giải thích "Gợi ý ngành"', 'Câu giải thích ngắn sau bài trắc nghiệm gợi ý ngành (Groq dùng mô hình nhỏ)'),
   C('AI_PROVIDER_ANALYTICS', 'GEMINI', 'STRING', 'AI phân tích trang Tổng quan', 'Nhận định số liệu cho lãnh đạo, chạy khi cán bộ bấm nút'),
   C('GROQ_MODEL', 'openai/gpt-oss-120b', 'STRING', 'Mô hình Groq', 'Tên mô hình trên console.groq.com/docs/models. Groq ngừng mô hình thì đổi ở đây'),
@@ -31,6 +31,12 @@ const CONFIG_DEFAULTS = [
   C('GROQ_SMALL_MODEL', 'openai/gpt-oss-20b', 'STRING', 'Mô hình Groq cho việc nhỏ', 'Dùng cho câu giải thích "Gợi ý ngành" – nhanh, rẻ'),
   C('GROQ_DAILY_TOKEN_BUDGET', 0, 'INT', 'Ngân sách token Groq/ngày', 'Vượt mức thì việc của Groq chuyển sang Gemini. 0 = không giới hạn riêng (vẫn tính trong ngân sách chung)', { min: 0, max: 100000000 }),
   C('GEMINI_DAILY_TOKEN_BUDGET', 0, 'INT', 'Ngân sách token Gemini/ngày', 'Vượt mức thì việc chat/phân tích chuyển sang Groq; tra Google, vector, đọc scan tạm dừng. 0 = không giới hạn riêng', { min: 0, max: 100000000 }),
+  // Mindtek (bot.mindtek.ai): nhà cung cấp thứ 3, gọi ngầm từ máy chủ – thí sinh vẫn dùng khung chat của HHT.
+  C('MINDTEK_ENABLED', true, 'BOOL', 'Dùng Mindtek', 'Tắt thì không chia việc cho Mindtek (Groq/Gemini vẫn chạy)'),
+  C('MINDTEK_BOT_ID', '1b94a3a9-eae9-4566-a648-ca2265f7e484', 'STRING', 'Bot ID Mindtek', 'Mã bot lấy ở Mindtek → Web Deployment → Embed (đoạn cuối đường dẫn /embed/…). Để trống = không dùng Mindtek'),
+  C('MINDTEK_BASE_URL', 'https://chatbot-platform-kappa.vercel.app', 'STRING', 'Địa chỉ máy chủ Mindtek', 'Phần đầu đường dẫn trong mã nhúng (trước /embed/). Chỉ đổi khi Mindtek đổi tên miền'),
+  C('MINDTEK_TIMEOUT_SECONDS', 30, 'INT', 'Thời gian chờ Mindtek (giây)', 'Mindtek trả lời chậm hơn Groq; quá thời gian này tự chuyển sang Groq/Gemini', { min: 5, max: 90 }),
+  C('MINDTEK_DAILY_TOKEN_BUDGET', 0, 'INT', 'Ngân sách token Mindtek/ngày', 'Token Mindtek là ước lượng (~4 ký tự/token). Vượt mức thì chuyển sang Groq/Gemini. 0 = không giới hạn riêng', { min: 0, max: 100000000 }),
   // Giá tham khảo (USD / 1 triệu token) để ước tính chi phí nếu dùng gói trả phí. Cập nhật theo trang giá của nhà cung cấp.
   C('PRICE_GROQ_IN', 0.15, 'NUMBER', 'Giá Groq – token vào (USD/1 triệu)', 'Giá tham khảo openai/gpt-oss-120b (groq.com/pricing)', { min: 0, max: 1000 }),
   C('PRICE_GROQ_OUT', 0.6, 'NUMBER', 'Giá Groq – token ra (USD/1 triệu)', 'Giá tham khảo openai/gpt-oss-120b', { min: 0, max: 1000 }),

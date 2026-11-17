@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "db:init": "node src/migrations/runMigrations.js",
-    "test": "node --test --test-concurrency=1 test/unit.test.js test/integration.db.test.js test/appointments.db.test.js test/llm.db.test.js test/admin-settings.db.test.js test/roles-catalog.db.test.js test/ai-knowledge-security.db.test.js test/groq-analytics.db.test.js",
+    "test": "node --test --test-concurrency=1 test/unit.test.js test/integration.db.test.js test/appointments.db.test.js test/llm.db.test.js test/admin-settings.db.test.js test/roles-catalog.db.test.js test/ai-knowledge-security.db.test.js test/groq-analytics.db.test.js test/mindtek.db.test.js",
     "import:excel": "node scripts/import-excel.js",
     "eval:rag": "node scripts/eval-rag.js",
     "report": "node scripts/export-report.js",

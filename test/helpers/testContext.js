@@ -11,6 +11,8 @@ if (!/test/i.test(new URL(TEST_URL).pathname)) {
 }
 process.env.DATABASE_URL = TEST_URL;
 process.env.RATE_LIMIT_ENABLED = 'false';
+// Test không gọi Mindtek thật; file test nào cần thì truyền mindtekTransport giả.
+process.env.HHT_TEST = '1';
 process.env.GEMINI_API_KEYS = process.env.TEST_FAKE_LLM === '1' ? 'fake-key-1,fake-key-2' : '';
 process.env.UPLOAD_DIR = require('node:path').join(require('node:os').tmpdir(), `hht-test-uploads-${process.pid}`);
 process.env.MESSENGER_APP_SECRET = 'test-app-secret';
@@ -40,10 +42,10 @@ async function createStaff(db, username, role, { mustChange = false, faculty = n
   return Number(rows[0].id);
 }
 
-async function createTestContext({ llmTransport, groqTransport } = {}) {
+async function createTestContext({ llmTransport, groqTransport, mindtekTransport } = {}) {
   const db = createDb(createPool(process.env.DATABASE_URL), { logger: silent });
   await resetDatabase(db);
-  const c = createContainer({ db, logger: silent, llmTransport, groqTransport });
+  const c = createContainer({ db, logger: silent, llmTransport, groqTransport, mindtekTransport });
   await c.configService.loadAll();
   await c.refreshMajors();
   const app = createApp(c);

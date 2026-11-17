@@ -1,13 +1,13 @@
 'use strict';
 /**
- * Đồng hồ đo AI: ghi MỖI lần gọi Groq/Gemini vào bảng ai_calls (không lưu nội dung câu hỏi/trả lời),
+ * Đồng hồ đo AI: ghi MỖI lần gọi Groq/Gemini/Mindtek vào bảng ai_calls (không lưu nội dung câu hỏi/trả lời),
  * phục vụ: ngân sách token riêng từng nhà cung cấp, thống kê trên trang Cài đặt AI, ước tính chi phí.
  * Ghi kiểu "bắn rồi quên": lỗi CSDL không làm hỏng câu trả lời của thí sinh.
  */
 const { vnToday, addDays } = require('../../utils/time');
 
 const TZ = "'Asia/Ho_Chi_Minh'";
-const PROVIDERS = ['GROQ', 'GEMINI'];
+const PROVIDERS = ['GROQ', 'GEMINI', 'MINDTEK'];
 const TASKS = ['CHAT', 'WEB_SEARCH', 'OCR', 'RECOMMEND', 'ANALYTICS', 'EMBED', 'TEST', 'OTHER'];
 const TODAY_TTL_MS = 20_000;
 
@@ -54,6 +54,8 @@ function createAiUsageMeter({ db, configService, logger = console } = {}) {
     return {
       GROQ: { in: Number(cfg('PRICE_GROQ_IN', 0.15)), out: Number(cfg('PRICE_GROQ_OUT', 0.6)) },
       GEMINI: { in: Number(cfg('PRICE_GEMINI_IN', 0.3)), out: Number(cfg('PRICE_GEMINI_OUT', 2.5)) },
+      // Mindtek tính theo gói thuê bao của nền tảng, không theo token -> mặc định 0 (token chỉ là ước lượng).
+      MINDTEK: { in: Number(cfg('PRICE_MINDTEK_IN', 0)), out: Number(cfg('PRICE_MINDTEK_OUT', 0)) },
       searchPer1000: Number(cfg('PRICE_GEMINI_SEARCH_PER_1000', 35)),
       usdVnd: Number(cfg('USD_VND_RATE', 26000)),
     };
@@ -103,14 +105,14 @@ function createAiUsageMeter({ db, configService, logger = console } = {}) {
     }));
     const paidSearches = searchDaily.rows.reduce((s, r) => s + Math.max(0, r.n - 1500), 0);
     const searchUsd = (paidSearches / 1000) * pr.searchPer1000;
-    const totalUsd = providers.GROQ.costUsd + providers.GEMINI.costUsd + searchUsd;
+    const totalUsd = providers.GROQ.costUsd + providers.GEMINI.costUsd + providers.MINDTEK.costUsd + searchUsd;
     return {
       from, to, days: n, daily,
       tasks: byTask.rows.map((r) => ({ task: r.task, provider: r.provider, ...num(r), costUsd: costOf(r.provider, Number(r.tokens_in), Number(r.tokens_out)) })),
       providers,
       errors: errors.rows,
       cost: {
-        prices: pr, groqUsd: providers.GROQ.costUsd, geminiUsd: providers.GEMINI.costUsd,
+        prices: pr, groqUsd: providers.GROQ.costUsd, geminiUsd: providers.GEMINI.costUsd, mindtekUsd: providers.MINDTEK.costUsd,
         searches: searchDaily.rows.reduce((s, r) => s + r.n, 0), paidSearches, searchUsd, totalUsd,
         totalVnd: Math.round(totalUsd * pr.usdVnd),
         monthlyUsd: (totalUsd / n) * 30, monthlyVnd: Math.round(((totalUsd / n) * 30) * pr.usdVnd),
@@ -118,6 +120,7 @@ function createAiUsageMeter({ db, configService, logger = console } = {}) {
       today: {
         GROQ: { tokens: await tokensToday('GROQ').catch(() => 0), budget: Number(cfg('GROQ_DAILY_TOKEN_BUDGET', 0)) || 0 },
         GEMINI: { tokens: await tokensToday('GEMINI').catch(() => 0), budget: Number(cfg('GEMINI_DAILY_TOKEN_BUDGET', 0)) || 0 },
+        MINDTEK: { tokens: await tokensToday('MINDTEK').catch(() => 0), budget: Number(cfg('MINDTEK_DAILY_TOKEN_BUDGET', 0)) || 0 },
       },
     };
   }

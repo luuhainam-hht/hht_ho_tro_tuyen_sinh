@@ -515,24 +515,27 @@ pre.chunk { white-space: pre-wrap; background: #f1f4f9; padding: 10px; border-ra
 .ai-summary { font-size: 1.02rem; background: var(--section); border-radius: var(--radius-s); padding: 10px 14px; margin: 12px 0 0; }
 .ml-s { margin-left: 8px; }
 
-/* ----- Thống kê AI (Groq / Gemini) ----- */
-:root { --groq: #f55036; --gemini: #1a73e8; }
+/* ----- Thống kê AI (Groq / Gemini / Mindtek) ----- */
+:root { --groq: #f55036; --gemini: #1a73e8; --mindtek: #12a150; }
 .spark--stack { gap: 4px; }
 .spark--stack .stack { flex: 1; display: flex; flex-direction: column-reverse; height: 100%; background: transparent; min-height: 0; border-radius: 0; }
 .spark--stack .seg { display: block; width: 100%; }
 .spark--stack .seg:last-child { border-radius: 2px 2px 0 0; }
 .seg--groq { background: var(--groq); }
 .seg--gemini { background: var(--gemini); }
+.seg--mindtek { background: var(--mindtek); }
 .ai-legend { display: flex; gap: 16px; margin: 6px 0 4px; color: var(--steel); }
 .ai-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 .kpi--groq { border-top: 3px solid var(--groq); }
 .kpi--gemini { border-top: 3px solid var(--gemini); }
+.kpi--mindtek { border-top: 3px solid var(--mindtek); }
 .kpi .kpi-dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
 .kpi .kpi-dl dt { color: var(--steel); }
 .kpi .kpi-dl dd { margin: 0; color: var(--ink); }
 .kpi strong.kpi-sm { font-size: 1.05rem; margin: 4px 0; }
 .badge--groq { background: #feece9; color: #a3301d; }
 .badge--gemini { background: #e8f0fe; color: #1557b0; }
+.badge--mindtek { background: #e3f6ea; color: #0b6b34; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .share { display: grid; gap: 8px; margin-top: 8px; }
 .share-row { display: grid; grid-template-columns: minmax(140px, 240px) 1fr auto; gap: 12px; align-items: center; }
