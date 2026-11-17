@@ -218,7 +218,7 @@ function createAppointmentService({ db, configService, broadcast }) {
       `DTSTART:${toUtc(a.date, a.startTime)}`, `DTEND:${toUtc(a.date, a.endTime)}`,
       `SUMMARY:${esc(`Nộp hồ sơ tuyển sinh – mã ${a.code}`)}`,
       `LOCATION:${esc(a.address)}`,
-      `DESCRIPTION:${esc(`Mang theo giấy tờ trong checklist. Xuất trình mã hẹn ${a.code} tại bàn tiếp nhận.`)}`,
+      `DESCRIPTION:${esc(`Mang theo đủ giấy tờ trong danh mục hồ sơ. Xuất trình mã hẹn ${a.code} tại bàn tiếp nhận.`)}`,
       'BEGIN:VALARM', 'TRIGGER:-PT2H', 'ACTION:DISPLAY', 'DESCRIPTION:Nhắc lịch nộp hồ sơ', 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR', '',
     ].join('\r\n');

@@ -124,13 +124,13 @@
           el('p', {}, 'Hotline: ', el('a', { href: `tel:${(cfg.HOTLINE || '').replace(/\s/g, '')}` }, cfg.HOTLINE || ''), ' · Email: ', el('a', { href: `mailto:${cfg.ADMISSION_EMAIL || ''}` }, cfg.ADMISSION_EMAIL || ''))),
         el('div', {}, el('h3', {}, 'Thí sinh'), el('ul', {},
           el('li', {}, el('a', { href: '/nganh.html' }, 'Tra cứu ngành học')),
-          el('li', {}, el('a', { href: '/ho-so.html' }, 'Checklist hồ sơ')),
+          el('li', {}, el('a', { href: '/ho-so.html' }, 'Danh mục hồ sơ cần nộp')),
           el('li', {}, el('a', { href: '/huong-dan-dang-ky.html' }, 'Hướng dẫn đăng ký trực tuyến')),
           el('li', {}, el('a', { href: '/hen.html' }, 'Tra cứu lịch hẹn')))),
         el('div', {}, el('h3', {}, 'Kênh chính thức'), el('ul', {},
           el('li', {}, el('a', { href: 'https://hht.edu.vn', rel: 'noopener', target: '_blank' }, 'Website hht.edu.vn')),
           el('li', {}, el('a', { href: cfg.OFFICIAL_REGISTER_URL || '#', rel: 'noopener', target: '_blank' }, 'Đăng ký xét tuyển trực tuyến')),
-          el('li', {}, el('a', { href: cfg.FANPAGE_URL || '#', rel: 'noopener', target: '_blank' }, 'Fanpage tuyển sinh')),
+          el('li', {}, el('a', { href: cfg.FANPAGE_URL || '#', rel: 'noopener', target: '_blank' }, 'Trang Facebook tuyển sinh')),
           el('li', {}, el('a', { href: '/nguon-du-lieu.html' }, 'Nguồn dữ liệu của hệ thống'))))),
       el('p', { class: 'footer-note' }, `© ${new Date().getFullYear()} Trường Cao đẳng Công nghệ cao Hà Nội. Thông tin tuyển sinh tổng hợp từ các thông báo của Nhà trường; khi có khác biệt, văn bản do Nhà trường ban hành là căn cứ cuối cùng.`)));
   }

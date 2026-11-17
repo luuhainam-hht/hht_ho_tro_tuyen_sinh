@@ -121,7 +121,7 @@
         el('p', { class: 'small' }, 'Hỏi thêm về học phí, thời gian học, cơ hội việc làm của ngành này.'),
         el('div', { class: 'btn-row' },
           el('button', { class: 'btn btn--tag', 'data-action': 'ask', 'data-question': `Ngành ${m.name} học những gì, ra trường làm gì?`, 'data-major': m.code }, 'Hỏi thêm về ngành này'),
-          el('a', { class: 'btn', href: `/ho-so.html?major=${encodeURIComponent(m.code)}` }, 'Xem checklist hồ sơ'))),
+          el('a', { class: 'btn', href: `/ho-so.html?major=${encodeURIComponent(m.code)}` }, 'Xem hồ sơ cần nộp'))),
       m.related?.length ? el('div', { class: 'panel' }, el('h3', {}, 'Cùng khoa'),
         el('ul', {}, m.related.map((r) => el('li', {}, el('a', { href: `/nganh-chi-tiet.html?code=${encodeURIComponent(r.code)}` }, r.name))))) : null);
     $('#major-detail').replaceChildren(main, side);
