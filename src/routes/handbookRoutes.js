@@ -25,6 +25,7 @@ module.exports = function handbookRoutes({ handbookService }) {
   })));
   r.get('/schedule', ah(async (_req, res) => res.json({ items: await handbookService.schedule() })));
   r.get('/contacts', ah(async (_req, res) => res.json({ items: await handbookService.contacts() })));
+  r.get('/info', ah(async (_req, res) => res.json(await handbookService.info())));
   r.get('/guide', ah(async (_req, res) => res.json({ steps: await handbookService.guideSteps() })));
   r.get('/faq', ah(async (_req, res) => res.json({ items: await handbookService.faqByTopic() })));
   r.get('/sources', ah(async (_req, res) => res.json({ items: await handbookService.sources() })));

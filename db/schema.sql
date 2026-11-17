@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS staff (
   password_hash          TEXT NOT NULL,
   full_name              TEXT NOT NULL,
   email                  TEXT,
-  role                   TEXT NOT NULL CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADVISOR')),
+  role                   TEXT NOT NULL CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR')),
+  faculty                TEXT,                         -- bắt buộc với vai trò FACULTY: chỉ quản lý ngành của khoa này
   is_active              BOOLEAN NOT NULL DEFAULT TRUE,
   failed_login_attempts  INT NOT NULL DEFAULT 0 CHECK (failed_login_attempts >= 0),
   locked_until           TIMESTAMPTZ,
@@ -44,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_staff_role ON staff (role);
 CREATE TABLE IF NOT EXISTS staff_sessions (
   token_hash    TEXT PRIMARY KEY,
   staff_id      BIGINT NOT NULL REFERENCES staff (id) ON DELETE CASCADE,
-  role          TEXT NOT NULL CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADVISOR')),
+  role          TEXT NOT NULL CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR')),
   expires_at    TIMESTAMPTZ NOT NULL,
   ip            TEXT,
   user_agent    TEXT,
@@ -210,7 +211,7 @@ CREATE INDEX IF NOT EXISTS idx_majors_document_id ON majors (document_id);
 CREATE TABLE IF NOT EXISTS admission_items (
   id              BIGSERIAL PRIMARY KEY,
   item_key        TEXT NOT NULL UNIQUE,                -- khóa tự nhiên để seed idempotent
-  kind            TEXT NOT NULL CHECK (kind IN ('DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT')),
+  kind            TEXT NOT NULL CHECK (kind IN ('DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT', 'LEVEL_INFO', 'SUPPORT_INFO')),
   audience        TEXT NOT NULL DEFAULT 'ALL',         -- CHINH_QUY | HE_9_PLUS | BO_DOI | nhãn nhóm lịch/liên hệ
   major_code      TEXT REFERENCES majors (code) ON DELETE SET NULL,   -- NULL = mọi ngành
   code            TEXT,                                -- mã giấy tờ (DOC_CHECKLIST)
@@ -257,7 +258,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   session_id       UUID NOT NULL REFERENCES chat_sessions (id) ON DELETE CASCADE,
   role             TEXT NOT NULL CHECK (role IN ('USER', 'ASSISTANT')),
   content          TEXT NOT NULL,
-  source           TEXT CHECK (source IN ('RULE', 'FAQ', 'RAG', 'CACHE', 'FALLBACK', 'HANDOFF')),
+  source           TEXT CHECK (source IN ('RULE', 'FAQ', 'RAG', 'CACHE', 'FALLBACK', 'HANDOFF', 'WEB')),
   answer_mode      TEXT CHECK (answer_mode IN ('LLM', 'EXTRACTIVE')),
   intent           TEXT,
   topics           TEXT[] NOT NULL DEFAULT '{}',
@@ -458,6 +459,10 @@ SELECT md5(
                AND d.admission_year = (SELECT value::int FROM system_configs WHERE key = 'CURRENT_ADMISSION_YEAR')), '')
   || '|' ||
   COALESCE((SELECT max(f.updated_at)::text FROM faq_entries f WHERE f.status = 'APPROVED'), '')
+  -- Ngành và mục cẩm nang (đợt nhận hồ sơ, liên hệ…) cũng là tri thức trả lời: Phòng Tuyển sinh/Khoa sửa
+  -- là bộ nhớ đệm câu trả lời tự hết hiệu lực.
+  || '|' || COALESCE((SELECT max(m.updated_at)::text FROM majors m), '')
+  || '|' || COALESCE((SELECT max(i.updated_at)::text || ':' || count(*)::text FROM admission_items i), '')
 ) AS kb_version;
 
 -- ---------------------------------------------------------------------------

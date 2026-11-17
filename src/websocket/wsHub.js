@@ -22,6 +22,7 @@ const EVENTS = Object.freeze([
   'APPOINTMENT_NO_SHOW',
   'CONFIG_UPDATED',
   'AI_KEYS_UPDATED',
+  'CATALOG_UPDATED', // ngành, hồ sơ, đợt nhận hồ sơ, liên hệ do Phòng Tuyển sinh/Khoa sửa
 ]);
 const EVENT_SET = new Set(EVENTS);
 // Sự kiện an toàn cho mọi người (không có dữ liệu cá nhân): trang công khai dùng để tải lại cấu hình.

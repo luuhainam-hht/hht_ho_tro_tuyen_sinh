@@ -28,10 +28,20 @@ const listForScoring = async (c, year) => (await c.query(
   `SELECT code, name, faculty, levels, riasec_profile, subject_weights, work_styles, state_support, enterprise_support, duration, career_paths
      FROM majors WHERE is_active AND admission_year = ? AND cardinality(levels) > 0`, [year],
 )).rows;
+/** Thêm ngành mới (Phòng Tuyển sinh/Khoa). Trả null khi trùng mã. */
+async function insert(c, fields) {
+  const cols = Object.keys(fields).filter((k) => k === 'code' || k === 'occupation_code' || k === 'admission_year' || UPDATABLE.has(k));
+  const { rows } = await c.query(
+    `INSERT INTO majors (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')}) ON CONFLICT (code) DO NOTHING RETURNING *`,
+    cols.map((k) => fields[k]),
+  );
+  return rows[0] || null;
+}
+
 const listAll = async (c) => (await c.query('SELECT * FROM majors ORDER BY faculty, name')).rows;
 const update = (c, code, fields) => updateWhitelisted(c, { table: 'majors', idColumn: 'code', id: code, fields, allowed: UPDATABLE });
 const faculties = async (c, year) => (await c.query(
   'SELECT faculty, COUNT(*)::int AS n FROM majors WHERE is_active AND admission_year = ? GROUP BY faculty ORDER BY faculty', [year],
 )).rows;
 
-module.exports = { listActive, findByCode, findByCodeForUpdate, listForScoring, listAll, update, faculties, PUBLIC_COLUMNS };
+module.exports = { listActive, findByCode, findByCodeForUpdate, listForScoring, listAll, insert, update, faculties, PUBLIC_COLUMNS };

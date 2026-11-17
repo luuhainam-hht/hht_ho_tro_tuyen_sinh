@@ -26,9 +26,10 @@
         <label>Khoa <select name="faculty"><option value="">Tất cả</option></select></label>
         <label>Hỗ trợ học phí <select name="support"><option value="">Không lọc</option><option value="STATE">Nhà nước hỗ trợ</option><option value="ENTERPRISE">Doanh nghiệp hỗ trợ</option></select></label>
       </form>
+      <div class="legend" id="major-legend" aria-label="Chú thích các từ viết tắt"></div>
       <p class="small muted" id="major-count" aria-live="polite"></p>
-      <div class="table-wrap"><table class="major-table">
-        <thead><tr><th>Ngành, nghề</th><th>Khoa</th><th>Hệ tuyển sinh</th><th>Hỗ trợ học phí</th></tr></thead>
+      <div class="table-wrap"><table class="major-table major-table--split">
+        <thead id="major-head"></thead>
         <tbody id="major-rows"></tbody>
       </table></div>
       <p class="note small mt-m">Mức hỗ trợ học phí từng ngành khác nhau giữa bảng ngành 03/2026 và 08/2026. Hệ thống hiển thị theo bảng mới nhất và cần Trung tâm Tuyển sinh xác nhận trước khi bạn quyết định.</p>

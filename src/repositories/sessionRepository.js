@@ -14,7 +14,7 @@ async function touchValid(c, tokenHash) {
     `UPDATE staff_sessions s SET last_seen_at = now()
        FROM staff u
       WHERE s.token_hash = ? AND s.expires_at > now() AND u.id = s.staff_id AND u.is_active
-      RETURNING u.id, u.username, u.full_name, u.role, u.must_change_password, s.expires_at`,
+      RETURNING u.id, u.username, u.full_name, u.role, u.faculty, u.must_change_password, s.expires_at`,
     [tokenHash],
   );
   return rows[0] || null;

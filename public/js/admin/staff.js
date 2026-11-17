@@ -43,7 +43,9 @@
         el('label', {}, 'Tên đăng nhập', el('input', { name: 'username', required: true, placeholder: 'vd: nguyenvana', autocomplete: 'off' }), el('span', { class: 'hint' }, 'Chữ thường không dấu, số, dấu chấm hoặc gạch.')),
         el('label', {}, 'Họ tên', el('input', { name: 'fullName', required: true })),
         el('label', {}, 'Email', el('input', { name: 'email', type: 'email' })),
-        el('label', {}, 'Vai trò', el('select', { name: 'role' }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === 'ADVISOR' }, v))))),
+        el('label', {}, 'Vai trò', el('select', { name: 'role', 'data-role-select': '' }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === 'ADVISOR' }, v))),
+          el('span', { class: 'hint' }, 'Phòng Tuyển sinh: quản lý hồ sơ, đợt nhận hồ sơ, ngành mọi khoa, hỏi đáp, liên hệ. Cán bộ Khoa: chỉ ngành của khoa mình.')),
+        el('label', { class: 'hidden', id: 'staff-faculty' }, 'Khoa phụ trách', el('input', { name: 'faculty', list: 'faculty-options', placeholder: 'Chọn hoặc gõ tên khoa' }))),
       el('fieldset', {},
         el('legend', {}, 'Mật khẩu ban đầu'),
         el('label', { class: 'check' }, el('input', { type: 'radio', name: 'pwMode', value: 'temp', checked: true }), el('span', {}, 'Hệ thống tạo mật khẩu tạm (hiện một lần sau khi tạo)')),
@@ -58,7 +60,8 @@
   admin.register({
     id: 'staff', title: 'Tài khoản cán bộ', perm: 'STAFF_MANAGEMENT', events: [],
     async render(root) {
-      const [{ items }, configs] = await Promise.all([apiClient.get('/api/admin/staff'), admin.configs()]);
+      const [{ items }, configs, overview] = await Promise.all([apiClient.get('/api/admin/staff'), admin.configs(), apiClient.get('/api/handbook/overview').catch(() => ({ faculties: [] }))]);
+      faculties = overview.faculties.map((f) => f.faculty);
       const me = admin.user();
       const byKey = new Map(configs.map((c) => [c.key, c]));
       root.replaceChildren(
@@ -67,7 +70,8 @@
           const self = Number(u.id) === Number(me.id);
           return el('tr', {},
             el('td', {}, el('strong', {}, u.full_name, self ? ' (bạn)' : ''), el('div', { class: 'small muted' }, `${u.username}${u.email ? ` · ${u.email}` : ''}`)),
-            el('td', {}, el('select', { 'data-role-of': u.id, 'aria-label': `Vai trò của ${u.full_name}`, disabled: self }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v)))),
+            el('td', {}, el('select', { 'data-role-of': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '', 'aria-label': `Vai trò của ${u.full_name}`, disabled: self }, Object.entries(admin.ROLE_LABEL).map(([k, v]) => el('option', { value: k, selected: k === u.role }, v))),
+              u.role === 'FACULTY' ? el('div', { class: 'small mt-xs' }, 'Khoa: ', el('strong', {}, u.faculty || '—'), ' ', el('button', { type: 'button', class: 'link-btn', 'data-action': 'staff-faculty', 'data-id': u.id, 'data-name': u.full_name, 'data-faculty': u.faculty || '' }, 'Đổi khoa')) : null),
             el('td', {}, statusCell(u)),
             el('td', { class: 'small' }, u.last_login_at ? admin.dt(u.last_login_at) : el('span', { class: 'muted' }, 'Chưa đăng nhập')),
             el('td', { class: 'small' }, u.password_changed_at ? admin.dt(u.password_changed_at) : el('span', { class: 'muted' }, '—')),
@@ -80,8 +84,19 @@
             SECURITY_KEYS.filter((k) => byKey.has(k)).map((k) => admin.configField(byKey.get(k))),
             el('div', { class: 'btn-row' }, el('button', { class: 'btn btn--primary', type: 'submit' }, 'Lưu chính sách')))));
 
-      $$('[data-role-of]', root).forEach((s) => s.addEventListener('change', () => apiClient.put(`/api/admin/staff/${s.dataset.roleOf}`, { role: s.value })
-        .then(() => toast('Đã đổi vai trò. Tài khoản đó cần đăng nhập lại.', 'ok')).catch((e) => { toast(e.message, 'error'); admin.reload(); })));
+      root.append(el('datalist', { id: 'faculty-options' }, faculties.map((f) => el('option', { value: f }))));
+      $$('[data-role-of]', root).forEach((s) => s.addEventListener('change', async () => {
+        const body = { role: s.value };
+        if (s.value === 'FACULTY') {
+          const faculty = await askFaculty(s.dataset.name, s.dataset.faculty);
+          if (!faculty) { admin.reload(); return; }
+          body.faculty = faculty;
+        }
+        apiClient.put(`/api/admin/staff/${s.dataset.roleOf}`, body)
+          .then(() => { toast('Đã đổi vai trò. Tài khoản đó cần đăng nhập lại.', 'ok'); admin.reload(); }).catch((e) => { toast(e.message, 'error'); admin.reload(); });
+      }));
+      const roleSel = $('[data-role-select]', root);
+      roleSel.addEventListener('change', () => { $('#staff-faculty').classList.toggle('hidden', roleSel.value !== 'FACULTY'); $('#staff-faculty input').required = roleSel.value === 'FACULTY'; });
       $$('input[name="pwMode"]', root).forEach((r) => r.addEventListener('change', () => {
         const own = $('input[name="pwMode"]:checked', root).value === 'own';
         $('#staff-own-pw').classList.toggle('hidden', !own);
@@ -89,6 +104,20 @@
       }));
     },
   });
+
+  let faculties = [];
+  /** Hộp chọn khoa cho Cán bộ Khoa. Trả tên khoa hoặc null khi hủy. */
+  async function askFaculty(name, current = '') {
+    const r = await admin.formDialog({
+      title: `Khoa phụ trách của ${name}`,
+      intro: 'Cán bộ Khoa chỉ xem, sửa và thêm ngành thuộc khoa này.',
+      fields: [el('label', {}, 'Khoa', el('select', { name: 'faculty', required: true },
+        el('option', { value: '' }, '— Chọn khoa —'),
+        [...new Set([...faculties, current].filter(Boolean))].map((f) => el('option', { value: f, selected: f === current }, f))))],
+      okText: 'Lưu khoa',
+    });
+    return r?.faculty || null;
+  }
 
   // Đóng menu thao tác khi bấm ra ngoài hoặc đã chọn một thao tác (đăng ký một lần cho cả trang).
   document.addEventListener('click', (e) => $$('.actions-menu[open]').forEach((d) => { if (!d.contains(e.target) || e.target.closest('[data-action]')) d.open = false; }));
@@ -106,7 +135,7 @@
     async 'staff-create'(f) {
       const d = Object.fromEntries(new FormData(f));
       const own = d.pwMode === 'own';
-      const body = { username: d.username, fullName: d.fullName, email: d.email || null, role: d.role };
+      const body = { username: d.username, fullName: d.fullName, email: d.email || null, role: d.role, faculty: d.role === 'FACULTY' ? d.faculty : null };
       if (own) Object.assign(body, { password: d.password, mustChangePassword: f.elements.mustChangePassword.checked });
       try {
         const r = await apiClient.post('/api/admin/staff', body);
@@ -152,5 +181,10 @@
       try { await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { isActive: !lock }); admin.reload(); } catch (e) { toast(e.message, 'error'); }
     },
     'staff-policy-save': (form) => admin.saveConfigs(form),
+    async 'staff-faculty'(b) {
+      const faculty = await askFaculty(b.dataset.name, b.dataset.faculty);
+      if (!faculty) return;
+      try { await apiClient.put(`/api/admin/staff/${b.dataset.id}`, { faculty }); toast('Đã đổi khoa. Tài khoản đó cần đăng nhập lại.', 'ok'); admin.reload(); } catch (e) { toast(e.message, 'error'); }
+    },
   });
 })();

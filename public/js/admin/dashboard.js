@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const SOURCE_LABEL = { FAQ: 'FAQ đã duyệt', RAG: 'Văn bản (RAG)', CACHE: 'Bộ nhớ đệm', FALLBACK: 'Chưa trả lời được', RULE: 'Chào hỏi/ngoài phạm vi', HANDOFF: 'Chuyển cán bộ' };
+  const SOURCE_LABEL = { FAQ: 'FAQ đã duyệt', RAG: 'Văn bản (RAG)', CACHE: 'Bộ nhớ đệm', FALLBACK: 'Chưa trả lời được', RULE: 'Chào hỏi/ngoài phạm vi', HANDOFF: 'Chuyển cán bộ', WEB: 'Tra cứu Internet' };
   const DOW = ['', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
   const kpi = (label, value, note) => el('div', { class: 'kpi' }, el('span', {}, label), el('strong', {}, value ?? '–'), note ? el('span', { class: 'small' }, note) : null);

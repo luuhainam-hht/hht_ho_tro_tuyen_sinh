@@ -32,10 +32,10 @@ async function resetDatabase(db) {
   await runMigrations(db, { logger: silent });
 }
 
-async function createStaff(db, username, role, { mustChange = false } = {}) {
+async function createStaff(db, username, role, { mustChange = false, faculty = null } = {}) {
   const { rows } = await db.query(
-    'INSERT INTO staff (username, password_hash, full_name, role, must_change_password) VALUES (?, ?, ?, ?, ?) RETURNING id',
-    [username, await bcrypt.hash(PASSWORD, 4), `Cán bộ ${username}`, role, mustChange],
+    'INSERT INTO staff (username, password_hash, full_name, role, faculty, must_change_password) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+    [username, await bcrypt.hash(PASSWORD, 4), `Cán bộ ${username}`, role, faculty, mustChange],
   );
   return Number(rows[0].id);
 }

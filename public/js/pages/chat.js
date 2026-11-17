@@ -11,12 +11,28 @@
 
   if (!embedded) $('#close-btn').classList.add('hidden');
 
-  const SOURCE_NOTE = { FAQ: 'Nguồn', RAG: 'Nguồn', CACHE: 'Nguồn' };
+  const SOURCE_NOTE = { FAQ: 'Nguồn', RAG: 'Nguồn', CACHE: 'Nguồn', WEB: 'Tham khảo trên Internet', INFO: 'Nguồn' };
+  const LONG_ANSWER_PX = 0.55; // câu trả lời cao hơn 55% khung chat -> cuộn về ĐẦU câu trả lời
+
+  /**
+   * Cuộn khung chat: câu trả lời ngắn -> xuống cuối như thường; câu trả lời dài -> đặt đầu câu trả lời
+   * ở mép trên để người đọc không phải kéo ngược lên tìm chỗ bắt đầu.
+   */
+  function scrollToMessage(node, { forceTop = false } = {}) {
+    const long = node.offsetHeight > log.clientHeight * LONG_ANSWER_PX;
+    if (forceTop || long) {
+      log.scrollTop += node.getBoundingClientRect().top - log.getBoundingClientRect().top - 8;
+    } else {
+      log.scrollTop = log.scrollHeight;
+    }
+    return long;
+  }
 
   function bubble(role, text, meta) {
     const node = el('div', { class: `msg msg--${role}` }, text);
     if (meta) {
       const m = el('div', { class: 'msg-meta' });
+      if (meta.source === 'WEB') m.append(el('div', { class: 'web-note' }, 'Thông tin tra cứu trên Internet, chưa phải văn bản chính thức của Nhà trường – vui lòng đối chiếu với nguồn hoặc hỏi Trung tâm Tuyển sinh.'));
       if (meta.citations?.length) {
         m.append(el('div', {}, `${SOURCE_NOTE[meta.source] || 'Nguồn'}: `,
           meta.citations.map((c, i) => [i ? '; ' : '', c.url ? el('a', { href: c.url, target: '_blank', rel: 'noopener' }, c.title) : c.title, c.pages ? ` (tr. ${c.pages})` : ''])));
@@ -36,8 +52,47 @@
       if (m.children.length) node.append(m);
     }
     log.append(node);
-    log.scrollTop = log.scrollHeight;
+    if (role === 'bot' && meta) {
+      if (scrollToMessage(node)) node.append(el('button', { type: 'button', class: 'to-top', 'data-action': 'to-answer-top' }, '↑ Về đầu câu trả lời'));
+    } else {
+      log.scrollTop = log.scrollHeight;
+    }
     return node;
+  }
+
+  // ---------- Giải thích hệ đào tạo / hỗ trợ học phí (bấm cột ở trang Ngành học) ----------
+  const EXPLAIN_Q = {
+    level: { SO_CAP: 'Hệ Sơ cấp (SC) là gì?', HE_9_PLUS: 'Hệ 9+ là gì?', TRUNG_CAP: 'Hệ Trung cấp (TC) là gì?', CAO_DANG: 'Hệ Cao đẳng (CĐ) là gì?' },
+    support: { NHA_NUOC: 'Nhà nước hỗ trợ học phí thế nào?', DOANH_NGHIEP: 'Doanh nghiệp hỗ trợ học phí thế nào?', SINH_VIEN: 'Sinh viên phải tự đóng bao nhiêu?' },
+  };
+  const FOLLOW_UP = {
+    SO_CAP: ['Trường có đào tạo ngắn hạn, cấp chứng chỉ không?'],
+    HE_9_PLUS: ['Học phí hệ 9+ bao nhiêu?', 'Hệ 9+ có những ngành nào, chỉ tiêu bao nhiêu?', 'Hồ sơ và thời gian nộp hồ sơ hệ 9+?'],
+    TRUNG_CAP: ['Điều kiện để học Trung cấp là gì?', 'Hồ sơ xét tuyển Cao đẳng, Trung cấp gồm những gì?'],
+    CAO_DANG: ['Trường có tuyển sinh liên thông không?', 'Hồ sơ xét tuyển Cao đẳng, Trung cấp gồm những gì?'],
+    NHA_NUOC: ['Ngành nào được Nhà nước hỗ trợ 70% học phí?', 'Hà Nội hỗ trợ 100% học phí là như thế nào?'],
+    DOANH_NGHIEP: ['Doanh nghiệp hỗ trợ học phí ngành nào?'],
+    SINH_VIEN: ['Học phí của trường là bao nhiêu?', 'Trường có học bổng không?'],
+  };
+  let infoPromise = null;
+  const info = () => (infoPromise ||= apiClient.get('/api/handbook/info'));
+
+  async function explain(spec) {
+    const [kind, code] = String(spec || '').split(':');
+    const question = EXPLAIN_Q[kind]?.[code];
+    if (!question) return;
+    bubble('user', question);
+    try {
+      const data = await info();
+      const item = (kind === 'level' ? data.levels : data.supports)[code];
+      if (!item) { await ask(question, { echo: false }); return; }
+      bubble('bot', [el('strong', {}, item.title), '\n', item.detail], {
+        source: 'INFO', citations: [{ title: 'Thông tin tuyển sinh của Nhà trường', url: '/nganh.html' }],
+        suggestions: (FOLLOW_UP[code] || []).map((q) => ({ question: q })),
+      });
+    } catch {
+      await ask(question, { echo: false });
+    }
   }
 
   async function ensureSession() {
@@ -52,11 +107,11 @@
     return sessionId;
   }
 
-  async function ask(text) {
+  async function ask(text, { echo = true } = {}) {
     const q = text.trim();
     if (!q) return;
     lastQuestion = q;
-    bubble('user', q);
+    if (echo) bubble('user', q);
     const typing = el('div', { class: 'typing' }, 'Đang trả lời…');
     log.append(typing);
     try {
@@ -107,6 +162,14 @@
       } catch (e) { toast(e.message, 'error'); }
     },
     close: () => window.parent.postMessage('hht-chat-close', location.origin),
+    'to-answer-top'(b) { scrollToMessage(b.closest('.msg'), { forceTop: true }); },
+  });
+
+  // Trang chứa khung chat gửi lệnh (hỏi / giải thích) mà không tải lại khung -> giữ cuộc trò chuyện.
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || e.data?.type !== 'hht-chat-command') return;
+    if (e.data.explain) explain(e.data.explain);
+    else if (e.data.question) ask(e.data.question);
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && embedded) window.parent.postMessage('hht-chat-close', location.origin); });
 
@@ -115,7 +178,8 @@
     handoffEnabled = meta.config.HANDOFF_ENABLED !== false;
     if (meta.config.AI_ASSISTANT_NAME) $('#chat-title').textContent = meta.config.AI_ASSISTANT_NAME;
     bubble('bot', meta.config.CHAT_GREETING || 'Xin chào! Bạn cần hỏi gì về tuyển sinh?');
-    if (p.get('q')) ask(p.get('q'));
+    if (p.get('explain')) explain(p.get('explain'));
+    else if (p.get('q')) ask(p.get('q'));
     $('#msg').focus();
   })();
 })();

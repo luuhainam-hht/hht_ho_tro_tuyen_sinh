@@ -20,7 +20,7 @@ function createGeminiTransport() {
     return clients.get(apiKey);
   };
   return {
-    async generate(apiKey, { model, system, contents, temperature, maxTokens, json, timeoutMs = DEFAULT_TIMEOUT_MS }) {
+    async generate(apiKey, { model, system, contents, temperature, maxTokens, json, search = false, timeoutMs = DEFAULT_TIMEOUT_MS }) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
@@ -29,11 +29,14 @@ function createGeminiTransport() {
           contents,
           config: {
             systemInstruction: system, temperature, maxOutputTokens: maxTokens, abortSignal: controller.signal,
-            ...(json ? { responseMimeType: 'application/json' } : {}),
+            // Google Search grounding không dùng chung được với đầu ra JSON -> hai chế độ tách biệt.
+            ...(search ? { tools: [{ googleSearch: {} }] } : json ? { responseMimeType: 'application/json' } : {}),
           },
         });
         const usage = res.usageMetadata || {};
-        return { text: (res.text || '').trim(), tokensIn: usage.promptTokenCount || 0, tokensOut: usage.candidatesTokenCount || 0 };
+        const out = { text: (res.text || '').trim(), tokensIn: usage.promptTokenCount || 0, tokensOut: usage.candidatesTokenCount || 0 };
+        if (search) out.webSources = extractWebSources(res);
+        return out;
       } finally {
         clearTimeout(timer);
       }
@@ -45,6 +48,20 @@ function createGeminiTransport() {
       return res.embeddings.map((e) => e.values);
     },
   };
+}
+
+/** Nguồn web từ groundingMetadata của Gemini (Google Search): [{ title, url }], bỏ trùng. */
+function extractWebSources(res) {
+  const chunks = res?.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+  const seen = new Set();
+  const out = [];
+  for (const ch of chunks) {
+    const url = ch?.web?.uri;
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push({ title: String(ch.web.title || url).slice(0, 200), url });
+  }
+  return out;
 }
 
 /** Lỗi kỹ thuật -> câu tiếng Việt cho cán bộ (trang Cài đặt AI). */
@@ -74,30 +91,30 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
   const enabled = () => cfg('AI_ENABLED', true) !== false;
   const available = () => enabled() && pool.size > 0 && pool.available() > 0;
 
-  function request(model, { system, contents, json, maxTokens }) {
+  function request(model, { system, contents, json, maxTokens, search = false }) {
     return {
-      model, system, contents, json,
+      model, system, contents, json, search,
       temperature: cfg('LLM_TEMPERATURE', 0.2),
       maxTokens: maxTokens ?? cfg('MAX_ANSWER_TOKENS', 800),
       timeoutMs: cfg('LLM_TIMEOUT_SECONDS', 20) * 1000,
     };
   }
 
-  async function generate({ system, history = [], prompt, json = false, maxTokens }) {
+  async function generate({ system, history = [], prompt, json = false, maxTokens, search = false }) {
     const contents = [
       ...history.map((h) => ({ role: h.role === 'USER' ? 'user' : 'model', parts: [{ text: h.content }] })),
       { role: 'user', parts: [{ text: prompt }] },
     ];
     const model = cfg('LLM_MODEL', 'gemini-2.5-flash');
     try {
-      const res = await pool.run((key) => transport.generate(key, request(model, { system, contents, json, maxTokens })));
+      const res = await pool.run((key) => transport.generate(key, request(model, { system, contents, json, maxTokens, search })));
       return { ...res, model };
     } catch (err) {
       // Mô hình chính lỗi (sai tên, quá tải, mọi khóa đều nghỉ…) -> thử mô hình dự phòng một lần.
       const fallback = cfg('LLM_FALLBACK_MODEL', '');
       if (!fallback || fallback === model || err?.code === 'NO_KEY_AVAILABLE') throw err;
       logger.warn(`[llm] ${model} lỗi (${String(err.message).slice(0, 120)}), thử mô hình dự phòng ${fallback}`);
-      const res = await pool.run((key) => transport.generate(key, request(fallback, { system, contents, json, maxTokens })));
+      const res = await pool.run((key) => transport.generate(key, request(fallback, { system, contents, json, maxTokens, search })));
       return { ...res, model: fallback, fallbackUsed: true };
     }
   }
@@ -158,4 +175,4 @@ function dot(a, b) {
   return s;
 }
 
-module.exports = { createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot };
+module.exports = { createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };

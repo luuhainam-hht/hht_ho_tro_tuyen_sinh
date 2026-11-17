@@ -21,7 +21,7 @@
       if (v === null || v === undefined || v === false) continue;
       if (k === 'class') n.className = v;
       else if (k === 'text') n.textContent = v;
-      else if (k.startsWith('data-') || k.startsWith('aria-') || ['for', 'role', 'type', 'name', 'value', 'href', 'src', 'id', 'title', 'colspan', 'min', 'max', 'placeholder', 'autocomplete', 'inputmode', 'maxlength', 'rows', 'target', 'rel', 'tabindex', 'download', 'accept', 'required', 'checked', 'disabled', 'selected', 'open'].includes(k)) {
+      else if (k.startsWith('data-') || k.startsWith('aria-') || ['for', 'role', 'type', 'name', 'value', 'href', 'src', 'id', 'title', 'colspan', 'rowspan', 'scope', 'list', 'min', 'max', 'placeholder', 'autocomplete', 'inputmode', 'maxlength', 'rows', 'target', 'rel', 'tabindex', 'download', 'accept', 'required', 'checked', 'disabled', 'selected', 'open'].includes(k)) {
         if (v === true) n.setAttribute(k, ''); else n.setAttribute(k, v);
       } else n[k] = v;
     }
@@ -83,9 +83,9 @@
     slot.replaceWith(topbar, el('header', { class: 'site-header' },
       el('a', { class: 'skip', href: '#main' }, 'Bỏ qua, tới nội dung chính'),
       el('div', { class: 'wrap' },
-        el('a', { class: 'brand', href: '/' },
-          el('img', { class: 'brand-logo', src: '/img/logo-hht-sm.png', alt: 'HHT – Hanoi High Tech', width: '120', height: '52' }),
-          el('span', { class: 'brand-text' }, el('strong', {}, 'TUYỂN SINH'), el('span', {}, 'Trường Cao đẳng Công nghệ cao Hà Nội'))),
+        // Logo đã có tên trường -> không lặp lại chữ bên cạnh.
+        el('a', { class: 'brand', href: '/', 'aria-label': 'Trường Cao đẳng Công nghệ cao Hà Nội – Trang chủ tuyển sinh' },
+          el('img', { class: 'brand-logo brand-logo--full', src: '/img/logo-hht-full.png', alt: 'HHT – Trường Cao đẳng Công nghệ cao Hà Nội', width: '432', height: '64' })),
         nav,
         el('button', { class: 'btn btn--sm nav-toggle', 'aria-controls': 'site-nav', 'aria-expanded': 'false', 'data-action': 'toggle-nav' }, 'Menu'),
         el('a', { class: 'btn btn--tag btn--sm', href: '/dat-lich.html' }, 'Đặt lịch nộp hồ sơ'))));
@@ -105,7 +105,7 @@
     footer.append(el('div', { class: 'wrap' },
       el('div', { class: 'footer-grid' },
         el('div', {},
-          el('img', { class: 'footer-logo', src: '/img/logo-hht-sm.png', alt: 'HHT – Hanoi High Tech', width: '128', height: '56' }),
+          el('img', { class: 'footer-logo footer-logo--full', src: '/img/logo-hht-full.png', alt: 'HHT – Trường Cao đẳng Công nghệ cao Hà Nội', width: '432', height: '64' }),
           el('h3', {}, cfg.SCHOOL_NAME || 'Trường Cao đẳng Công nghệ cao Hà Nội'),
           el('p', {}, 'Trung tâm Tuyển sinh & Giải quyết việc làm: tầng 1 nhà A, Cơ sở 1, Phố Nhuệ Giang, Phường Xuân Phương, TP. Hà Nội.'),
           el('p', {}, 'Hotline: ', el('a', { href: `tel:${(cfg.HOTLINE || '').replace(/\s/g, '')}` }, cfg.HOTLINE || ''), ' · Email: ', el('a', { href: `mailto:${cfg.ADMISSION_EMAIL || ''}` }, cfg.ADMISSION_EMAIL || ''))),
@@ -138,17 +138,24 @@
     s.append(p);
     return s;
   }
-  /** Mở khung chat; có thể gửi kèm câu hỏi và mã ngành (từ trang ngành, trang chủ). */
-  function openChat({ question = '', majorCode = '' } = {}) {
+  /**
+   * Mở khung chat; có thể gửi kèm câu hỏi, mã ngành, hoặc yêu cầu giải thích (explain = 'level:HE_9_PLUS',
+   * 'support:NHA_NUOC' – từ bảng Ngành học). Khung đã mở thì gửi postMessage để giữ nguyên cuộc trò chuyện.
+   */
+  function openChat({ question = '', majorCode = '', explain = '' } = {}) {
     let frame = $('#chat-frame');
     const q = new URLSearchParams();
     if (question) q.set('q', question);
     if (majorCode) q.set('major', majorCode);
+    if (explain) q.set('explain', explain);
     q.set('embedded', '1');
     if (!frame) {
       frame = el('iframe', { id: 'chat-frame', class: 'chat-frame', title: 'Tư vấn tuyển sinh', src: `/chat.html?${q}` });
       document.body.append(frame);
-    } else if (question || majorCode) {
+    } else if (question || explain) {
+      frame.hidden = false;
+      frame.contentWindow?.postMessage({ type: 'hht-chat-command', question, majorCode, explain }, location.origin);
+    } else if (majorCode) {
       frame.src = `/chat.html?${q}`;
       frame.hidden = false;
     } else frame.hidden = !frame.hidden;

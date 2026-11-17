@@ -34,6 +34,30 @@ const MIGRATIONS = [
           ALTER TABLE audit_logs ADD CONSTRAINT audit_logs_target_type_check CHECK (target_type IN ('KB_DOCUMENT', 'FAQ', 'MAJOR',
             'HANDOFF', 'CONFIG', 'STAFF', 'SYSTEM', 'APPOINTMENT', 'ADMISSION_ITEM', 'AI', 'AI_KEY'));`,
   },
+  {
+    // Vai trò Phòng Tuyển sinh, Cán bộ Khoa (gắn khoa); mục giải thích hệ đào tạo/hỗ trợ học phí;
+    // câu trả lời tra cứu trên Internet (nguồn WEB).
+    id: '2026-11-17-admission-office-faculty-web',
+    sql: `ALTER TABLE staff ADD COLUMN IF NOT EXISTS faculty TEXT;
+          ALTER TABLE staff DROP CONSTRAINT IF EXISTS staff_role_check;
+          ALTER TABLE staff ADD CONSTRAINT staff_role_check CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR'));
+          ALTER TABLE staff_sessions DROP CONSTRAINT IF EXISTS staff_sessions_role_check;
+          ALTER TABLE staff_sessions ADD CONSTRAINT staff_sessions_role_check CHECK (role IN ('SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR'));
+          ALTER TABLE admission_items DROP CONSTRAINT IF EXISTS admission_items_kind_check;
+          ALTER TABLE admission_items ADD CONSTRAINT admission_items_kind_check CHECK (kind IN ('DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT', 'LEVEL_INFO', 'SUPPORT_INFO'));
+          ALTER TABLE chat_messages DROP CONSTRAINT IF EXISTS chat_messages_source_check;
+          ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_source_check CHECK (source IN ('RULE', 'FAQ', 'RAG', 'CACHE', 'FALLBACK', 'HANDOFF', 'WEB'));`,
+  },
+  {
+    // Bật KB_AUTO_PUBLISH: tài liệu đã tải lên và xử lý xong (READY) nhưng chưa ai bấm Công bố -> đưa vào kho
+    // trả lời một lần, để trợ lý dùng được mọi tài liệu đã cập nhật. Bản bị thay thế chuyển ARCHIVED.
+    id: '2026-11-17-publish-ready-documents',
+    sql: `UPDATE kb_documents o SET status = 'ARCHIVED'
+            FROM kb_documents n
+           WHERE n.replaces_document_id = o.id AND n.status = 'READY' AND n.chunk_count > 0 AND o.status = 'PUBLISHED';
+          UPDATE kb_documents SET status = 'PUBLISHED', published_at = COALESCE(published_at, now())
+           WHERE status = 'READY' AND chunk_count > 0;`,
+  },
 ];
 
 async function upsertConfigDefaults(c) {

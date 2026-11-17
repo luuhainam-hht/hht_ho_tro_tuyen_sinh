@@ -58,6 +58,13 @@ function createHandbookService({ db, configService }) {
   }
 
   const contacts = () => admissionItemRepository.list(db, { year: year(), kind: 'CONTACT' });
+
+  /** Giải thích hệ đào tạo (SC, 9+, TC, CĐ) và loại hỗ trợ học phí (Nhà nước, Doanh nghiệp, Sinh viên). */
+  async function info() {
+    const rows = await admissionItemRepository.listInfo(db, year());
+    const pick = (kind) => Object.fromEntries(rows.filter((r) => r.kind === kind && r.code).map((r) => [r.code, { title: r.title, detail: r.detail }]));
+    return { levels: pick('LEVEL_INFO'), supports: pick('SUPPORT_INFO') };
+  }
   const guideSteps = () => admissionItemRepository.list(db, { year: year(), kind: 'ONLINE_GUIDE_STEP' });
 
   async function faqByTopic() {
@@ -95,7 +102,7 @@ function createHandbookService({ db, configService }) {
 
   const meta = () => ({ levels: LEVELS, audiences: AUDIENCES, topics: TOPICS, copyTypes: COPY_TYPES, config: configService.getPublic(), admissionYear: year() });
 
-  return { listMajors, majorDetail, checklist, schedule, contacts, guideSteps, faqByTopic, sources, overview, meta };
+  return { listMajors, majorDetail, checklist, schedule, contacts, guideSteps, info, faqByTopic, sources, overview, meta };
 }
 
 module.exports = { createHandbookService, scheduleStatus };

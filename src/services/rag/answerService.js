@@ -11,10 +11,10 @@
  */
 const { HttpError } = require('../../utils/httpError');
 const { sha256 } = require('../../utils/crypto');
-const { normalizeVi } = require('../../utils/textNormalize');
+const { normalizeVi, keywords, coverage } = require('../../utils/textNormalize');
 const { vnToday } = require('../../utils/time');
 const { maskPii, forMatching } = require('../piiFilter');
-const { systemPromptFromConfig, buildUserPrompt } = require('../ai/promptBuilder');
+const { systemPromptFromConfig, buildUserPrompt, buildWebSearchPrompt } = require('../ai/promptBuilder');
 const { describeLlmError } = require('../ai/llmClient');
 const { validateCitations } = require('./citation');
 const chatRepository = require('../../repositories/chatRepository');
@@ -23,6 +23,25 @@ const answerCacheRepository = require('../../repositories/answerCacheRepository'
 const tokenUsageRepository = require('../../repositories/tokenUsageRepository');
 
 const EXTRACTIVE_MAX_CHARS = 900;
+const WEB_NOT_FOUND = /KHONG_TIM_THAY/i;
+const MAX_WEB_SOURCES = 5;
+
+/**
+ * Trích nguyên văn nhưng trả lời THẲNG: đoạn dạng "Hỏi: … / Đáp: …" (từ FAQ) chỉ lấy phần Đáp của cặp
+ * khớp câu hỏi nhất; bỏ dòng tiêu đề lặp lại. Không thêm câu mở đầu kiểu "Theo văn bản…".
+ */
+function directAnswer(content, question) {
+  const text = String(content || '').trim();
+  const pairs = [...text.matchAll(/Hỏi:\s*([\s\S]*?)\n\s*Đáp:\s*([\s\S]*?)(?=\n\s*Hỏi:|$)/g)];
+  if (pairs.length) {
+    const q = keywords(question);
+    const best = pairs
+      .map((m) => ({ ans: m[2].trim(), score: coverage(q, normalizeVi(`${m[1]} ${m[2]}`)) }))
+      .sort((a, b) => b.score - a.score)[0];
+    if (best?.ans) return best.ans;
+  }
+  return text.replace(/^Hỏi:.*\n/gm, '').replace(/^Đáp:\s*/gm, '').trim();
+}
 
 function createAnswerService({
   db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger = console,
@@ -61,9 +80,46 @@ function createAnswerService({
 
   function chunkCitation(c, n) {
     return {
-      n, chunkId: c.id, title: c.title, heading: c.heading_path || null, url: c.source_url || null,
+      n, chunkId: c.id > 0 ? c.id : null, title: c.title, heading: c.heading_path || null, url: c.source_url || null,
       sourceCode: c.source_code || null, pages: c.page_from ? (c.page_to && c.page_to !== c.page_from ? `${c.page_from}–${c.page_to}` : String(c.page_from)) : null,
     };
+  }
+
+  /**
+   * Tra cứu Internet (Google Search grounding) khi kho tri thức không đủ căn cứ. Chỉ chấp nhận khi Gemini
+   * trả về ít nhất một nguồn web thật (groundingMetadata) – không có nguồn thì coi như không tìm thấy.
+   */
+  async function tryWeb({ question, contextChunks = [] }) {
+    const get = (k, d) => configService.getOr(k, d);
+    const { system, prompt } = buildWebSearchPrompt({
+      schoolName: get('SCHOOL_NAME', 'Nhà trường'), hotline: get('HOTLINE', ''), maxWords: get('AI_ANSWER_MAX_WORDS', 150),
+      tone: get('AI_TONE', 'THAN_THIEN'), question, contextChunks,
+    });
+    const res = await llm.generate({ system, prompt, search: true });
+    try { await tokenUsageRepository.add(db, vnToday(), res.tokensIn, res.tokensOut); } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
+    const text = String(res.text || '').replace(/^```\w*\s*|\s*```$/g, '').trim();
+    const sources = (res.webSources || []).slice(0, MAX_WEB_SOURCES);
+    if (!text || WEB_NOT_FOUND.test(text) || text.length < 20) return { ok: false, tokens: res, reason: 'Không tìm thấy thông tin đáng tin cậy trên Internet' };
+    if (!sources.length) return { ok: false, tokens: res, reason: 'Tra cứu Internet không trả về nguồn nào nên không dùng' };
+    return { ok: true, tokens: res, answer: text, citations: sources.map((s, i) => ({ n: i + 1, chunkId: null, title: s.title, url: s.url, web: true })) };
+  }
+
+  const webSearchOn = (llmOn) => llmOn && configService.getOr('AI_WEB_SEARCH_ENABLED', true) !== false;
+
+  async function webOrNull({ question, contextChunks, t, cls, retrieval }) {
+    try {
+      const out = await tryWeb({ question, contextChunks });
+      t.web = { used: true, accepted: out.ok, reason: out.reason || null, sources: out.citations?.length || 0 };
+      if (!out.ok) return null;
+      return {
+        source: 'WEB', answerMode: 'LLM', answer: out.answer, citations: out.citations, topScore: retrieval?.topScore ?? null,
+        tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...cls,
+      };
+    } catch (err) {
+      logger.warn('[answer] tra cứu Internet lỗi:', err.message);
+      t.web = { used: true, accepted: false, reason: describeLlmError(err) };
+      return null;
+    }
   }
 
   async function tryLlm({ question, history, retrieval }) {
@@ -74,7 +130,7 @@ function createAnswerService({
     } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
     let parsed;
     try { parsed = JSON.parse(res.text.replace(/^```json\s*|\s*```$/g, '')); } catch { return { ok: false, tokens: res, reason: 'AI trả về sai định dạng JSON' }; }
-    if (parsed.insufficient || typeof parsed.answer !== 'string') return { ok: false, tokens: res, reason: 'AI báo tài liệu không đủ thông tin' };
+    if (parsed.insufficient || typeof parsed.answer !== 'string') return { ok: false, insufficient: true, tokens: res, reason: 'AI báo tài liệu không đủ thông tin' };
     const checked = validateCitations({
       answer: parsed.answer, chunks: retrieval.chunks, allowedNumbers: [configService.get('HOTLINE')],
     });
@@ -142,8 +198,12 @@ function createAnswerService({
       chunks: retrieval.chunks.map((c) => ({ title: c.title, heading: c.heading_path || null, cosine: c.cosine ?? null, coverage: c.coverage ?? null })),
     };
 
-    // f) không đủ căn cứ
+    // f) không đủ căn cứ -> tra cứu Internet (nếu bật và có AI) -> không được thì FALLBACK
     if (!retrieval.grounded) {
+      if (webSearchOn(llmOn)) {
+        const web = await webOrNull({ question, contextChunks: [], t, cls, retrieval });
+        if (web) return web;
+      }
       return { source: 'FALLBACK', answer: fallbackText(), citations: [], suggestions, topScore: retrieval.topScore, handoffSuggested: true, ...cls };
     }
 
@@ -162,8 +222,13 @@ function createAnswerService({
           }
           return {
             source: 'RAG', answerMode: 'LLM', answer: out.answer, citations: out.citations, topScore: retrieval.topScore,
-            citedChunkIds: out.citations.map((c) => c.chunkId), tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...meta,
+            citedChunkIds: out.citations.map((c) => c.chunkId).filter(Boolean), tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...meta,
           };
+        }
+        // AI đọc tài liệu và báo không đủ thông tin -> thử tra Internet trước khi trích nguyên văn.
+        if (out.insufficient && webSearchOn(llmOn)) {
+          const web = await webOrNull({ question, contextChunks: retrieval.chunks, t, cls, retrieval });
+          if (web) return web;
         }
       } catch (err) {
         logger.warn('[answer] LLM lỗi, chuyển sang trích dẫn nguyên văn:', err.message);
@@ -172,11 +237,14 @@ function createAnswerService({
     }
 
     // Không có LLM: trích nguyên văn đoạn có độ phủ cao nhất (vẫn có dẫn nguồn).
-    const bestChunk = [...retrieval.chunks].sort((a, b) => (b.cosine ?? b.coverage) - (a.cosine ?? a.coverage))[0];
-    const text = bestChunk.content.length > EXTRACTIVE_MAX_CHARS ? `${bestChunk.content.slice(0, EXTRACTIVE_MAX_CHARS)}…` : bestChunk.content;
+    // Đoạn sát ý nhất: ưu tiên giống nghĩa (vector), rồi độ phủ "từ quan trọng" (IDF), rồi đoạn ngắn – cụ thể hơn.
+    const score = (c) => c.cosine ?? ((c.weightedCoverage ?? c.coverage) + (c.headCoverage || 0));
+    const bestChunk = [...retrieval.chunks].sort((a, b) => score(b) - score(a) || a.content.length - b.content.length)[0];
+    const direct = directAnswer(bestChunk.content, question) || bestChunk.content;
+    const text = direct.length > EXTRACTIVE_MAX_CHARS ? `${direct.slice(0, EXTRACTIVE_MAX_CHARS)}…` : direct;
     return {
-      source: 'RAG', answerMode: 'EXTRACTIVE', answer: `Theo văn bản tuyển sinh của trường:\n${text}`,
-      citations: [chunkCitation(bestChunk, 1)], citedChunkIds: [bestChunk.id], topScore: retrieval.topScore, suggestions, ...cls,
+      source: 'RAG', answerMode: 'EXTRACTIVE', answer: text,
+      citations: [chunkCitation(bestChunk, 1)], citedChunkIds: bestChunk.id > 0 ? [bestChunk.id] : [], topScore: retrieval.topScore, suggestions, ...cls,
     };
   }
 
@@ -248,4 +316,4 @@ function createAnswerService({
   return { answer, compose, preview };
 }
 
-module.exports = { createAnswerService };
+module.exports = { createAnswerService, directAnswer };

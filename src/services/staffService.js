@@ -17,23 +17,32 @@ function temporaryPassword(minLength = 12) {
   return `${s}${crypto.randomInt(10, 99)}`;
 }
 
+/** Cán bộ Khoa bắt buộc gắn đúng một khoa; vai trò khác không gắn khoa (tránh hiểu nhầm phạm vi quyền). */
+function resolveFaculty(role, faculty) {
+  if (role !== 'FACULTY') return null;
+  const f = String(faculty || '').trim();
+  if (!f) throw new HttpError(400, 'Cán bộ Khoa phải chọn khoa phụ trách');
+  return f.slice(0, 100);
+}
+
 function createStaffService({ db, configService = null }) {
   const minLength = () => securityPolicy(configService).passwordMinLength;
 
-  async function create({ username, fullName, email, role, password: chosen = null, mustChangePassword = true, actor, ip }) {
+  async function create({ username, fullName, email, role, faculty = null, password: chosen = null, mustChangePassword = true, actor, ip }) {
+    const fac = resolveFaculty(role, faculty);
     if (chosen) assertStrongPassword(chosen, username, minLength());
     const password = chosen || temporaryPassword(minLength());
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     return db.withTransaction(async (c) => {
-      const u = await staffRepository.insert(c, { username, passwordHash: hash, fullName, email, role, mustChangePassword: chosen ? mustChangePassword : true });
+      const u = await staffRepository.insert(c, { username, passwordHash: hash, fullName, email, role, faculty: fac, mustChangePassword: chosen ? mustChangePassword : true });
       if (!u) throw new HttpError(409, 'Tên đăng nhập đã tồn tại');
-      await auditRepository.insert(c, { actorId: actor.id, action: 'STAFF_CREATE', targetType: 'STAFF', targetId: u.id, payload: { username, role, chosenPassword: Boolean(chosen) }, ip });
+      await auditRepository.insert(c, { actorId: actor.id, action: 'STAFF_CREATE', targetType: 'STAFF', targetId: u.id, payload: { username, role, faculty: fac, chosenPassword: Boolean(chosen) }, ip });
       // Mật khẩu do Admin tự đặt thì Admin đã biết -> không trả lại qua API.
       return { user: u, temporaryPassword: chosen ? null : password };
     });
   }
 
-  async function update(id, { fullName, email, role, isActive, actor, ip }) {
+  async function update(id, { fullName, email, role, faculty, isActive, actor, ip }) {
     return db.withTransaction(async (c) => {
       const u = await staffRepository.findByIdForUpdate(c, id);
       if (!u) throw new HttpError(404, 'Không tìm thấy tài khoản');
@@ -42,10 +51,15 @@ function createStaffService({ db, configService = null }) {
       if (demoting && (await staffRepository.countActiveByRole(c, 'SUPER_ADMIN')) <= 1) {
         throw new HttpError(409, 'Không thể hạ quyền/khóa quản trị viên cuối cùng');
       }
-      const updated = await staffRepository.update(c, id, { full_name: fullName, email, role, is_active: isActive });
-      if (isActive === false || (role && role !== u.role)) await sessionRepository.removeAllForStaff(c, id);
-      await auditRepository.insert(c, { actorId: actor.id, action: 'STAFF_UPDATE', targetType: 'STAFF', targetId: id, payload: { role, isActive }, ip });
-      return updated;
+      // Đổi vai trò hoặc khoa -> tính lại khoa; chỉ gửi khoa (không đổi vai trò) thì áp cho vai trò hiện tại.
+      const nextRole = role || u.role;
+      const fac = role !== undefined || faculty !== undefined ? resolveFaculty(nextRole, faculty !== undefined ? faculty : u.faculty) : undefined;
+      const updated = await staffRepository.update(c, id, { full_name: fullName, email, role, faculty: fac, is_active: isActive });
+      const scopeChanged = (role && role !== u.role) || (fac !== undefined && (fac || null) !== (u.faculty || null));
+      if (isActive === false || scopeChanged) await sessionRepository.removeAllForStaff(c, id);
+      await auditRepository.insert(c, { actorId: actor.id, action: 'STAFF_UPDATE', targetType: 'STAFF', targetId: id, payload: { role, faculty: fac, isActive }, ip });
+      // RETURNING * có password_hash -> trả bản chỉ gồm cột công khai.
+      return updated ? staffRepository.findById(c, id) : null;
     });
   }
 

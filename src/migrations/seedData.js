@@ -113,10 +113,37 @@ const GUIDE_STEPS = [
   ['Hoàn tất nhập học', 'Hoàn tất thủ tục nhập học trực tiếp tại trường theo đợt nhập học.', ['S01']],
 ];
 
+/**
+ * Giải thích hệ đào tạo và loại hỗ trợ học phí: hiện khi bấm vào cột SC / Hệ 9+ / TC / CĐ và
+ * Nhà nước / Doanh nghiệp / Sinh viên trên trang Ngành học, đồng thời là tri thức của trợ lý.
+ * Nội dung tổng hợp từ FAQ độ tin cậy A/B (Q10, Q11, Q13, Q17, Q18, Q20, Q21, Q31, Q32, Q35, Q39).
+ * Phòng Tuyển sinh sửa được trong Quản trị > Thông tin tuyển sinh.
+ */
+const LEVEL_INFO = [
+  ['SO_CAP', 'Sơ cấp (SC) – đào tạo ngắn hạn',
+    'Hệ Sơ cấp là các lớp đào tạo ngắn hạn, học xong được cấp chứng chỉ, chứng nhận nghề. Trường tuyển sinh và mở lớp liên tục trong năm cho nhiều nghề thuộc các lĩnh vực Cơ khí, Điện – Điện tử, Công nghệ thông tin, Ngoại ngữ, Chăm sóc sắc đẹp, Công nghệ ô tô, Kinh tế – Du lịch, Nông nghiệp. Phù hợp với người cần học nhanh một nghề để đi làm hoặc bổ sung kỹ năng. Thời gian và học phí từng lớp: liên hệ Trung tâm Tuyển sinh.', ['S01']],
+  ['HE_9_PLUS', 'Hệ 9+ (THPT – Cao đẳng)',
+    'Hệ 9+ dành cho học sinh tốt nghiệp THCS, xét tuyển học bạ/kết quả học tập lớp 9. Thời gian đào tạo 4 năm:\n- 3 năm đầu: học song song chương trình văn hóa THPT (GDTX) và Trung cấp, dự thi tốt nghiệp THPT, nhận 2 bằng: tốt nghiệp THPT và Trung cấp.\n- 1 năm cuối: học chương trình Cao đẳng, nhận bằng Cao đẳng (Kỹ sư/Cử nhân thực hành), đủ điều kiện học liên thông lên đại học.\nHọc phí: phần Trung cấp được miễn 100%; phần Cao đẳng 1.800.000 – 2.400.000 đ/tháng tùy nghề; học phí văn hóa theo quy định của Nhà nước và TP Hà Nội.', ['S02', 'S01']],
+  ['TRUNG_CAP', 'Trung cấp (TC)',
+    'Hệ Trung cấp tuyển người tốt nghiệp THCS hoặc tương đương trở lên, thời gian học khoảng 2 năm. Tốt nghiệp được cấp bằng Trung cấp chính quy và được học liên thông lên Cao đẳng, Đại học. Học phí từ 1.800.000 đến 2.400.000 đ/tháng tùy ngành; nhiều ngành được Nhà nước hoặc doanh nghiệp hỗ trợ một phần.', ['S01']],
+  ['CAO_DANG', 'Cao đẳng (CĐ)',
+    'Hệ Cao đẳng chính quy dành cho người đã tốt nghiệp THPT hoặc tương đương trở lên, tuyển sinh trên toàn quốc, thời gian học khoảng 3 năm; xét học bạ hoặc điểm thi tốt nghiệp THPT. Tốt nghiệp được cấp bằng Cao đẳng chính quy (danh hiệu Kỹ sư/Cử nhân thực hành) và được học liên thông lên Đại học. Người đã tốt nghiệp Trung cấp, Cao đẳng, Đại học có thể học Cao đẳng liên thông. Học phí từ 1.800.000 đến 2.400.000 đ/tháng tùy ngành.', ['S01', 'S07']],
+];
+const SUPPORT_INFO = [
+  ['NHA_NUOC', 'Nhà nước hỗ trợ học phí',
+    'Sinh viên hệ Cao đẳng chính quy học các nghề thuộc danh mục nặng nhọc, độc hại, nguy hiểm được Nhà nước hỗ trợ 70% học phí. Người học thường trú tại Hà Nội học Trung cấp/Cao đẳng thuộc ngành, nghề trọng điểm được thành phố hỗ trợ học phí theo Nghị quyết 57/2026/NQ-HĐND (có thể đến 100%). Ngoài ra có chế độ miễn, giảm học phí theo Nghị định 238/2025/NĐ-CP tùy đối tượng.', ['S07', 'S01', 'S04']],
+  ['DOANH_NGHIEP', 'Doanh nghiệp hỗ trợ học phí',
+    'Một số ngành có doanh nghiệp đối tác hỗ trợ một phần học phí (thường 30%; riêng một vài ngành cao hơn). Mức hỗ trợ từng ngành được ghi trong bảng ngành và cần Trung tâm Tuyển sinh xác nhận trước khi nhập học.', ['S01']],
+  ['SINH_VIEN', 'Phần sinh viên tự đóng',
+    'Số tiền sinh viên tự đóng = học phí tháng – phần Nhà nước hỗ trợ – phần Doanh nghiệp hỗ trợ. Học phí hệ Trung cấp, Cao đẳng từ 1.800.000 đến 2.400.000 đ/tháng tùy ngành; hệ 9+ được miễn 100% học phí phần Trung cấp. Con số trên trang Ngành học là ước tính theo tháng, chưa tính miễn giảm theo đối tượng và học bổng.', ['S01']],
+];
+
 async function seedAdmissionItems(c, items, docs, refresh = false) {
   const all = [
     ...items,
     ...GUIDE_STEPS.map(([title, detail, src], i) => ({ kind: 'ONLINE_GUIDE_STEP', itemKey: `GUIDE:${i + 1}`, audience: 'ALL', title, detail, orderNo: i + 1, sourceCodes: src })),
+    ...LEVEL_INFO.map(([code, title, detail, src], i) => ({ kind: 'LEVEL_INFO', itemKey: `LEVEL:${code}`, audience: 'ALL', code, title, detail, orderNo: i + 1, sourceCodes: src })),
+    ...SUPPORT_INFO.map(([code, title, detail, src], i) => ({ kind: 'SUPPORT_INFO', itemKey: `SUPPORT:${code}`, audience: 'ALL', code, title, detail, orderNo: i + 1, sourceCodes: src })),
   ];
   for (const it of all) {
     await upsert(c, 
@@ -204,4 +231,4 @@ async function seedAll(c, { refresh = false } = {}) {
   await seedChunks(c, buildSeedChunks({ faqs, majors, items, docs }), refresh);
 }
 
-module.exports = { seedAll, buildSeedChunks, SEED_YEAR };
+module.exports = { seedAll, buildSeedChunks, SEED_YEAR, LEVEL_INFO, SUPPORT_INFO };

@@ -13,6 +13,13 @@ const { assertStrongPassword } = require('../utils/passwordPolicy');
 const staffRepository = require('../repositories/staffRepository');
 const sessionRepository = require('../repositories/sessionRepository');
 const auditRepository = require('../repositories/auditRepository');
+const { permissionsOf } = require('../constants/roles');
+
+/** Thông tin cán bộ trả cho giao diện: kèm khoa (vai trò Cán bộ Khoa) và danh sách nhóm quyền. */
+const toUser = (r) => ({
+  id: Number(r.id), username: r.username, fullName: r.full_name, role: r.role, faculty: r.faculty || null,
+  permissions: permissionsOf(r.role), mustChangePassword: r.must_change_password,
+});
 
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const LOGIN_MAX_FAILED_ATTEMPTS = 5;
@@ -56,14 +63,14 @@ function createAuthService({ db, configService = null }) {
     return {
       token,
       expiresAt: s.expires_at,
-      user: { id: Number(user.id), username: user.username, fullName: user.full_name, role: user.role, mustChangePassword: user.must_change_password },
+      user: toUser(user),
     };
   }
 
   async function resolveToken(token) {
     if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
     const r = await sessionRepository.touchValid(db, sha256(token));
-    return r && { id: Number(r.id), username: r.username, fullName: r.full_name, role: r.role, mustChangePassword: r.must_change_password };
+    return r && toUser(r);
   }
 
   const logout = (token) => (token ? sessionRepository.remove(db, sha256(token)) : null);

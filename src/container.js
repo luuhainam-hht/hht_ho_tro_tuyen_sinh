@@ -18,6 +18,7 @@ const { createIntentClassifier } = require('./services/intentClassifier');
 const { createRuleAssistant } = require('./services/ruleAssistant');
 const { createFaqMatcher } = require('./services/faqMatcher');
 const { createRetriever } = require('./services/rag/retriever');
+const { createLiveKnowledge } = require('./services/rag/liveKnowledge');
 const { createAnswerService } = require('./services/rag/answerService');
 const { createIngestService } = require('./services/rag/ingestService');
 const { createKbService } = require('./services/kbService');
@@ -59,7 +60,8 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const classifier = createIntentClassifier({ getMajors: () => majorsCache.rows });
 
   const faqMatcher = createFaqMatcher({ db, configService });
-  const retriever = createRetriever({ db, configService });
+  const liveKnowledge = createLiveKnowledge({ db, configService, logger });
+  const retriever = createRetriever({ db, configService, liveKnowledge });
   const ruleAssistant = createRuleAssistant({ configService });
   const answerService = createAnswerService({ db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger });
   const ingestService = createIngestService({ db, llm, broadcast, uploadDir, logger });
@@ -78,7 +80,16 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const jobRunner = createJobRunner({
     db, workerId: env.INSTANCE_ID, broadcast, logger,
     handlers: {
-      INGEST_DOCUMENT: (p) => ingestService.processDocument(p.documentId),
+      INGEST_DOCUMENT: async (p) => {
+        const out = await ingestService.processDocument(p.documentId);
+        // KB_AUTO_PUBLISH: tài liệu vừa xử lý xong được trợ lý dùng ngay (vẫn ghi nhật ký, vẫn lưu trữ được).
+        if (configService.getOr('KB_AUTO_PUBLISH', true) !== false) {
+          const { rows } = await db.query('SELECT uploaded_by FROM kb_documents WHERE id = ?', [p.documentId]);
+          await kbService.publish(p.documentId, { actor: { id: rows[0]?.uploaded_by ?? null }, ip: null, reason: 'Tự công bố sau khi xử lý (KB_AUTO_PUBLISH)' });
+          out.published = true;
+        }
+        return out;
+      },
       REEMBED_ALL: (p) => ingestService.reembedMissing({ reset: Boolean(p.reset) }),
       CLASSIFY_MESSAGES: () => maintenanceService.classifyMessages(),
       PURGE_OLD_DATA: () => maintenanceService.purgeOldData(),
@@ -101,7 +112,7 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   }
 
   return {
-    env, db, logger, isOriginAllowed, wsHub, pgBus, configService, llm, aiKeyService, authService, staffService, classifier, faqMatcher, retriever,
+    env, db, logger, isOriginAllowed, wsHub, broadcast, pgBus, configService, llm, aiKeyService, authService, staffService, classifier, faqMatcher, retriever, liveKnowledge,
     answerService, ingestService, kbService, faqService, handoffService, handbookService, recommendService, analyticsService,
     maintenanceService, appointmentService, messengerService, visitorHash, jobRunner, scheduler, onBusEvent, refreshMajors,
     pgBusState: () => ({ connected: pgBus.isConnected() }),

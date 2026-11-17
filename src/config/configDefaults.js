@@ -31,6 +31,7 @@ const CONFIG_DEFAULTS = [
   C('AI_TONE', 'THAN_THIEN', 'STRING', 'Giọng văn', 'Cách xưng hô và mức độ trang trọng của câu trả lời'),
   C('AI_ANSWER_MAX_WORDS', 150, 'INT', 'Số từ tối đa mỗi câu trả lời', 'Hướng dẫn độ dài cho AI', { min: 50, max: 400 }),
   C('AI_EXTRA_INSTRUCTIONS', '', 'STRING', 'Hướng dẫn bổ sung', 'Yêu cầu riêng của Nhà trường gửi kèm cho AI (không thay được các quy tắc chống bịa)'),
+  C('AI_WEB_SEARCH_ENABLED', true, 'BOOL', 'Tra cứu Internet khi thiếu tài liệu', 'Kho tri thức không đủ căn cứ thì AI tra Google (ưu tiên hht.edu.vn) và trả lời kèm nguồn web, có ghi chú "chưa phải văn bản chính thức". Tắt thì báo hotline như cũ'),
   C('AI_RECOMMEND_EXPLAIN', true, 'BOOL', 'AI giải thích kết quả gợi ý ngành', 'Tắt thì trang Gợi ý ngành chỉ hiện lý do tính theo điểm'),
   C('EMBEDDING_MODEL', 'gemini-embedding-001', 'STRING', 'Mô hình vector', 'Đổi mô hình thì hệ thống tự tạo lại vector cho toàn bộ kho'),
   C('EMBEDDING_DIM', 768, 'INT', 'Số chiều vector', 'Đổi thì hệ thống tự tạo lại vector cho toàn bộ kho', { min: 128, max: 3072 }),
@@ -41,6 +42,7 @@ const CONFIG_DEFAULTS = [
   C('RAG_MIN_LEXICAL_SCORE', 0.5, 'NUMBER', 'Ngưỡng trùng từ khóa', 'Tỉ lệ từ khóa trùng tối thiểu để coi là có căn cứ trả lời', { min: 0, max: 1 }),
   C('FAQ_MATCH_SCORE', 0.85, 'NUMBER', 'Ngưỡng khớp FAQ (vector)', 'Đạt ngưỡng này thì trả nguyên văn câu trả lời FAQ đã duyệt', { min: 0, max: 1 }),
   C('FAQ_LEXICAL_MATCH_SCORE', 0.62, 'NUMBER', 'Ngưỡng khớp FAQ (từ khóa)', 'Dùng khi chưa có vector', { min: 0, max: 1 }),
+  C('KB_AUTO_PUBLISH', true, 'BOOL', 'Tự công bố tài liệu sau khi xử lý', 'Tài liệu tải lên được trợ lý dùng ngay khi xử lý xong (không chờ bấm Công bố). Tắt nếu cần Lãnh đạo duyệt từng văn bản'),
   C('AI_CACHE_ENABLED', true, 'BOOL', 'Dùng bộ nhớ đệm', 'Câu hỏi lặp lại lấy câu trả lời đã có, không tốn token'),
   C('CACHE_TTL_HOURS', 72, 'INT', 'Giữ bộ nhớ đệm (giờ)', 'Câu trả lời đệm tự hết hạn sau số giờ này', { min: 1, max: 720 }),
   // --- Đăng nhập & mật khẩu ---

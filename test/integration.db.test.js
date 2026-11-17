@@ -79,6 +79,7 @@ test('chuyển cán bộ: cần đồng ý -> NEW -> trả lời -> đưa vào F
 });
 
 test('kho tri thức: tải văn bản -> job xử lý -> READY -> chỉ Lãnh đạo công bố -> trợ lý trích dẫn', async () => {
+  await ctx.c.configService.update('KB_AUTO_PUBLISH', 'false', { actorId: null, ip: null }); // quy trình duyệt thủ công
   const text = '# Thông báo lệ phí xét tuyển 2027\nLệ phí xét tuyển hệ cao đẳng là 50.000 đồng mỗi hồ sơ, nộp khi đăng ký.\nThí sinh nộp lệ phí tại phòng tài chính kế toán.';
   const up = await request(app).post('/api/admin/kb').set(H.advisor).field('title', 'Thông báo lệ phí xét tuyển').attach('file', Buffer.from(text), 'le-phi.txt').expect(201);
   await request(app).post('/api/admin/kb').set(H.advisor).field('title', 'Trùng').attach('file', Buffer.from(text), 'le-phi-2.txt').expect(409);
@@ -96,6 +97,19 @@ test('kho tri thức: tải văn bản -> job xử lý -> READY -> chỉ Lãnh �
   assert.equal(r.citations[0].title, 'Thông báo lệ phí xét tuyển');
   const { rows } = await ctx.db.query("SELECT action FROM audit_logs WHERE target_type = 'KB_DOCUMENT' ORDER BY id");
   assert.deepEqual(rows.map((x) => x.action), ['KB_UPLOAD', 'KB_PUBLISHED']);
+  await ctx.c.configService.update('KB_AUTO_PUBLISH', 'true', { actorId: null, ip: null });
+});
+
+test('kho tri thức: KB_AUTO_PUBLISH (mặc định bật) -> xử lý xong là trợ lý dùng ngay, có nhật ký', async () => {
+  const text = '# Thông báo đồng phục 2026\nSinh viên khóa mới nhận đồng phục thể dục tại kho vật tư nhà B sau khi nhập học.';
+  const up = await request(app).post('/api/admin/kb').set(H.advisor).field('title', 'Thông báo đồng phục').attach('file', Buffer.from(text), 'dong-phuc.txt').expect(201);
+  await ctx.c.jobRunner.runOnce();
+  const doc = await request(app).get(`/api/admin/kb/${up.body.document.id}`).set(H.leader).expect(200);
+  assert.equal(doc.body.document.status, 'PUBLISHED');
+  const r = await chat('Nhận đồng phục thể dục ở đâu?');
+  assert.equal(r.source, 'RAG');
+  assert.match(r.answer, /kho vật tư nhà B/);
+  assert.doesNotMatch(r.answer, /^Theo văn bản/, 'trả lời thẳng, không câu mở đầu');
 });
 
 test('xác thực: khóa sau 5 lần sai; bắt đổi mật khẩu; mật khẩu yếu bị từ chối', async () => {

@@ -240,3 +240,45 @@ test('mật khẩu: độ dài tối thiểu theo cấu hình', () => {
   assert.doesNotThrow(() => assertStrongPassword('TuyenSinh26', 'admin'));
   assert.throws(() => assertStrongPassword('TuyenSinh26', 'admin', 14), /ít nhất 14 ký tự/);
 });
+
+// ---------- Nâng cấp 17/11/2026: phân quyền, bảng ngành, trả lời thẳng, tra cứu Internet ----------
+test('phân quyền: Phòng Tuyển sinh và Cán bộ Khoa', () => {
+  const { permissionsOf } = require('../src/constants/roles');
+  assert.ok(permissionsOf('ADMISSION_OFFICE').includes('ADMISSION_INFO'));
+  assert.ok(permissionsOf('ADMISSION_OFFICE').includes('FAQ_APPROVE'));
+  assert.deepEqual(permissionsOf('FACULTY').sort(), ['FAQ_EDIT', 'KB_VIEW', 'MAJOR_MANAGE']);
+  assert.ok(!permissionsOf('FACULTY').includes('CONFIG'));
+});
+
+test('hỗ trợ học phí: chuẩn hóa "70" -> "70%", giữ chữ tự do, chặn > 100%', () => {
+  const { normalizeSupport } = require('../src/routes/adminMajorRoutes');
+  assert.equal(normalizeSupport('70'), '70%');
+  assert.equal(normalizeSupport(' 30 % '), '30%');
+  assert.equal(normalizeSupport(''), null);
+  assert.equal(normalizeSupport('theo NQ 57'), 'theo NQ 57');
+  assert.throws(() => normalizeSupport('120%'));
+});
+
+test('trả lời thẳng: trích phần Đáp của cặp hỏi–đáp khớp nhất, bỏ dòng "Hỏi:"', () => {
+  const { directAnswer } = require('../src/services/rag/answerService');
+  const chunk = 'Hỏi: Học phí bao nhiêu?\nĐáp: Từ 1.800.000 đ/tháng.\nHỏi: Khi nào nhận hồ sơ?\nĐáp: Liên tục từ 01/01 đến 31/12.';
+  assert.equal(directAnswer(chunk, 'Khi nào trường nhận hồ sơ?'), 'Liên tục từ 01/01 đến 31/12.');
+  assert.equal(directAnswer('Danh mục:\n- A', 'x'), 'Danh mục:\n- A');
+});
+
+test('tra cứu Internet: lấy nguồn từ groundingMetadata, bỏ trùng', () => {
+  const { extractWebSources } = require('../src/services/ai/llmClient');
+  const res = { candidates: [{ groundingMetadata: { groundingChunks: [
+    { web: { uri: 'https://a.vn/x', title: 'hht.edu.vn' } }, { web: { uri: 'https://a.vn/x', title: 'trùng' } }, { retrievedContext: {} },
+  ] } }] };
+  assert.deepEqual(extractWebSources(res), [{ title: 'hht.edu.vn', url: 'https://a.vn/x' }]);
+  assert.deepEqual(extractWebSources({}), []);
+});
+
+test('độ phủ có trọng số IDF: từ phổ biến nặng ít, từ hiếm nặng nhiều', () => {
+  const { weightedCoverage } = require('../src/services/rag/liveKnowledge');
+  const df = new Map([['co', 40], ['so', 40], ['3', 10]]);
+  const words = new Set(['co', 'so', '3', 'dinh', 'thon']);
+  assert.ok(weightedCoverage(['be', 'boi', 'co', 'so', '3'], words, df, 50) < 0.5, '"bể bơi" không có -> không đủ căn cứ');
+  assert.ok(weightedCoverage(['co', 'so', '3'], words, df, 50) === 1);
+});

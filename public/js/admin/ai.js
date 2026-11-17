@@ -4,10 +4,10 @@
  */
 (function () {
   'use strict';
-  const SOURCE_LABEL = { RULE: 'Câu trả lời cố định', FAQ: 'Câu hỏi thường gặp', RAG: 'Tài liệu tuyển sinh', CACHE: 'Bộ nhớ đệm', FALLBACK: 'Chưa có căn cứ', HANDOFF: 'Chuyển cán bộ' };
+  const SOURCE_LABEL = { RULE: 'Câu trả lời cố định', FAQ: 'Câu hỏi thường gặp', RAG: 'Tài liệu tuyển sinh', CACHE: 'Bộ nhớ đệm', FALLBACK: 'Chưa có căn cứ', HANDOFF: 'Chuyển cán bộ', WEB: 'Tra cứu Internet' };
   const MODE_LABEL = { LLM: 'AI soạn', EXTRACTIVE: 'trích nguyên văn' };
   const MODEL_KEYS = ['LLM_MODEL', 'LLM_FALLBACK_MODEL', 'LLM_TEMPERATURE', 'LLM_TIMEOUT_SECONDS', 'MAX_ANSWER_TOKENS', 'MAX_HISTORY_TURNS', 'DAILY_TOKEN_BUDGET', 'EMBEDDING_MODEL', 'EMBEDDING_DIM'];
-  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_RECOMMEND_EXPLAIN'];
+  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_WEB_SEARCH_ENABLED', 'KB_AUTO_PUBLISH', 'AI_RECOMMEND_EXPLAIN'];
   const nf = new Intl.NumberFormat('vi-VN');
   const pct = (x) => (x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`);
 
@@ -109,6 +109,7 @@
       else ai = `${t.llm.model || 'AI'}${t.llm.fallbackUsed ? ' (mô hình dự phòng)' : ''}: ${t.llm.accepted ? 'câu trả lời hợp lệ' : (t.llm.reason || 'không dùng được')}${t.llm.tokensIn ? `, ${nf.format(t.llm.tokensIn + t.llm.tokensOut)} token` : ''}`;
       steps.push(['AI soạn câu trả lời', ai]);
     }
+    if (t.web) steps.push(['Tra cứu Internet', t.web.accepted ? `Dùng được, ${t.web.sources} nguồn web` : (t.web.reason || 'Không dùng được')]);
     return el('div', { class: 'try-result' },
       el('div', { class: 'btn-row' },
         el('span', { class: 'badge' }, SOURCE_LABEL[r.source] || r.source),

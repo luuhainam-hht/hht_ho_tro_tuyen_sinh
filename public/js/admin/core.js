@@ -4,12 +4,9 @@
  */
 (function () {
   'use strict';
-  const PERMS = {
-    KB_VIEW: ['SUPER_ADMIN', 'LEADER', 'ADVISOR'], KB_MANAGE: ['SUPER_ADMIN', 'ADVISOR'], KB_PUBLISH: ['SUPER_ADMIN', 'LEADER'], FAQ_EDIT: ['SUPER_ADMIN', 'LEADER', 'ADVISOR'],
-    FAQ_APPROVE: ['SUPER_ADMIN', 'LEADER'], HANDOFF: ['SUPER_ADMIN', 'ADVISOR'], ANALYTICS: ['SUPER_ADMIN', 'LEADER', 'ADVISOR'],
-    APPOINTMENT_MANAGE: ['SUPER_ADMIN', 'LEADER', 'ADVISOR'], CONFIG: ['SUPER_ADMIN'], STAFF_MANAGEMENT: ['SUPER_ADMIN'],
-  };
-  const ROLE_LABEL = { SUPER_ADMIN: 'Quản trị hệ thống', LEADER: 'Lãnh đạo', ADVISOR: 'Cán bộ tư vấn' };
+  // Danh sách nhóm quyền do máy chủ trả (/api/auth/me -> user.permissions, nguồn: src/constants/roles.js).
+  // Giao diện chỉ dùng để ẩn/hiện; máy chủ vẫn kiểm tra lại mọi thao tác.
+  const ROLE_LABEL = { SUPER_ADMIN: 'Quản trị hệ thống', LEADER: 'Lãnh đạo', ADMISSION_OFFICE: 'Phòng Tuyển sinh', FACULTY: 'Cán bộ Khoa', ADVISOR: 'Cán bộ tư vấn' };
   const tabs = [];
   let current = null;
   let user = null;
@@ -135,7 +132,7 @@
 
   const admin = {
     user: () => user,
-    can: (perm) => Boolean(user && PERMS[perm]?.includes(user.role)),
+    can: (perm) => Boolean(user && Array.isArray(user.permissions) && user.permissions.includes(perm)),
     ROLE_LABEL,
     /** Mỗi tab: { id, title, perm, render(root), events: [WS types làm tab tự tải lại] } */
     register(tab) { tabs.push(tab); },
@@ -173,7 +170,7 @@
     $('#login').classList.add('hidden');
     $('#change-password').classList.add('hidden');
     $('#app').classList.remove('hidden');
-    $('#who').textContent = `${u.fullName} · ${ROLE_LABEL[u.role]}`;
+    $('#who').textContent = `${u.fullName} · ${ROLE_LABEL[u.role] || u.role}${u.faculty ? ` – Khoa ${u.faculty}` : ''}`;
     $('#admin-nav').replaceChildren(...tabs.filter((t) => admin.can(t.perm)).map((t) => el('button', { type: 'button', 'data-action': 'tab', 'data-tab': t.id }, t.title, el('span', { class: 'badge hidden' }))));
     let saved = null;
     try { saved = sessionStorage.getItem('hht.adminTab'); } catch { /* */ }

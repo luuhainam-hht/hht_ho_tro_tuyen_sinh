@@ -1,7 +1,9 @@
 'use strict';
 const { updateWhitelisted } = require('../utils/sqlUpdate');
 
-const UPDATABLE = new Set(['title', 'detail', 'is_mandatory', 'copy_type', 'quantity', 'note', 'order_no', 'date_from', 'date_to', 'is_active']);
+const crypto = require('node:crypto');
+
+const UPDATABLE = new Set(['title', 'detail', 'audience', 'code', 'is_mandatory', 'copy_type', 'quantity', 'note', 'order_no', 'date_from', 'date_to', 'is_active']);
 const PUBLIC_COLUMNS = 'id, kind, audience, major_code, code, title, detail, is_mandatory, copy_type, quantity, note, order_no, date_from, date_to, source_codes';
 
 async function list(c, { year, kind, audience = null, majorCode = null }) {
@@ -22,4 +24,23 @@ const listAllForAdmin = async (c, year) => (await c.query(
 const findByIdForUpdate = async (c, id) => (await c.query('SELECT * FROM admission_items WHERE id = ? FOR UPDATE', [id])).rows[0] || null;
 const update = (c, id, fields) => updateWhitelisted(c, { table: 'admission_items', id, fields, allowed: UPDATABLE });
 
-module.exports = { list, listAllForAdmin, findByIdForUpdate, update };
+/** Mục do cán bộ thêm: item_key ngẫu nhiên (khóa seed dạng 'SCHEDULE:1' giữ cho dữ liệu nhập từ Excel). */
+async function insert(c, fields) {
+  const data = { item_key: `ADMIN:${crypto.randomUUID()}`, audience: 'ALL', detail: '', ...fields };
+  const cols = Object.keys(data).filter((k) => ['item_key', 'kind', 'admission_year'].includes(k) || UPDATABLE.has(k));
+  const { rows } = await c.query(
+    `INSERT INTO admission_items (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')}) RETURNING *`,
+    cols.map((k) => data[k]),
+  );
+  return rows[0];
+}
+
+const remove = (c, id) => c.query('DELETE FROM admission_items WHERE id = ?', [id]);
+
+/** Mục giải thích hệ đào tạo / loại hỗ trợ học phí cho trang Ngành và trợ lý (mã: HE_9_PLUS, NHA_NUOC…). */
+const listInfo = async (c, year) => (await c.query(
+  `SELECT id, kind, code, title, detail, note, order_no FROM admission_items
+    WHERE is_active AND admission_year = ? AND kind IN ('LEVEL_INFO', 'SUPPORT_INFO') ORDER BY kind, order_no, id`, [year],
+)).rows;
+
+module.exports = { list, listAllForAdmin, findByIdForUpdate, update, insert, remove, listInfo };

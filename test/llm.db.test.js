@@ -9,7 +9,13 @@ const { createFakeTransport } = require('./helpers/fakeLlm');
 
 let ctx; let app; let mode = 'good';
 const transport = createFakeTransport({
-  responder: () => {
+  responder: (req) => {
+    if (req.search) {
+      if (mode === 'web-none') return { text: 'KHONG_TIM_THAY', webSources: [] };
+      if (mode === 'web-nosource') return { text: 'Trường có hồ bơi 50m mở cửa cả năm cho sinh viên.', webSources: [] };
+      return { text: 'Trường có sân bóng đá và nhà thi đấu đa năng cho sinh viên luyện tập thể thao.', webSources: [{ title: 'hht.edu.vn', url: 'https://hht.edu.vn/the-thao' }] };
+    }
+    if (['insufficient', 'web', 'web-none', 'web-nosource'].includes(mode)) return { answer: '', citations: [], insufficient: true };
     if (mode === 'invented') return { answer: 'Học phí ngành này là 9.999.000 đồng/tháng [1].', citations: [1], intent: 'HOC_PHI', topics: ['HOC_PHI'], major_codes: [], insufficient: false };
     if (mode === 'garbage') return 'không phải JSON';
     return { answer: 'Hồ sơ của bộ đội xuất ngũ cần Thẻ học nghề bản gốc và Quyết định xuất ngũ bản công chứng [1].', citations: [1], intent: 'HO_SO', topics: ['HO_SO', 'DOI_TUONG_DAC_BIET'], major_codes: [], insufficient: false };
@@ -57,6 +63,44 @@ test('LLM bịa con số không có trong văn bản -> bị loại, chuyển sa
   const g = await ask('Bộ đội xuất ngũ được hỗ trợ những quyền lợi gì khi học?');
   assert.ok(['RAG', 'FAQ'].includes(g.source));
   assert.notEqual(g.answerMode, 'LLM');
+  mode = 'good';
+});
+
+test('kho không đủ căn cứ -> tra cứu Internet có nguồn web; không có nguồn thì FALLBACK (không bịa)', async () => {
+  // Embedding giả (băm từ) đôi khi chấm giống nghĩa cao ngẫu nhiên -> nâng ngưỡng để nhánh "không đủ căn cứ" tất định.
+  await ctx.c.configService.update('RAG_MIN_SCORE', '0.99', { actorId: null, ip: null });
+  mode = 'web';
+  const w = await ask('Trường có sân golf cho sinh viên luyện tập không?');
+  assert.equal(w.source, 'WEB');
+  assert.match(w.answer, /sân bóng đá/);
+  assert.equal(w.citations[0].url, 'https://hht.edu.vn/the-thao');
+  const { rows } = await ctx.db.query("SELECT source FROM chat_messages WHERE role = 'ASSISTANT' ORDER BY id DESC LIMIT 1");
+  assert.equal(rows[0].source, 'WEB');
+  mode = 'web-nosource';
+  const ns = await ask('Trường có hồ bơi tiêu chuẩn Olympic không?');
+  assert.notEqual(ns.source, 'WEB', 'không có nguồn web thật -> không dùng');
+  assert.doesNotMatch(ns.answer, /hồ bơi 50m/);
+  mode = 'web-none';
+  const nf = await ask('Trường có nuôi ngựa vằn không?');
+  assert.notEqual(nf.source, 'WEB');
+  assert.doesNotMatch(nf.answer, /KHONG_TIM_THAY/);
+  await ctx.c.configService.update('AI_WEB_SEARCH_ENABLED', 'false', { actorId: null, ip: null });
+  mode = 'web';
+  assert.notEqual((await ask('Trường có phòng thu âm cho sinh viên không?')).source, 'WEB', 'tắt tra cứu Internet');
+  await ctx.c.configService.update('AI_WEB_SEARCH_ENABLED', 'true', { actorId: null, ip: null });
+  await ctx.c.configService.update('RAG_MIN_SCORE', '0.6', { actorId: null, ip: null });
+  mode = 'good';
+});
+
+test('AI báo tài liệu không đủ -> thử tra cứu Internet trước khi trích nguyên văn', async () => {
+  mode = 'insufficient';
+  // Câu có căn cứ trong kho (bộ đội xuất ngũ) nhưng AI báo không đủ -> phải sang tra cứu, không dừng ở đó.
+  await ctx.c.configService.update('RAG_MIN_LEXICAL_SCORE', '0.1', { actorId: null, ip: null });
+  const before = transport.calls.generate;
+  const r = await ask('Bộ đội xuất ngũ học xong được giới thiệu việc làm ở doanh nghiệp Hàn Quốc nào?');
+  assert.equal(transport.calls.generate, before + 2, 'gọi AI đọc tài liệu rồi gọi tra cứu');
+  assert.equal(r.source, 'WEB');
+  await ctx.c.configService.update('RAG_MIN_LEXICAL_SCORE', '0.5', { actorId: null, ip: null });
   mode = 'good';
 });
 

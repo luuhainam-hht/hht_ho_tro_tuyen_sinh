@@ -62,3 +62,19 @@ Mọi chuyển trạng thái đi theo cùng một trình tự: `withTransaction`
 - **Lời nhắc:** quy tắc chống bịa luôn đứng trước "Hướng dẫn bổ sung của Nhà trường" và được ghi rõ là ưu tiên cao hơn; câu trả lời vẫn qua bước kiểm tra trích dẫn bằng mã như trước.
 - **Thử trợ lý** (`POST /api/admin/ai/try`): chạy `answerService.compose` với `dryRun` (không đọc/ghi bộ nhớ đệm, không lấy lịch sử, không ghi log) và `trace` ghi từng bước.
 - **Tài khoản:** `set-password` (không áp dụng cho chính mình để phiên bị đánh cắp không chiếm được tài khoản Admin), `unlock`, `logout-all`; chính sách `PASSWORD_MIN_LENGTH`, `SESSION_TTL_HOURS`, `LOGIN_MAX_FAILED_ATTEMPTS`, `LOGIN_LOCK_MINUTES` trong `system_configs`. Cột mới `staff.last_login_at`, `staff.password_changed_at` (migration `2026-11-16-staff-login-tracking`).
+
+## Phân quyền Phòng Tuyển sinh / Khoa, bảng ngành tách cột, trợ lý tra cứu Internet (bổ sung 17/11/2026)
+
+- **Vai trò mới** (`src/constants/roles.js`, migration `2026-11-17-admission-office-faculty-web`):
+  - `ADMISSION_OFFICE` – Phòng Tuyển sinh: ngành của mọi khoa, hồ sơ (trang Hồ sơ), đợt nhận hồ sơ, hướng dẫn, liên hệ, giải thích hệ/học phí, duyệt FAQ, công bố tài liệu, câu hỏi chờ cán bộ, lịch hẹn.
+  - `FACULTY` – Cán bộ Khoa: gắn `staff.faculty`; chỉ xem/sửa/thêm ngành của khoa mình (máy chủ ép khoa khi thêm, chặn 403 khi sửa ngành khoa khác hoặc chuyển khoa); soạn FAQ chờ duyệt.
+  - Nhóm quyền mới: `MAJOR_MANAGE`, `ADMISSION_INFO`, `CONTACT_CONFIG`. `/api/auth/me` trả `permissions` -> giao diện ẩn/hiện tab theo máy chủ (không còn chép bảng quyền ở frontend).
+- **API quản trị** `/api/admin/catalog`: `majors` (GET/POST/PUT, có học phí min–max, % Nhà nước/Doanh nghiệp – chuẩn hóa "70" → "70%", chặn tổng > 100%), `admission-items` (GET/POST/PUT/DELETE cho DOC_CHECKLIST, SCHEDULE, ONLINE_GUIDE_STEP, CONTACT, LEVEL_INFO, SUPPORT_INFO), `contact-configs` (chỉ HOTLINE, email, địa chỉ nộp hồ sơ, trang đăng ký, fanpage, tên trường, lời chào, bật chuyển cán bộ). Mọi thay đổi ghi audit và phát `CATALOG_UPDATED`.
+- **Trang Ngành học**: cột "Hệ tuyển sinh" tách SC | Hệ 9+ | TC | CĐ, cột "Hỗ trợ học phí" tách Nhà nước | Doanh nghiệp | Sinh viên (% + số tiền/tháng = học phí × %). Chú thích viết tắt ở trên bảng; bấm tên cột → khung chat hiện giải thích lấy từ `admission_items` kind `LEVEL_INFO`/`SUPPORT_INFO` (`GET /api/handbook/info`, Phòng Tuyển sinh sửa được). Khung chat đang mở nhận lệnh qua `postMessage`, không tải lại.
+- **Trợ lý**:
+  - *Tri thức sống* (`services/rag/liveKnowledge.js`): dựng đoạn văn bản từ ngành, đợt nhận hồ sơ (trạng thái theo hôm nay), hồ sơ, liên hệ, hướng dẫn, giải thích hệ – trợ lý trả lời theo dữ liệu vừa sửa. Đoạn seed cũ cùng loại bị loại khỏi tìm kiếm (`STALE_SEED_FILTER`). `v_kb_version` gồm `majors`/`admission_items.updated_at` nên cache tự hết hiệu lực.
+  - *Có căn cứ*: độ phủ từ khóa phải đạt ngưỡng cả theo đếm thường lẫn theo trọng số IDF toàn kho – chặn "bể bơi ở cơ sở 3" khớp nhầm đoạn Liên hệ.
+  - *Tự công bố* (`KB_AUTO_PUBLISH`, mặc định bật): tài liệu tải lên xử lý xong là vào kho trả lời; migration `2026-11-17-publish-ready-documents` công bố một lần các tài liệu READY tồn đọng.
+  - *Tra cứu Internet* (`AI_WEB_SEARCH_ENABLED`): kho không đủ căn cứ hoặc AI báo tài liệu thiếu → Gemini + Google Search grounding, ưu tiên hht.edu.vn, chỉ nhận khi có nguồn web thật (`groundingMetadata`); nguồn `WEB`, giao diện ghi chú "chưa phải văn bản chính thức".
+  - *Trả lời thẳng*: lời nhắc cấm nhắc lại câu hỏi/mở đầu; nhánh trích nguyên văn bỏ "Theo văn bản…", với đoạn "Hỏi/Đáp" chỉ lấy phần Đáp khớp nhất.
+  - *Câu trả lời dài*: khung chat cuộn tới ĐẦU câu trả lời (khi cao hơn 55% khung) và thêm nút "↑ Về đầu câu trả lời".

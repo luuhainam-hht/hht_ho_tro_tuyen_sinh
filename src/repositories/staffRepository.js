@@ -1,8 +1,8 @@
 'use strict';
 const { updateWhitelisted } = require('../utils/sqlUpdate');
 
-const PUBLIC_COLUMNS = 'id, username, full_name, email, role, is_active, must_change_password, locked_until, failed_login_attempts, last_login_at, password_changed_at, created_at, updated_at';
-const UPDATABLE = new Set(['full_name', 'email', 'role', 'is_active', 'password_hash', 'must_change_password', 'failed_login_attempts', 'locked_until', 'last_login_at', 'password_changed_at']);
+const PUBLIC_COLUMNS = 'id, username, full_name, email, role, faculty, is_active, must_change_password, locked_until, failed_login_attempts, last_login_at, password_changed_at, created_at, updated_at';
+const UPDATABLE = new Set(['full_name', 'email', 'role', 'faculty', 'is_active', 'password_hash', 'must_change_password', 'failed_login_attempts', 'locked_until', 'last_login_at', 'password_changed_at']);
 
 const findByUsername = async (c, username) => (await c.query('SELECT * FROM staff WHERE username = ?', [username])).rows[0] || null;
 const findById = async (c, id) => (await c.query(`SELECT ${PUBLIC_COLUMNS} FROM staff WHERE id = ?`, [id])).rows[0] || null;
@@ -10,11 +10,11 @@ const findByIdForUpdate = async (c, id) => (await c.query('SELECT * FROM staff W
 const list = async (c) => (await c.query(`SELECT ${PUBLIC_COLUMNS} FROM staff ORDER BY role, username`)).rows;
 const countActiveByRole = async (c, role) => (await c.query('SELECT COUNT(*)::int AS n FROM staff WHERE role = ? AND is_active', [role])).rows[0].n;
 
-async function insert(c, { username, passwordHash, fullName, email = null, role, mustChangePassword = true }) {
+async function insert(c, { username, passwordHash, fullName, email = null, role, faculty = null, mustChangePassword = true }) {
   const { rows } = await c.query(
-    `INSERT INTO staff (username, password_hash, full_name, email, role, must_change_password)
-     VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (username) DO NOTHING RETURNING ${PUBLIC_COLUMNS}`,
-    [username, passwordHash, fullName, email, role, mustChangePassword],
+    `INSERT INTO staff (username, password_hash, full_name, email, role, faculty, must_change_password)
+     VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (username) DO NOTHING RETURNING ${PUBLIC_COLUMNS}`,
+    [username, passwordHash, fullName, email, role, faculty, mustChangePassword],
   );
   return rows[0] || null;
 }

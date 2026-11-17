@@ -12,7 +12,15 @@ async function replaceForDocument(c, documentId, chunks) {
 }
 
 /**
- * Tìm kiếm toàn văn trên các đoạn thuộc tài liệu PUBLISHED của năm hiện hành.
+ * Đoạn seed dựng từ bảng ngành/hồ sơ/lịch/liên hệ (tài liệu không có tệp gốc) là ảnh chụp lúc nhập Excel.
+ * Dữ liệu đó nay lấy trực tiếp từ CSDL (liveKnowledge) nên bỏ các đoạn seed này khỏi tìm kiếm để không
+ * trả lời theo bản cũ khi Phòng Tuyển sinh đã sửa.
+ */
+const STALE_SEED_FILTER = `NOT (d.file_path IS NULL AND ch.heading_path ~ '^(Ngành nghề đào tạo|Hệ 9\\+ › Chỉ tiêu|Hồ sơ ›|Lịch tuyển sinh|Liên hệ)')`;
+
+/**
+ * Tìm kiếm toàn văn trên các đoạn thuộc tài liệu PUBLISHED của năm hiện hành (và năm sau, khi trường
+ * đã đăng văn bản cho khóa kế tiếp).
  * OR giữa các từ khóa (câu hỏi tự nhiên có nhiều từ thừa; AND sẽ trượt hết) + xếp hạng ts_rank_cd.
  */
 async function fullTextSearch(c, { tokens, year, limit = 20 }) {
@@ -23,9 +31,9 @@ async function fullTextSearch(c, { tokens, year, limit = 20 }) {
             d.title, d.source_url, d.source_code, d.doc_no, d.reliability,
             ts_rank_cd(ch.tsv, q) AS rank
        FROM kb_chunks ch
-       JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year = ?,
+       JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year >= ?,
             to_tsquery('simple', ?) q
-      WHERE ch.tsv @@ q
+      WHERE ch.tsv @@ q AND ${STALE_SEED_FILTER}
       ORDER BY rank DESC, ch.id LIMIT ?`,
     [year, terms.join(' | '), limit],
   );
@@ -36,8 +44,19 @@ async function fullTextSearch(c, { tokens, year, limit = 20 }) {
 async function listPublishedEmbeddings(c, year) {
   const { rows } = await c.query(
     `SELECT ch.id, ch.embedding FROM kb_chunks ch
-       JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year = ?
-      WHERE ch.embedding IS NOT NULL`,
+       JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year >= ?
+      WHERE ch.embedding IS NOT NULL AND ${STALE_SEED_FILTER}`,
+    [year],
+  );
+  return rows;
+}
+
+/** Văn bản chuẩn hóa của mọi đoạn đang dùng để tính tần suất từ (IDF) cho bước "có căn cứ". */
+async function listPublishedNorms(c, year) {
+  const { rows } = await c.query(
+    `SELECT ch.content_norm, ch.heading_path, d.title FROM kb_chunks ch
+       JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year >= ?
+      WHERE ${STALE_SEED_FILTER}`,
     [year],
   );
   return rows;
@@ -66,4 +85,4 @@ const listMissingEmbedding = async (c, limit = 50) => (await c.query(
 const setEmbedding = (c, id, embedding, model) => c.query('UPDATE kb_chunks SET embedding = ?, embedding_model = ? WHERE id = ?', [embedding, model, id]);
 const clearAllEmbeddings = (c) => c.query('UPDATE kb_chunks SET embedding = NULL, embedding_model = NULL');
 
-module.exports = { replaceForDocument, fullTextSearch, listPublishedEmbeddings, findByIds, listForDocument, listMissingEmbedding, setEmbedding, clearAllEmbeddings };
+module.exports = { STALE_SEED_FILTER, replaceForDocument, fullTextSearch, listPublishedEmbeddings, listPublishedNorms, findByIds, listForDocument, listMissingEmbedding, setEmbedding, clearAllEmbeddings };
