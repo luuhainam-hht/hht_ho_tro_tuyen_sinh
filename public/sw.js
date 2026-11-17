@@ -2,7 +2,7 @@
  * Service Worker: vỏ ứng dụng chạy được khi rớt mạng. KHÔNG cache /api (dữ liệu tuyển sinh phải mới,
  * thông tin cá nhân không lưu trên máy dùng chung). Tăng CACHE_VERSION mỗi lần đổi file tĩnh.
  */
-const CACHE_VERSION = 'hht-ts-v4';
+const CACHE_VERSION = 'hht-ts-v5';
 const PRECACHE = [
   '/', '/index.html', '/nganh.html', '/nganh-chi-tiet.html', '/ho-so.html', '/dat-lich.html', '/hen.html', '/lich-tuyen-sinh.html',
   '/huong-dan-dang-ky.html', '/cam-nang.html', '/goi-y-nganh.html', '/lien-he.html', '/nguon-du-lieu.html', '/chat.html', '/offline.html', '/404.html',
@@ -26,6 +26,6 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(fetch(e.request).then((res) => {
     if (res.ok) { const copy = res.clone(); caches.open(CACHE_VERSION).then((c) => c.put(e.request, copy)); }
     return res;
-  }).catch(() => caches.match(e.request, { ignoreSearch: e.request.mode === 'navigate' })
+  }).catch(() => caches.match(e.request, { ignoreSearch: true })
     .then((hit) => hit || (e.request.mode === 'navigate' ? caches.match('/offline.html') : undefined))));
 });

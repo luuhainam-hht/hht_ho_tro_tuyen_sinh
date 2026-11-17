@@ -45,7 +45,7 @@
         const money = moneyRange(m, p);
         if (money) body.push(el('span', { class: 'money' }, money));
       }
-      return el('td', { class: 'num-cell', 'data-label': col.short }, body);
+      return el('td', { class: `num-cell${col === SUPPORT_COLS[0] ? ' grp-start' : ''}`, 'data-label': col.short }, body);
     };
     const verify = m.support_needs_verify && (m.state_support || m.enterprise_support);
     const studentCell = cell(SUPPORT_COLS[2], known ? `${student}%` : null, student, 'pct--student');
@@ -59,14 +59,14 @@
   }
 
   function levelCells(m) {
-    return LEVEL_COLS.map((c) => el('td', { class: 'lvl-cell', 'data-label': c.short },
+    return LEVEL_COLS.map((c, i) => el('td', { class: `lvl-cell${i === 0 ? ' grp-start' : ''}`, 'data-label': c.short },
       m.levels.includes(c.code)
         ? el('span', { class: 'tick', role: 'img', 'aria-label': `Có tuyển ${c.short}`, title: `Có tuyển ${c.long}` }, '✓')
         : el('span', { class: 'dash', 'aria-label': `Không tuyển ${c.short}` }, '–')));
   }
 
-  function headerButton(kind, col) {
-    return el('th', { scope: 'col', class: 'sub-th' },
+  function headerButton(kind, col, i) {
+    return el('th', { scope: 'col', class: `sub-th${i === 0 ? ' grp-start' : ''}` },
       el('button', { type: 'button', class: 'th-btn', 'data-action': 'explain', 'data-kind': kind, 'data-code': col.code, title: `Bấm để trợ lý giải thích: ${col.long}` }, col.short));
   }
 
@@ -75,9 +75,9 @@
       el('tr', {},
         el('th', { rowspan: '2', scope: 'col' }, 'Ngành, nghề'),
         el('th', { rowspan: '2', scope: 'col' }, 'Khoa'),
-        el('th', { colspan: '4', scope: 'colgroup', class: 'group-th' }, 'Hệ tuyển sinh'),
-        el('th', { colspan: '3', scope: 'colgroup', class: 'group-th' }, 'Hỗ trợ học phí (% và số tiền mỗi tháng)')),
-      el('tr', {}, LEVEL_COLS.map((c) => headerButton('level', c)), SUPPORT_COLS.map((c) => headerButton('support', c))));
+        el('th', { colspan: '4', scope: 'colgroup', class: 'group-th grp-start' }, 'Hệ tuyển sinh'),
+        el('th', { colspan: '3', scope: 'colgroup', class: 'group-th grp-start' }, 'Hỗ trợ học phí', el('span', { class: 'group-sub' }, '% và số tiền mỗi tháng'))),
+      el('tr', {}, LEVEL_COLS.map((c, i) => headerButton('level', c, i)), SUPPORT_COLS.map((c, i) => headerButton('support', c, i))));
   }
 
   function renderLegend() {

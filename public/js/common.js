@@ -23,7 +23,8 @@
       else if (k === 'text') n.textContent = v;
       else if (k.startsWith('data-') || k.startsWith('aria-') || ['for', 'role', 'type', 'name', 'value', 'href', 'src', 'id', 'title', 'colspan', 'rowspan', 'scope', 'list', 'min', 'max', 'placeholder', 'autocomplete', 'inputmode', 'maxlength', 'rows', 'target', 'rel', 'tabindex', 'download', 'accept', 'required', 'checked', 'disabled', 'selected', 'open'].includes(k)) {
         if (v === true) n.setAttribute(k, ''); else n.setAttribute(k, v);
-      } else n[k] = v;
+      } else if (typeof v === 'function' || typeof v === 'boolean') n[k] = v; // sự kiện / cờ DOM (onclick, hidden…)
+      else n.setAttribute(k, v); // list, step, alt, width… : luôn dùng setAttribute, không gán property chỉ-đọc
     }
     for (const c of children.flat(Infinity)) if (c !== null && c !== undefined && c !== false) n.append(c instanceof Node ? c : document.createTextNode(String(c)));
     return n;
