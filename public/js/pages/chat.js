@@ -32,10 +32,17 @@
     const node = el('div', { class: `msg msg--${role}` }, text);
     if (meta) {
       const m = el('div', { class: 'msg-meta' });
-      if (meta.source === 'WEB') m.append(el('div', { class: 'web-note' }, 'Thông tin tra cứu trên Internet, chưa phải văn bản chính thức của Nhà trường – vui lòng đối chiếu với nguồn hoặc hỏi Trung tâm Tuyển sinh.'));
+      if (meta.source === 'WEB') {
+        const official = meta.citations?.some((c) => c.official);
+        m.append(el('div', { class: 'web-note' }, meta.webMode === 'GENERAL'
+          ? 'Thông tin tham khảo tra cứu trên Internet (ngoài nội dung tuyển sinh).'
+          : official
+            ? 'Tra cứu trên website chính thức của Nhà trường – thông tin có thể đã cập nhật, vui lòng đối chiếu với Trung tâm Tuyển sinh.'
+            : 'Thông tin tra cứu trên Internet, chưa phải văn bản chính thức của Nhà trường – vui lòng đối chiếu với nguồn hoặc hỏi Trung tâm Tuyển sinh.'));
+      }
       if (meta.citations?.length) {
         m.append(el('div', {}, `${SOURCE_NOTE[meta.source] || 'Nguồn'}: `,
-          meta.citations.map((c, i) => [i ? '; ' : '', c.url ? el('a', { href: c.url, target: '_blank', rel: 'noopener' }, c.title) : c.title, c.pages ? ` (tr. ${c.pages})` : ''])));
+          meta.citations.map((c, i) => [i ? '; ' : '', c.url ? el('a', { href: c.url, target: '_blank', rel: 'noopener noreferrer' }, c.title) : c.title, c.official ? ' (chính thức)' : '', c.pages ? ` (tr. ${c.pages})` : ''])));
       }
       if (meta.suggestions?.length) {
         m.append(el('div', {}, 'Có thể bạn muốn hỏi:'),

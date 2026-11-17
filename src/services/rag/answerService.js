@@ -7,6 +7,9 @@
  *   g) LLM với prompt nghiêm ngặt, JSON                      h) kiểm tra trích dẫn bằng mã
  *   i) lưu log, ghi cache, broadcast QUESTION_LOGGED
  * Không có LLM (chưa cấu hình key / hết ngân sách / lỗi): trích nguyên văn đoạn tốt nhất (EXTRACTIVE).
+ * Tra Google: câu hỏi tuyển sinh chưa đủ căn cứ -> tìm trên website chính thức (AI_OFFICIAL_SITE) trước;
+ *   câu hỏi ngoài tuyển sinh -> trả lời bằng Google (AI_WEB_GENERAL_ENABLED).
+ * Bảo mật (securityGuard): câu hỏi dò bí mật bị từ chối TRƯỚC mọi bước; mọi câu trả lời được lọc bí mật.
  * Không bao giờ hiển thị lỗi kỹ thuật cho thí sinh; tác vụ phụ lỗi không làm mất câu trả lời.
  */
 const { HttpError } = require('../../utils/httpError');
@@ -14,7 +17,8 @@ const { sha256 } = require('../../utils/crypto');
 const { normalizeVi, keywords, coverage } = require('../../utils/textNormalize');
 const { vnToday } = require('../../utils/time');
 const { maskPii, forMatching } = require('../piiFilter');
-const { systemPromptFromConfig, buildUserPrompt, buildWebSearchPrompt } = require('../ai/promptBuilder');
+const { systemPromptFromConfig, buildUserPrompt, buildWebSearchPrompt, buildGeneralWebPrompt } = require('../ai/promptBuilder');
+const { createSecurityGuard } = require('../securityGuard');
 const { describeLlmError } = require('../ai/llmClient');
 const { validateCitations } = require('./citation');
 const chatRepository = require('../../repositories/chatRepository');
@@ -25,6 +29,19 @@ const tokenUsageRepository = require('../../repositories/tokenUsageRepository');
 const EXTRACTIVE_MAX_CHARS = 900;
 const WEB_NOT_FOUND = /KHONG_TIM_THAY/i;
 const MAX_WEB_SOURCES = 5;
+
+/**
+ * Câu hỏi có thuộc phạm vi tuyển sinh/nhà trường không (quyết định tra hht.edu.vn hay trả lời chung bằng Google).
+ * Viết chặt hơn intentClassifier: "lịch sử Việt Nam", "ở đâu bán sách" không bị coi là câu hỏi tuyển sinh.
+ */
+const SCHOOL_TERMS = /(?<!thi )\btruong\b(?! hop)|\b(tuyen sinh|xet tuyen|nhap hoc|nganh|hoc nghe|nghe nghiep|nghe gi|nghe nao|khoa nao|hoc phi|ho tro hoc phi|mien giam|hoc bong|ho so|hoc ba|hht|cao dang|trung cap|so cap|he 9|lien thong|chi tieu|diem chuan|dang ky|thi sinh|phu huynh|ky tuc xa|ktx|co so [123]|giang vien|giao vien|sinh vien|hoc vien|tot nghiep|bang cap|van bang|chuong trinh dao tao|thuc tap|viec lam|dong phuc|lich hoc|hoc ky|nhap hoc|bo doi|xuat ngu|lop (9|12)|thcs|thpt|he nao|hoc he|dat hang|doanh nghiep tuyen|du hoc|ngan han|chung chi)\b|9\+/;
+function isSchoolQuestion(question, cls) {
+  if (cls?.majorCodes?.length) return true;
+  return SCHOOL_TERMS.test(normalizeVi(question).replace(/\b9 \b/g, '9+ '));
+}
+
+/** Nguồn web thuộc website chính thức? (Gemini thường trả URL chuyển hướng, tên miền nằm ở tiêu đề.) */
+const isOfficial = (s, site) => Boolean(site) && `${s.title || ''} ${s.url || ''}`.toLowerCase().includes(site.toLowerCase());
 
 /**
  * Trích nguyên văn nhưng trả lời THẲNG: đoạn dạng "Hỏi: … / Đáp: …" (từ FAQ) chỉ lấy phần Đáp của cặp
@@ -45,6 +62,7 @@ function directAnswer(content, question) {
 
 function createAnswerService({
   db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger = console,
+  securityGuard = createSecurityGuard(),
 }) {
   let sourceMap = { version: null, map: new Map() };
 
@@ -89,31 +107,40 @@ function createAnswerService({
    * Tra cứu Internet (Google Search grounding) khi kho tri thức không đủ căn cứ. Chỉ chấp nhận khi Gemini
    * trả về ít nhất một nguồn web thật (groundingMetadata) – không có nguồn thì coi như không tìm thấy.
    */
-  async function tryWeb({ question, contextChunks = [] }) {
+  async function tryWeb({ question, contextChunks = [], general = false }) {
     const get = (k, d) => configService.getOr(k, d);
-    const { system, prompt } = buildWebSearchPrompt({
+    const site = get('AI_OFFICIAL_SITE', 'hht.edu.vn');
+    const base = {
       schoolName: get('SCHOOL_NAME', 'Nhà trường'), hotline: get('HOTLINE', ''), maxWords: get('AI_ANSWER_MAX_WORDS', 150),
-      tone: get('AI_TONE', 'THAN_THIEN'), question, contextChunks,
-    });
+      tone: get('AI_TONE', 'THAN_THIEN'), question, site,
+    };
+    const { system, prompt } = general ? buildGeneralWebPrompt(base) : buildWebSearchPrompt({ ...base, contextChunks });
     const res = await llm.generate({ system, prompt, search: true });
     try { await tokenUsageRepository.add(db, vnToday(), res.tokensIn, res.tokensOut); } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
     const text = String(res.text || '').replace(/^```\w*\s*|\s*```$/g, '').trim();
     const sources = (res.webSources || []).slice(0, MAX_WEB_SOURCES);
     if (!text || WEB_NOT_FOUND.test(text) || text.length < 20) return { ok: false, tokens: res, reason: 'Không tìm thấy thông tin đáng tin cậy trên Internet' };
     if (!sources.length) return { ok: false, tokens: res, reason: 'Tra cứu Internet không trả về nguồn nào nên không dùng' };
-    return { ok: true, tokens: res, answer: text, citations: sources.map((s, i) => ({ n: i + 1, chunkId: null, title: s.title, url: s.url, web: true })) };
+    // Nguồn trên website chính thức lên đầu và được đánh dấu.
+    const ordered = [...sources.filter((x) => isOfficial(x, site)), ...sources.filter((x) => !isOfficial(x, site))];
+    return {
+      ok: true, tokens: res, answer: text, official: ordered.some((x) => isOfficial(x, site)),
+      citations: ordered.map((x, i) => ({ n: i + 1, chunkId: null, title: x.title, url: x.url, web: true, official: isOfficial(x, site) })),
+    };
   }
 
   const webSearchOn = (llmOn) => llmOn && configService.getOr('AI_WEB_SEARCH_ENABLED', true) !== false;
+  const generalWebOn = (llmOn) => webSearchOn(llmOn) && configService.getOr('AI_WEB_GENERAL_ENABLED', true) !== false;
 
-  async function webOrNull({ question, contextChunks, t, cls, retrieval }) {
+  async function webOrNull({ question, contextChunks, t, cls, retrieval, general = false }) {
     try {
-      const out = await tryWeb({ question, contextChunks });
-      t.web = { used: true, accepted: out.ok, reason: out.reason || null, sources: out.citations?.length || 0 };
+      const out = await tryWeb({ question, contextChunks, general });
+      t.web = { used: true, mode: general ? 'GENERAL' : 'SCHOOL', accepted: out.ok, official: Boolean(out.official), reason: out.reason || null, sources: out.citations?.length || 0 };
       if (!out.ok) return null;
       return {
         source: 'WEB', answerMode: 'LLM', answer: out.answer, citations: out.citations, topScore: retrieval?.topScore ?? null,
-        tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...cls,
+        webMode: general ? 'GENERAL' : 'SCHOOL', webOfficial: Boolean(out.official),
+        tokensIn: out.tokens.tokensIn, tokensOut: out.tokens.tokensOut, ...cls, ...(general ? { intent: 'GENERAL', topics: ['KHAC'] } : {}),
       };
     } catch (err) {
       logger.warn('[answer] tra cứu Internet lỗi:', err.message);
@@ -152,15 +179,27 @@ function createAnswerService({
    */
   async function compose({ sessionId, question, majorContext, dryRun = false, trace = null }) {
     const t = trace || {};
+    // Bảo mật: câu hỏi dò bí mật/prompt injection -> từ chối ngay, không gửi cho AI, không tra Internet.
+    if (securityGuard.detectSecretProbe(question)) {
+      t.security = { blocked: true };
+      return { source: 'RULE', answer: securityGuard.REFUSAL, citations: [], intent: 'SECURITY', topics: ['KHAC'], majorCodes: [] };
+    }
     const cls = classifier.classify(question);
     const rule = ruleAssistant.tryAnswer(question);
     t.rule = Boolean(rule);
-    if (rule) return { source: 'RULE', answer: rule.answer, citations: [], intent: rule.intent, topics: [], majorCodes: [] };
-
-    const kbVersion = await kbDocumentRepository.kbVersion(db);
     const budgetOk = await budgetLeft();
     const llmOn = llm.available() && budgetOk;
     t.llm = { enabled: llm.enabled(), keys: llm.keyCount(), budgetOk, used: false };
+    if (rule) {
+      // Câu hỏi ngoài tuyển sinh: bật "trả lời bằng Google" thì AI tra cứu và trả lời kèm nguồn thay vì từ chối.
+      if (rule.intent === 'OUT_OF_SCOPE' && generalWebOn(llmOn)) {
+        const web = await webOrNull({ question, contextChunks: [], t, cls, retrieval: null, general: true });
+        if (web) return web;
+      }
+      return { source: 'RULE', answer: rule.answer, citations: [], intent: rule.intent, topics: [], majorCodes: [] };
+    }
+
+    const kbVersion = await kbDocumentRepository.kbVersion(db);
     const queryEmbedding = llmOn ? await safeEmbedQuery(question) : null;
     t.vectorSearch = Boolean(queryEmbedding);
 
@@ -201,7 +240,12 @@ function createAnswerService({
     // f) không đủ căn cứ -> tra cứu Internet (nếu bật và có AI) -> không được thì FALLBACK
     if (!retrieval.grounded) {
       if (webSearchOn(llmOn)) {
-        const web = await webOrNull({ question, contextChunks: [], t, cls, retrieval });
+        // Câu hỏi tuyển sinh: tra website chính thức trước; câu hỏi chung: trả lời bằng Google (nếu bật).
+        const school = isSchoolQuestion(question, cls);
+        t.scope = school ? 'SCHOOL' : 'GENERAL';
+        const web = school || generalWebOn(llmOn)
+          ? await webOrNull({ question, contextChunks: [], t, cls, retrieval, general: !school })
+          : null;
         if (web) return web;
       }
       return { source: 'FALLBACK', answer: fallbackText(), citations: [], suggestions, topScore: retrieval.topScore, handoffSuggested: true, ...cls };
@@ -227,8 +271,12 @@ function createAnswerService({
         }
         // AI đọc tài liệu và báo không đủ thông tin -> thử tra Internet trước khi trích nguyên văn.
         if (out.insufficient && webSearchOn(llmOn)) {
-          const web = await webOrNull({ question, contextChunks: retrieval.chunks, t, cls, retrieval });
-          if (web) return web;
+          const school = isSchoolQuestion(question, cls);
+          t.scope = school ? 'SCHOOL' : 'GENERAL';
+          if (school || generalWebOn(llmOn)) {
+            const web = await webOrNull({ question, contextChunks: school ? retrieval.chunks : [], t, cls, retrieval, general: !school });
+            if (web) return web;
+          }
         }
       } catch (err) {
         logger.warn('[answer] LLM lỗi, chuyển sang trích dẫn nguyên văn:', err.message);
@@ -248,6 +296,14 @@ function createAnswerService({
     };
   }
 
+  /** Lọc bí mật trên MỌI câu trả lời (kể cả FAQ, trích văn bản, Internet) trước khi lưu log và gửi đi. */
+  function secure(reply) {
+    const out = securityGuard.sanitizeAnswer(reply.answer);
+    if (out.redacted) logger.warn(`[security] đã ${out.blocked ? 'chặn' : 'ẩn bí mật trong'} câu trả lời (nguồn ${reply.source})`);
+    if (out.blocked) return { ...reply, answer: out.text, citations: [], intent: 'SECURITY', redacted: true };
+    return out.redacted ? { ...reply, answer: out.text, redacted: true } : reply;
+  }
+
   async function answer({ sessionId, message, majorCode = null }) {
     const startedAt = Date.now();
     const session = await chatRepository.findSession(db, sessionId);
@@ -262,6 +318,7 @@ function createAnswerService({
     let reply;
     try {
       reply = await compose({ sessionId, question: forMatching(masked) || masked, majorContext });
+      reply = secure(reply);
     } catch (err) {
       // Lỗi bất ngờ (DB chập chờn…): vẫn trả lời lịch sự, không lộ lỗi kỹ thuật.
       logger.error('[answer] lỗi khi soạn câu trả lời:', err);
@@ -292,6 +349,7 @@ function createAnswerService({
       answer: reply.answer,
       source: reply.source,
       answerMode: reply.answerMode ?? null,
+      webMode: reply.webMode ?? null,
       citations: reply.citations,
       suggestions: reply.suggestions ?? [],
       handoffSuggested: Boolean(reply.handoffSuggested) && configService.get('HANDOFF_ENABLED'),
@@ -306,7 +364,8 @@ function createAnswerService({
     const startedAt = Date.now();
     const { masked } = maskPii(message);
     const trace = {};
-    const reply = await compose({ sessionId: null, question: forMatching(masked) || masked, majorContext: null, dryRun: true, trace });
+    const reply = secure(await compose({ sessionId: null, question: forMatching(masked) || masked, majorContext: null, dryRun: true, trace }));
+    trace.security = { ...(trace.security || {}), redacted: Boolean(reply.redacted) };
     return {
       answer: reply.answer, source: reply.source, answerMode: reply.answerMode ?? null, citations: reply.citations,
       topScore: reply.topScore ?? null, latencyMs: Date.now() - startedAt, trace,

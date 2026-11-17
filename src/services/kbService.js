@@ -22,7 +22,7 @@ function createKbService({ db, configService, broadcast, uploadDir }) {
     if (!file) throw new HttpError(400, 'Chưa chọn tệp tài liệu');
     if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(413, 'Tệp vượt quá 20 MB');
     const mime = mimeFromName(file.originalname);
-    if (!mime || !SUPPORTED_MIME.has(mime)) throw new HttpError(400, 'Chỉ hỗ trợ tệp PDF, DOCX, TXT hoặc MD');
+    if (!mime || !SUPPORTED_MIME.has(mime)) throw new HttpError(400, 'Chỉ hỗ trợ tệp PDF, DOCX, XLSX, CSV, TXT, MD hoặc ảnh JPG/PNG/WEBP');
     const hash = sha256(file.buffer);
     const dup = await kbDocumentRepository.findBySha(db, hash);
     if (dup) throw new HttpError(409, `Tài liệu này đã được tải lên trước đó: "${dup.title}" (${dup.status})`);
@@ -86,7 +86,21 @@ function createKbService({ db, configService, broadcast, uploadDir }) {
     });
   }
 
-  return { upload, publish, archive, reprocess, MAX_UPLOAD_BYTES };
+  /**
+   * "Học lại toàn bộ": xử lý lại mọi tài liệu lỗi/chưa xử lý có tệp gốc (vd: bản scan trước đây báo lỗi, nay AI
+   * đọc được) và bổ sung vector còn thiếu cho đoạn văn bản + FAQ.
+   */
+  async function relearnAll({ actor, ip }) {
+    return db.withTransaction(async (c) => {
+      const { rows } = await c.query("SELECT id FROM kb_documents WHERE status IN ('FAILED', 'DRAFT') AND file_path IS NOT NULL ORDER BY id");
+      for (const r of rows) await jobRepository.enqueue(c, { type: 'INGEST_DOCUMENT', payload: { documentId: Number(r.id) } });
+      await jobRepository.enqueue(c, { type: 'REEMBED_ALL', payload: { reset: false } });
+      await auditRepository.insert(c, { actorId: actor.id, action: 'KB_RELEARN', targetType: 'SYSTEM', targetId: null, payload: { documents: rows.length }, ip });
+      return { requeued: rows.length };
+    });
+  }
+
+  return { upload, publish, archive, reprocess, relearnAll, MAX_UPLOAD_BYTES };
 }
 
 module.exports = { createKbService, MAX_UPLOAD_BYTES };

@@ -479,8 +479,7 @@ CREATE OR REPLACE VIEW v_kb_version AS
 SELECT md5(
   COALESCE((SELECT string_agg(d.id || ':' || d.updated_at::text, ',' ORDER BY d.id)
               FROM kb_documents d
-             WHERE d.status = 'PUBLISHED'
-               AND d.admission_year = (SELECT value::int FROM system_configs WHERE key = 'CURRENT_ADMISSION_YEAR')), '')
+             WHERE d.status = 'PUBLISHED'), '')   -- mọi năm học: trợ lý học toàn bộ tài liệu đã công bố (RAG_ALL_YEARS)
   || '|' ||
   COALESCE((SELECT max(f.updated_at)::text FROM faq_entries f WHERE f.status = 'APPROVED'), '')
   -- Ngành và mục cẩm nang (đợt nhận hồ sơ, liên hệ…) cũng là tri thức trả lời: Phòng Tuyển sinh/Khoa sửa

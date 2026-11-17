@@ -2,7 +2,7 @@
  * Service Worker: vỏ ứng dụng chạy được khi rớt mạng. KHÔNG cache /api (dữ liệu tuyển sinh phải mới,
  * thông tin cá nhân không lưu trên máy dùng chung). Tăng CACHE_VERSION mỗi lần đổi file tĩnh.
  */
-const CACHE_VERSION = 'hht-ts-v7';
+const CACHE_VERSION = 'hht-ts-v8';
 const PRECACHE = [
   '/', '/index.html', '/nganh.html', '/nganh-chi-tiet.html', '/ho-so.html', '/dat-lich.html', '/hen.html', '/lich-tuyen-sinh.html',
   '/huong-dan-dang-ky.html', '/cam-nang.html', '/goi-y-nganh.html', '/lien-he.html', '/nguon-du-lieu.html', '/chat.html', '/offline.html', '/404.html',

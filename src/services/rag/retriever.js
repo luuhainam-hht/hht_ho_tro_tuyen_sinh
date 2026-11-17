@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Bước (e): tìm kiếm lai trên các đoạn thuộc tài liệu PUBLISHED của năm hiện hành
+ * Bước (e): tìm kiếm lai trên các đoạn thuộc tài liệu PUBLISHED (mọi năm học khi RAG_ALL_YEARS bật)
  *   + tri thức "sống" dựng từ dữ liệu ngành/đợt nhận hồ sơ/liên hệ đang hiệu lực (liveKnowledge).
  *   full-text top 20 (Postgres tsvector, không dấu)  +  vector top 20 (cosine, khi có embedding)
  *   + dữ liệu sống top 20 (độ phủ từ khóa) -> gộp bằng Reciprocal Rank Fusion (k = 60) -> lấy RAG_TOP_K.
@@ -35,7 +35,8 @@ function createRetriever({ db, configService, liveKnowledge = null }) {
    * trùng từ phổ biến ("trường", "cơ sở", "học") nhưng trượt ý chính ("bể bơi").
    */
   async function corpusStats(kbVersion, year) {
-    if (dfCache.version === kbVersion) return dfCache;
+    const ver = `${kbVersion}|${year}`;
+    if (dfCache.version === ver) return dfCache;
     const df = new Map();
     let total = 0;
     const addDoc = (text) => {
@@ -44,7 +45,7 @@ function createRetriever({ db, configService, liveKnowledge = null }) {
     };
     for (const r of await kbChunkRepository.listPublishedNorms(db, year)) addDoc(`${r.content_norm} ${normalizeVi(`${r.title} ${r.heading_path}`)}`);
     if (liveKnowledge) for (const c of await liveKnowledge.all(kbVersion)) addDoc(`${c.content_norm} ${c.head_norm}`);
-    dfCache = { version: kbVersion, df, total };
+    dfCache = { version: ver, df, total };
     return dfCache;
   }
 
@@ -63,8 +64,9 @@ function createRetriever({ db, configService, liveKnowledge = null }) {
 
   async function vectorCandidates(queryEmbedding, kbVersion, year) {
     if (!queryEmbedding) return [];
-    if (vectorCache.version !== kbVersion) {
-      vectorCache = { version: kbVersion, rows: await kbChunkRepository.listPublishedEmbeddings(db, year) };
+    const ver = `${kbVersion}|${year}`;
+    if (vectorCache.version !== ver) {
+      vectorCache = { version: ver, rows: await kbChunkRepository.listPublishedEmbeddings(db, year) };
     }
     return vectorCache.rows
       .map((r) => ({ id: Number(r.id), cosine: dot(queryEmbedding, r.embedding) }))
@@ -73,7 +75,8 @@ function createRetriever({ db, configService, liveKnowledge = null }) {
   }
 
   async function retrieve({ question, queryEmbedding = null, kbVersion }) {
-    const year = configService.get('CURRENT_ADMISSION_YEAR');
+    // RAG_ALL_YEARS (mặc định bật): học toàn bộ tài liệu đã công bố của mọi năm học (year = 0).
+    const year = configService.getOr('RAG_ALL_YEARS', true) !== false ? 0 : configService.get('CURRENT_ADMISSION_YEAR');
     const topK = configService.get('RAG_TOP_K');
     const tokens = keywords(question);
     const [ftRows, vecRows, liveRows] = await Promise.all([

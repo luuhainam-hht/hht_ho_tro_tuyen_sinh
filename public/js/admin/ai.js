@@ -7,7 +7,7 @@
   const SOURCE_LABEL = { RULE: 'Câu trả lời cố định', FAQ: 'Câu hỏi thường gặp', RAG: 'Tài liệu tuyển sinh', CACHE: 'Bộ nhớ đệm', FALLBACK: 'Chưa có căn cứ', HANDOFF: 'Chuyển cán bộ', WEB: 'Tra cứu Internet' };
   const MODE_LABEL = { LLM: 'AI soạn', EXTRACTIVE: 'trích nguyên văn' };
   const MODEL_KEYS = ['LLM_MODEL', 'LLM_FALLBACK_MODEL', 'LLM_TEMPERATURE', 'LLM_TIMEOUT_SECONDS', 'MAX_ANSWER_TOKENS', 'MAX_HISTORY_TURNS', 'DAILY_TOKEN_BUDGET', 'EMBEDDING_MODEL', 'EMBEDDING_DIM'];
-  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_WEB_SEARCH_ENABLED', 'KB_AUTO_PUBLISH', 'AI_RECOMMEND_EXPLAIN'];
+  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_WEB_SEARCH_ENABLED', 'AI_OFFICIAL_SITE', 'AI_WEB_GENERAL_ENABLED', 'KB_AUTO_PUBLISH', 'AI_OCR_ENABLED', 'AI_RECOMMEND_EXPLAIN'];
   const nf = new Intl.NumberFormat('vi-VN');
   const pct = (x) => (x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`);
 
@@ -93,6 +93,8 @@
   function traceView(r) {
     const t = r.trace || {};
     const steps = [];
+    if (t.security?.blocked) steps.push(['Bảo mật', 'Câu hỏi dò thông tin nội bộ/bí mật – đã từ chối, không gửi cho AI']);
+    if (t.security?.redacted) steps.push(['Bảo mật', 'Đã ẩn thông tin bí mật trong câu trả lời']);
     steps.push(['Câu trả lời cố định', t.rule ? 'Khớp (chào hỏi / ngoài phạm vi / xin gặp cán bộ)' : 'Không khớp']);
     if (t.faq) {
       steps.push(['Câu hỏi thường gặp', t.faq.matched ? `Khớp, độ giống ${pct(t.faq.score)}` : `Không đủ giống${t.faq.candidates.length ? `. Gần nhất: ${t.faq.candidates.map((c) => `"${c.question}" (${pct(c.score)})`).join('; ')}` : ''}`]);
@@ -109,14 +111,14 @@
       else ai = `${t.llm.model || 'AI'}${t.llm.fallbackUsed ? ' (mô hình dự phòng)' : ''}: ${t.llm.accepted ? 'câu trả lời hợp lệ' : (t.llm.reason || 'không dùng được')}${t.llm.tokensIn ? `, ${nf.format(t.llm.tokensIn + t.llm.tokensOut)} token` : ''}`;
       steps.push(['AI soạn câu trả lời', ai]);
     }
-    if (t.web) steps.push(['Tra cứu Internet', t.web.accepted ? `Dùng được, ${t.web.sources} nguồn web` : (t.web.reason || 'Không dùng được')]);
+    if (t.web) steps.push([t.web.mode === 'GENERAL' ? 'Tra Google (câu hỏi chung)' : 'Tra Google (website trường trước)', t.web.accepted ? `Dùng được, ${t.web.sources} nguồn web${t.web.official ? ', có nguồn từ website chính thức' : ''}` : (t.web.reason || 'Không dùng được')]);
     return el('div', { class: 'try-result' },
       el('div', { class: 'btn-row' },
         el('span', { class: 'badge' }, SOURCE_LABEL[r.source] || r.source),
         r.answerMode ? el('span', { class: 'badge' }, MODE_LABEL[r.answerMode]) : null,
         el('span', { class: 'small muted' }, `${nf.format(r.latencyMs)} ms`)),
       el('div', { class: 'msg msg--bot mt-xs' }, r.answer),
-      r.citations?.length ? el('p', { class: 'small muted' }, 'Nguồn: ', r.citations.map((c) => `[${c.n}] ${c.title}`).join('; ')) : null,
+      r.citations?.length ? el('p', { class: 'small muted' }, 'Nguồn: ', r.citations.map((c) => `[${c.n}] ${c.title}${c.official ? ' (chính thức)' : ''}`).join('; ')) : null,
       el('h4', { class: 'mb-0' }, 'Các bước xử lý'),
       el('dl', { class: 'trace' }, steps.map(([k, v]) => [el('dt', {}, k), el('dd', {}, v)])),
       t.retrieval?.chunks?.length ? el('details', {}, el('summary', {}, `Xem ${t.retrieval.chunks.length} đoạn tài liệu đã tìm được`),

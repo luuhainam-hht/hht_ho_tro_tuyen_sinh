@@ -19,6 +19,18 @@ module.exports = function adminKbRoutes({ db, kbService, limits }) {
     documents: await kbDocumentRepository.list(db, { status: v.str(req.query, 'status', { max: 20 }), year: v.int(req.query, 'year') }),
     kbVersion: await kbDocumentRepository.kbVersion(db),
   })));
+  /** Trợ lý đã học được gì: tài liệu theo trạng thái, số đoạn, đoạn đã có vector, tài liệu lỗi cần xử lý. */
+  r.get('/coverage', requirePermission('KB_VIEW'), ah(async (_req, res) => {
+    const [{ rows: byStatus }, { rows: chunks }, { rows: failed }, { rows: faq }] = await Promise.all([
+      db.query('SELECT status, COUNT(*)::int AS n FROM kb_documents GROUP BY status'),
+      db.query(`SELECT COUNT(*)::int AS total, COUNT(ch.embedding)::int AS embedded
+                  FROM kb_chunks ch JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED'`),
+      db.query("SELECT id, title, error FROM kb_documents WHERE status IN ('FAILED', 'DRAFT') ORDER BY id DESC LIMIT 20"),
+      db.query("SELECT COUNT(*)::int AS total, COUNT(embedding)::int AS embedded FROM faq_entries WHERE status = 'APPROVED'"),
+    ]);
+    res.json({ byStatus: Object.fromEntries(byStatus.map((x) => [x.status, x.n])), chunks: chunks[0], faq: faq[0], pending: failed });
+  }));
+  r.post('/relearn', requirePermission('KB_MANAGE'), ah(async (req, res) => res.json(await kbService.relearnAll({ actor: req.user, ip: req.ip }))));
   r.get('/:id', requirePermission('KB_VIEW'), ah(async (req, res) => {
     const doc = await kbDocumentRepository.findById(db, v.idParam(req.params));
     if (!doc) throw new HttpError(404, 'Không tìm thấy tài liệu');

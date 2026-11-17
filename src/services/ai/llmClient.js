@@ -91,30 +91,35 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
   const enabled = () => cfg('AI_ENABLED', true) !== false;
   const available = () => enabled() && pool.size > 0 && pool.available() > 0;
 
-  function request(model, { system, contents, json, maxTokens, search = false }) {
+  function request(model, { system, contents, json, maxTokens, search = false, timeoutMs, temperature }) {
     return {
       model, system, contents, json, search,
-      temperature: cfg('LLM_TEMPERATURE', 0.2),
+      temperature: temperature ?? cfg('LLM_TEMPERATURE', 0.2),
       maxTokens: maxTokens ?? cfg('MAX_ANSWER_TOKENS', 800),
-      timeoutMs: cfg('LLM_TIMEOUT_SECONDS', 20) * 1000,
+      timeoutMs: timeoutMs ?? cfg('LLM_TIMEOUT_SECONDS', 20) * 1000,
     };
   }
 
-  async function generate({ system, history = [], prompt, json = false, maxTokens, search = false }) {
+  /**
+   * attachments: [{ mimeType, data (base64) }] – tệp gửi kèm (AI đọc ảnh/PDF scan khi nạp tài liệu).
+   * timeoutMs/temperature: ghi đè cấu hình cho tác vụ nền (đọc tài liệu cần lâu hơn câu hỏi của thí sinh).
+   */
+  async function generate({ system, history = [], prompt, json = false, maxTokens, search = false, attachments = [], timeoutMs, temperature }) {
     const contents = [
       ...history.map((h) => ({ role: h.role === 'USER' ? 'user' : 'model', parts: [{ text: h.content }] })),
-      { role: 'user', parts: [{ text: prompt }] },
+      { role: 'user', parts: [...attachments.map((a) => ({ inlineData: { mimeType: a.mimeType, data: a.data } })), { text: prompt }] },
     ];
+    const opts = { system, contents, json, maxTokens, search, timeoutMs, temperature };
     const model = cfg('LLM_MODEL', 'gemini-2.5-flash');
     try {
-      const res = await pool.run((key) => transport.generate(key, request(model, { system, contents, json, maxTokens, search })));
+      const res = await pool.run((key) => transport.generate(key, request(model, opts)));
       return { ...res, model };
     } catch (err) {
       // Mô hình chính lỗi (sai tên, quá tải, mọi khóa đều nghỉ…) -> thử mô hình dự phòng một lần.
       const fallback = cfg('LLM_FALLBACK_MODEL', '');
       if (!fallback || fallback === model || err?.code === 'NO_KEY_AVAILABLE') throw err;
       logger.warn(`[llm] ${model} lỗi (${String(err.message).slice(0, 120)}), thử mô hình dự phòng ${fallback}`);
-      const res = await pool.run((key) => transport.generate(key, request(fallback, { system, contents, json, maxTokens, search })));
+      const res = await pool.run((key) => transport.generate(key, request(fallback, opts)));
       return { ...res, model: fallback, fallbackUsed: true };
     }
   }
@@ -156,6 +161,8 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
   return {
     available, enabled, generate, embed, setKeys, testKey, testAll,
     keyStatus: () => pool.status(),
+    /** Giá trị khóa thật – CHỈ để bộ lọc bảo mật xóa khỏi câu trả lời nếu bị lộ. */
+    secretValues: () => pool.entries().map((e) => e.key),
     keyCount: () => pool.size,
     modelName: () => cfg('EMBEDDING_MODEL', 'gemini-embedding-001'),
   };

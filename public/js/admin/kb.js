@@ -2,14 +2,32 @@
   'use strict';
   const STATUS = { DRAFT: ['Nháp', ''], PROCESSING: ['Đang xử lý', 'badge--wait'], READY: ['Sẵn sàng công bố', 'badge--wait'], PUBLISHED: ['Đang dùng', 'badge--go'], ARCHIVED: ['Lưu trữ', ''], FAILED: ['Lỗi', 'badge--stop'] };
 
+  /** Trợ lý đã học được bao nhiêu: tài liệu đang dùng, đoạn có vector, tài liệu lỗi; nút "Học lại toàn bộ". */
+  function learnPanel(cov) {
+    const n = (k) => cov.byStatus[k] || 0;
+    const pct = cov.chunks.total ? Math.round((cov.chunks.embedded / cov.chunks.total) * 100) : 0;
+    return el('section', { class: 'panel mb-m' },
+      el('h3', { class: 'mb-0' }, 'Trợ lý đã học'),
+      el('p', { class: 'hint' }, 'Trợ lý dùng mọi tài liệu "Đang dùng" (mọi năm học, ưu tiên văn bản mới nhất), dữ liệu ngành/đợt tuyển/liên hệ trong hệ thống, FAQ đã duyệt, rồi tra Google (ưu tiên hht.edu.vn) khi chưa đủ. PDF scan và ảnh chụp được AI đọc thành chữ.'),
+      el('div', { class: 'kpis' },
+        el('div', { class: 'kpi' }, el('span', {}, 'Tài liệu đang dùng'), el('strong', {}, String(n('PUBLISHED')))),
+        el('div', { class: 'kpi' }, el('span', {}, 'Đoạn văn bản'), el('strong', {}, String(cov.chunks.total)), el('span', {}, `${pct}% đã có vector (tìm theo nghĩa)`)),
+        el('div', { class: 'kpi' }, el('span', {}, 'FAQ đã duyệt'), el('strong', {}, String(cov.faq.total))),
+        el('div', { class: 'kpi' }, el('span', {}, 'Chờ xử lý / lỗi'), el('strong', {}, String(n('FAILED') + n('DRAFT') + n('PROCESSING') + n('READY'))))),
+      cov.pending.length ? el('ul', { class: 'small mt-s' }, cov.pending.map((d) => el('li', {}, el('strong', {}, d.title), d.error ? ` – ${d.error}` : ' – chưa xử lý'))) : null,
+      admin.can('KB_MANAGE') ? el('div', { class: 'btn-row mt-s' },
+        el('button', { class: 'btn btn--primary btn--sm', 'data-action': 'kb-relearn' }, 'Học lại toàn bộ'),
+        el('span', { class: 'hint' }, 'Xử lý lại tài liệu lỗi (vd: bản scan) và tạo vector còn thiếu. Chạy nền vài phút.')) : null);
+  }
+
   admin.register({
     id: 'kb', title: 'Kho tri thức', perm: 'KB_VIEW', events: ['KB_DOCUMENT_UPDATED', 'JOB_UPDATED'],
     async render(root) {
-      const { documents } = await apiClient.get('/api/admin/kb');
+      const [{ documents }, cov] = await Promise.all([apiClient.get('/api/admin/kb'), apiClient.get('/api/admin/kb/coverage')]);
       const published = documents.filter((d) => d.status === 'PUBLISHED');
       root.replaceChildren(
-        el('p', { class: 'small muted' }, 'Phần hỏi đáp chỉ dùng các tài liệu "Đang dùng" của năm tuyển sinh hiện hành. Công bố hoặc lưu trữ tài liệu thì câu trả lời được cập nhật ngay.'),
-        admin.can('KB_MANAGE') ? el('details', { class: 'panel mb-m' }, el('summary', {}, el('strong', {}, 'Tải lên văn bản tuyển sinh (PDF, DOCX, TXT)')),
+        learnPanel(cov),
+        admin.can('KB_MANAGE') ? el('details', { class: 'panel mb-m' }, el('summary', {}, el('strong', {}, 'Tải lên tài liệu (PDF, DOCX, XLSX, CSV, TXT, ảnh JPG/PNG)')),
           el('form', { class: 'form mt-s', 'data-action': 'kb-upload' },
             el('div', { class: 'form-grid' },
               el('label', {}, 'Tên văn bản', el('input', { name: 'title', required: true, maxlength: '300' })),
@@ -17,7 +35,7 @@
               el('label', {}, 'Ngày ban hành', el('input', { name: 'issuedDate', type: 'date' })),
               el('label', {}, 'Đường dẫn gốc', el('input', { name: 'sourceUrl', type: 'url', placeholder: 'https://hht.edu.vn/…' })),
               el('label', {}, 'Thay thế văn bản', el('select', { name: 'replacesDocumentId' }, el('option', { value: '' }, 'Không thay thế'), published.map((d) => el('option', { value: d.id }, d.title.slice(0, 80))))),
-              el('label', {}, 'Tệp', el('input', { name: 'file', type: 'file', accept: '.pdf,.docx,.txt,.md', required: true }))),
+              el('label', {}, 'Tệp', el('input', { name: 'file', type: 'file', accept: '.pdf,.docx,.xlsx,.csv,.txt,.md,.jpg,.jpeg,.png,.webp', required: true }))),
             el('button', { class: 'btn btn--primary', type: 'submit' }, 'Tải lên và xử lý'))) : null,
         admin.can('CONFIG') ? el('div', { class: 'btn-row mb-m' }, el('button', { class: 'btn btn--sm', 'data-action': 'kb-reembed' }, 'Tạo vector cho đoạn còn thiếu')) : null,
         admin.table(['Văn bản', 'Nguồn', 'Đoạn', 'Trạng thái', 'Thao tác'], documents.map((d) => el('tr', {},
@@ -57,6 +75,7 @@
       apiClient.post(`/api/admin/kb/${b.dataset.id}/archive`).then(() => { toast('Đã lưu trữ', 'ok'); admin.reload(); }).catch((e) => toast(e.message, 'error'));
     },
     'kb-reprocess': (b) => apiClient.post(`/api/admin/kb/${b.dataset.id}/reprocess`).then(() => toast('Đã xếp hàng xử lý lại', 'ok')).catch((e) => toast(e.message, 'error')),
+    'kb-relearn': () => apiClient.post('/api/admin/kb/relearn', {}).then((r) => { toast(`Đã xếp hàng học lại ${r.requeued} tài liệu và bổ sung vector`, 'ok'); admin.reload(); }).catch((e) => toast(e.message, 'error')),
     'kb-reembed': () => apiClient.post('/api/admin/kb/reembed', {}).then(() => toast('Đã xếp hàng tạo vector', 'ok')).catch((e) => toast(e.message, 'error')),
   });
 })();

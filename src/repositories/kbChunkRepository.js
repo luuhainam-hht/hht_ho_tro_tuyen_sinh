@@ -19,8 +19,8 @@ async function replaceForDocument(c, documentId, chunks) {
 const STALE_SEED_FILTER = `NOT (d.file_path IS NULL AND ch.heading_path ~ '^(Ngành nghề đào tạo|Hệ 9\\+ › Chỉ tiêu|Hồ sơ ›|Lịch tuyển sinh|Liên hệ)')`;
 
 /**
- * Tìm kiếm toàn văn trên các đoạn thuộc tài liệu PUBLISHED của năm hiện hành (và năm sau, khi trường
- * đã đăng văn bản cho khóa kế tiếp).
+ * Tìm kiếm toàn văn trên các đoạn thuộc tài liệu PUBLISHED có admission_year >= year. Truyền year = 0 để học
+ * toàn bộ tài liệu đã công bố của mọi năm (RAG_ALL_YEARS) – năm học đi kèm mỗi đoạn để AI ưu tiên văn bản mới.
  * OR giữa các từ khóa (câu hỏi tự nhiên có nhiều từ thừa; AND sẽ trượt hết) + xếp hạng ts_rank_cd.
  */
 async function fullTextSearch(c, { tokens, year, limit = 20 }) {
@@ -28,7 +28,7 @@ async function fullTextSearch(c, { tokens, year, limit = 20 }) {
   if (!terms.length) return [];
   const { rows } = await c.query(
     `SELECT ch.id, ch.document_id, ch.heading_path, ch.content, ch.content_norm, ch.page_from, ch.page_to,
-            d.title, d.source_url, d.source_code, d.doc_no, d.reliability,
+            d.title, d.source_url, d.source_code, d.doc_no, d.reliability, d.admission_year,
             ts_rank_cd(ch.tsv, q) AS rank
        FROM kb_chunks ch
        JOIN kb_documents d ON d.id = ch.document_id AND d.status = 'PUBLISHED' AND d.admission_year >= ?,
@@ -66,7 +66,7 @@ async function findByIds(c, ids) {
   if (!ids.length) return [];
   const { rows } = await c.query(
     `SELECT ch.id, ch.document_id, ch.heading_path, ch.content, ch.content_norm, ch.page_from, ch.page_to,
-            d.title, d.source_url, d.source_code, d.doc_no, d.reliability
+            d.title, d.source_url, d.source_code, d.doc_no, d.reliability, d.admission_year
        FROM kb_chunks ch JOIN kb_documents d ON d.id = ch.document_id WHERE ch.id = ANY(?::bigint[])`,
     [ids],
   );

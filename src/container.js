@@ -20,6 +20,7 @@ const { createFaqMatcher } = require('./services/faqMatcher');
 const { createRetriever } = require('./services/rag/retriever');
 const { createLiveKnowledge } = require('./services/rag/liveKnowledge');
 const { createAnswerService } = require('./services/rag/answerService');
+const { createSecurityGuard } = require('./services/securityGuard');
 const { createIngestService } = require('./services/rag/ingestService');
 const { createKbService } = require('./services/kbService');
 const { createFaqService } = require('./services/faqService');
@@ -63,8 +64,16 @@ function createContainer({ db = getDb(), logger = console, llmTransport, fetchIm
   const liveKnowledge = createLiveKnowledge({ db, configService, logger });
   const retriever = createRetriever({ db, configService, liveKnowledge });
   const ruleAssistant = createRuleAssistant({ configService });
-  const answerService = createAnswerService({ db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger });
-  const ingestService = createIngestService({ db, llm, broadcast, uploadDir, logger });
+  // Bí mật thật của máy chủ: nếu lọt vào câu trả lời (AI bị lừa, tài liệu chứa khóa…) sẽ bị xóa trước khi gửi.
+  const securityGuard = createSecurityGuard({
+    secrets: () => [
+      env.DATABASE_URL, process.env.NEON_DATABASE_URL, process.env.POSTGRES_PASSWORD, env.SECRET_ENCRYPTION_KEY, env.VISITOR_HASH_SECRET,
+      env.ADMIN_INITIAL_PASSWORD, env.MESSENGER_APP_SECRET, env.MESSENGER_PAGE_TOKEN, env.MESSENGER_VERIFY_TOKEN,
+      ...(llm.secretValues ? llm.secretValues() : []),
+    ],
+  });
+  const answerService = createAnswerService({ db, configService, llm, faqMatcher, retriever, ruleAssistant, classifier, broadcast, logger, securityGuard });
+  const ingestService = createIngestService({ db, llm, broadcast, uploadDir, logger, configService });
   const kbService = createKbService({ db, configService, broadcast, uploadDir });
   const faqService = createFaqService({ db, configService, broadcast });
   const handoffService = createHandoffService({ db, configService, broadcast, classifier });

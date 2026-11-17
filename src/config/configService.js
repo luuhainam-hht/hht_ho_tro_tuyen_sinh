@@ -115,6 +115,7 @@ const KEY_VALIDATORS = {
   LLM_FALLBACK_MODEL: (v) => { if (v) assertModelName(v); },
   EMBEDDING_MODEL: (v) => assertModelName(v),
   AI_TONE: (v) => { if (!AI_TONES.includes(v)) throw new HttpError(400, `AI_TONE chỉ nhận: ${AI_TONES.join(', ')}`); },
+  AI_OFFICIAL_SITE: (v) => { if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v)) throw new HttpError(400, 'AI_OFFICIAL_SITE chỉ ghi tên miền, vd: hht.edu.vn'); },
   AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };
 
