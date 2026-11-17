@@ -10,51 +10,78 @@
  *  - CHAT (trả lời thí sinh)      : AI_PROVIDER_CHAT      (mặc định GROQ)
  *  - RECOMMEND (gợi ý ngành)      : AI_PROVIDER_RECOMMEND (mặc định GROQ, mô hình nhỏ GROQ_SMALL_MODEL)
  *  - ANALYTICS (phân tích Tổng quan): AI_PROVIDER_ANALYTICS (mặc định GEMINI)
- *    Giá trị AUTO | GROQ | GEMINI; AUTO = Groq trước nếu có khóa. Lỗi / hết ngân sách riêng -> tự chuyển bên còn lại.
+ *    Giá trị BALANCE | GROQ | GEMINI | AUTO. BALANCE = chia đều tải: mỗi câu đi bên đang dùng ít token hôm nay hơn
+ *    (tính theo % ngân sách riêng nếu cả hai bên có đặt), bằng nhau thì xoay vòng. AUTO = Groq trước nếu có khóa. Lỗi / hết ngân sách riêng -> tự chuyển bên còn lại.
  *  - WEB_SEARCH (tra Google), OCR (đọc ảnh/PDF scan), EMBED (vector): chỉ Gemini làm được.
  * Mỗi lần gọi được ghi vào ai_calls (aiUsageMeter) để thống kê, tính ngân sách và chi phí.
  */
-const { GoogleGenAI } = require('@google/genai');
 const { createGeminiKeyPool, classifyError } = require('./geminiKeyPool');
 const { isGroqKey } = require('./groqClient');
 
 const DEFAULT_TIMEOUT_MS = 20_000;
+const GEMINI_API_VERSION = 'v1beta';
+const GEMINI_BASE = `https://generativelanguage.googleapis.com/${GEMINI_API_VERSION}`;
 const EMBED_BATCH_SIZE = 50;
 const TEST_PROMPT = 'Trả lời đúng một từ: OK';
 
-function createGeminiTransport() {
-  const clients = new Map();
-  const client = (apiKey) => {
-    if (!clients.has(apiKey)) clients.set(apiKey, new GoogleGenAI({ apiKey }));
-    return clients.get(apiKey);
-  };
+/**
+ * Gọi Gemini API trực tiếp qua REST v1beta (không qua thư viện @google/genai): thư viện 3.x mặc định gọi v1,
+ * bản này từ chối systemInstruction ("Developer instruction is not enabled for api version v1") và không có
+ * Google Search. Gọi REST thì không phụ thuộc phiên bản thư viện cài trên máy chủ.
+ */
+function createGeminiTransport({ fetchImpl = globalThis.fetch } = {}) {
+  async function call(apiKey, path, body, timeoutMs) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetchImpl(`${GEMINI_BASE}/${path}`, {
+        method: 'POST', signal: controller.signal,
+        headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const e = data?.error || {};
+        const err = new Error(`Gemini ${res.status} ${e.status || ''}: ${e.message || res.statusText}`.trim());
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const modelPath = (m) => `models/${String(m).replace(/^models\//, '')}`;
   return {
     async generate(apiKey, { model, system, contents, temperature, maxTokens, json, search = false, timeoutMs = DEFAULT_TIMEOUT_MS }) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const res = await client(apiKey).models.generateContent({
-          model,
-          contents,
-          config: {
-            systemInstruction: system, temperature, maxOutputTokens: maxTokens, abortSignal: controller.signal,
-            // Google Search grounding không dùng chung được với đầu ra JSON -> hai chế độ tách biệt.
-            ...(search ? { tools: [{ googleSearch: {} }] } : json ? { responseMimeType: 'application/json' } : {}),
-          },
-        });
-        const usage = res.usageMetadata || {};
-        const out = { text: (res.text || '').trim(), tokensIn: usage.promptTokenCount || 0, tokensOut: usage.candidatesTokenCount || 0 };
-        if (search) out.webSources = extractWebSources(res);
-        return out;
-      } finally {
-        clearTimeout(timer);
+      const generationConfig = { temperature, maxOutputTokens: maxTokens };
+      // Google Search grounding không dùng chung được với đầu ra JSON -> hai chế độ tách biệt.
+      if (json && !search) generationConfig.responseMimeType = 'application/json';
+      // Gemini 2.5 Flash/Flash-Lite: tắt "suy nghĩ" để token suy nghĩ không ăn hết giới hạn đầu ra và trả lời nhanh hơn.
+      if (/gemini-2\.5-flash/i.test(model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };
+      const body = {
+        contents, generationConfig,
+        ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+        ...(search ? { tools: [{ google_search: {} }] } : {}),
+      };
+      const data = await call(apiKey, `${modelPath(model)}:generateContent`, body, timeoutMs);
+      const cand = data?.candidates?.[0];
+      const text = (cand?.content?.parts || []).filter((x) => typeof x.text === 'string' && !x.thought).map((x) => x.text).join('').trim();
+      if (!text && cand?.finishReason && cand.finishReason !== 'STOP') {
+        const err = new Error(`Gemini không trả nội dung (finishReason=${cand.finishReason})`);
+        err.status = 400;
+        throw err;
       }
+      const usage = data?.usageMetadata || {};
+      const out = { text, tokensIn: usage.promptTokenCount || 0, tokensOut: (usage.candidatesTokenCount || 0) + (usage.thoughtsTokenCount || 0) };
+      if (search) out.webSources = extractWebSources(data);
+      return out;
     },
     async embed(apiKey, { model, texts, dim, taskType }) {
-      const res = await client(apiKey).models.embedContent({
-        model, contents: texts, config: { outputDimensionality: dim, taskType },
-      });
-      return res.embeddings.map((e) => e.values);
+      const data = await call(apiKey, `${modelPath(model)}:batchEmbedContents`, {
+        requests: texts.map((t) => ({ model: modelPath(model), content: { parts: [{ text: String(t) }] }, taskType, outputDimensionality: dim })),
+      }, 60_000);
+      return (data.embeddings || []).map((e) => e.values);
     },
   };
 }
@@ -87,7 +114,7 @@ function describeLlmError(err) {
 }
 
 const TASK_PROVIDER_KEY = { CHAT: 'AI_PROVIDER_CHAT', RECOMMEND: 'AI_PROVIDER_RECOMMEND', ANALYTICS: 'AI_PROVIDER_ANALYTICS' };
-const TASK_DEFAULT = { CHAT: 'GROQ', RECOMMEND: 'GROQ', ANALYTICS: 'GEMINI' };
+const TASK_DEFAULT = { CHAT: 'BALANCE', RECOMMEND: 'BALANCE', ANALYTICS: 'GEMINI' };
 
 function createLlmClient({ apiKeys = [], configService, transport = createGeminiTransport(), logger = console, groq = null, meter = null }) {
   const envKeys = apiKeys.map((key, i) => ({ key, label: `.env #${i + 1}`, source: 'ENV' }));
@@ -109,8 +136,26 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
   /** Nhà cung cấp chính đã cấu hình cho một việc: GROQ | GEMINI | AUTO. */
   const providerFor = (task) => {
     const v = String(cfg(TASK_PROVIDER_KEY[task], TASK_DEFAULT[task] || 'GEMINI') || 'AUTO').toUpperCase();
-    return ['GROQ', 'GEMINI', 'AUTO'].includes(v) ? v : 'AUTO';
+    return ['GROQ', 'GEMINI', 'AUTO', 'BALANCE'].includes(v) ? v : 'BALANCE';
   };
+  let turn = 0;
+  /** Chia đều: chọn bên đang "nhẹ tải" hơn hôm nay. */
+  async function pickBalanced() {
+    turn += 1;
+    const alternate = turn % 2 ? 'GROQ' : 'GEMINI';
+    if (!meter?.tokensToday) return alternate;
+    try {
+      const [g, m] = await Promise.all([meter.tokensToday('GROQ'), meter.tokensToday('GEMINI')]);
+      const gb = Number(cfg('GROQ_DAILY_TOKEN_BUDGET', 0)) || 0;
+      const mb = Number(cfg('GEMINI_DAILY_TOKEN_BUDGET', 0)) || 0;
+      const [lg, lm] = gb && mb ? [g / gb, m / mb] : [g, m];
+      const max = Math.max(lg, lm);
+      if (!max || Math.abs(lg - lm) / max < 0.02) return alternate;
+      return lg < lm ? 'GROQ' : 'GEMINI';
+    } catch {
+      return alternate;
+    }
+  }
   const inBudget = (provider) => (meter ? meter.withinBudget(provider) : Promise.resolve(true));
 
   function request(model, { system, contents, json, maxTokens, search = false, timeoutMs, temperature }) {
@@ -139,7 +184,8 @@ function createLlmClient({ apiKeys = [], configService, transport = createGemini
     const groqCan = !geminiOnly && groqAvailable() && groqBudget;
     const geminiCan = geminiAvailable() && geminiBudget;
     if (geminiOnly && geminiAvailable() && !geminiBudget) throw budgetError('GEMINI');
-    const pref = providerFor(t);
+    let pref = providerFor(t);
+    if (pref === 'BALANCE') pref = groqCan && geminiCan ? await pickBalanced() : 'AUTO';
     const groqFirst = groqCan && (pref !== 'GEMINI' || !geminiCan);
     const viaGroq = (crossFallback) => groq.generate({ system, history, prompt, json, maxTokens, timeoutMs, temperature, task: t, small: t === 'RECOMMEND', crossFallback });
     if (groqFirst) {
@@ -278,4 +324,4 @@ function dot(a, b) {
   return s;
 }
 
-module.exports = { createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };
+module.exports = { GEMINI_API_VERSION, createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };

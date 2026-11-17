@@ -88,6 +88,7 @@
     else {
       const p = s.providers || {};
       const who = (pref) => {
+        if (pref === 'BALANCE' && p.groq && p.gemini) return 'chia đều Groq + Gemini';
         if (pref === 'GEMINI' && p.gemini) return 'Gemini';
         if (p.groq && (pref !== 'GEMINI' || !p.gemini)) return 'Groq';
         return p.gemini ? 'Gemini' : 'Groq';

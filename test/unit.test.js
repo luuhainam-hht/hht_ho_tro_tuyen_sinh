@@ -346,7 +346,7 @@ test('Groq: gọi API kiểu OpenAI (JSON mode, suy luận thấp), lỗi có m�
 test('định tuyến AI: chat đi Groq trước, tra Google/đọc tệp/vector đi Gemini, lỗi tự chuyển', async () => {
   const { createLlmClient } = require('../src/services/ai/llmClient');
   const { createGroqClient } = require('../src/services/ai/groqClient');
-  const cfgVals = {};
+  const cfgVals = { AI_PROVIDER_CHAT: 'GROQ', AI_PROVIDER_RECOMMEND: 'GROQ' };
   const configService = { getOr: (k, d) => (k in cfgVals ? cfgVals[k] : d), get: (k) => cfgVals[k] };
   const calls = [];
   let groqFail = false;
@@ -380,7 +380,6 @@ test('định tuyến AI: chat đi Groq trước, tra Google/đọc tệp/vector
   const meter = { withinBudget: async (p) => p !== 'GROQ', record() {} };
   const llm4 = createLlmClient({ apiKeys: ['AIzaFake4'], configService, transport: gemini, logger: { warn() {} }, groq: groq3, meter });
   assert.equal((await llm4.generate({ prompt: 'x' })).provider, 'GEMINI');
-  delete cfgVals.AI_PROVIDER_CHAT;
   assert.equal(llm.keyCount(), 2);
   assert.ok(llm.secretValues().includes('gsk_testkey'));
   // Chỉ có khóa Groq: vẫn trả lời chat được, nhưng không tra Google/vector
@@ -389,4 +388,50 @@ test('định tuyến AI: chat đi Groq trước, tra Google/đọc tệp/vector
   assert.equal(only.available(), true);
   assert.equal(only.geminiAvailable(), false);
   assert.equal((await only.generate({ prompt: 'x' })).provider, 'GROQ');
+});
+
+test('Gemini gọi REST v1beta trực tiếp: lời nhắc hệ thống, JSON, tra Google, tắt suy nghĩ, vector, lỗi có mã', async () => {
+  const { createGeminiTransport } = require('../src/services/ai/llmClient');
+  const sent = [];
+  const fetchImpl = async (url, init) => {
+    sent.push({ url, init, body: JSON.parse(init.body) });
+    if (/batchEmbedContents/.test(url)) return { ok: true, json: async () => ({ embeddings: [{ values: [1, 2] }] }) };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"a":1}' }] }, finishReason: 'STOP', groundingMetadata: { groundingChunks: [{ web: { uri: 'https://hht.edu.vn/x', title: 'HHT' } }] } }], usageMetadata: { promptTokenCount: 9, candidatesTokenCount: 4 } }) };
+  };
+  const t = createGeminiTransport({ fetchImpl });
+  const r = await t.generate('AIzaK', { model: 'gemini-2.5-flash', system: 'SYS', contents: [{ role: 'user', parts: [{ text: 'hi' }] }], temperature: 0.2, maxTokens: 100, json: true });
+  assert.equal(sent[0].url, 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent');
+  assert.equal(sent[0].init.headers['x-goog-api-key'], 'AIzaK');
+  assert.deepEqual(sent[0].body.systemInstruction, { parts: [{ text: 'SYS' }] });
+  assert.equal(sent[0].body.generationConfig.responseMimeType, 'application/json');
+  assert.equal(sent[0].body.generationConfig.thinkingConfig.thinkingBudget, 0);
+  assert.deepEqual([r.text, r.tokensIn, r.tokensOut], ['{"a":1}', 9, 4]);
+  const w = await t.generate('AIzaK', { model: 'gemini-2.5-flash', contents: [], search: true, json: true });
+  assert.deepEqual(sent[1].body.tools, [{ google_search: {} }]);
+  assert.equal(sent[1].body.generationConfig.responseMimeType, undefined, 'tra Google không kèm JSON');
+  assert.equal(w.webSources[0].url, 'https://hht.edu.vn/x');
+  const v = await t.embed('AIzaK', { model: 'gemini-embedding-001', texts: ['a'], dim: 768, taskType: 'RETRIEVAL_QUERY' });
+  assert.deepEqual(v, [[1, 2]]);
+  assert.match(sent[2].url, /v1beta\/models\/gemini-embedding-001:batchEmbedContents$/);
+  const bad = createGeminiTransport({ fetchImpl: async () => ({ ok: false, status: 429, statusText: 'x', json: async () => ({ error: { status: 'RESOURCE_EXHAUSTED', message: 'quota' } }) }) });
+  await assert.rejects(bad.generate('k', { model: 'gemini-2.5-flash', contents: [] }), (e) => e.status === 429 && /RESOURCE_EXHAUSTED/.test(e.message));
+});
+
+test('chia đều Groq + Gemini: câu đi bên đang dùng ít token hơn, bằng nhau thì xoay vòng', async () => {
+  const { createLlmClient } = require('../src/services/ai/llmClient');
+  const { createGroqClient } = require('../src/services/ai/groqClient');
+  const configService = { getOr: (_k, d) => d, get: () => undefined };
+  const groq = createGroqClient({ apiKeys: ['gsk_bal'], configService, logger: { warn() {} }, transport: { async generate() { return { text: 'g', tokensIn: 1, tokensOut: 1 }; } } });
+  const gem = { async generate() { return { text: 'm', tokensIn: 1, tokensOut: 1 }; }, async embed() { return [[1]]; } };
+  const alt = createLlmClient({ apiKeys: ['AIzaBal'], configService, transport: gem, logger: { warn() {} }, groq });
+  const seq = [];
+  for (let i = 0; i < 4; i += 1) seq.push((await alt.generate({ prompt: 'x' })).provider);
+  assert.deepEqual(seq, ['GROQ', 'GEMINI', 'GROQ', 'GEMINI'], 'không có đồng hồ đo -> xoay vòng');
+  const used = { GROQ: 5000, GEMINI: 100 };
+  const meter = { withinBudget: async () => true, record() {}, tokensToday: async (p) => used[p] };
+  const bal = createLlmClient({ apiKeys: ['AIzaBal2'], configService, transport: gem, logger: { warn() {} }, groq, meter });
+  assert.equal((await bal.generate({ prompt: 'x' })).provider, 'GEMINI', 'Gemini đang nhẹ tải hơn');
+  used.GEMINI = 9000;
+  assert.equal((await bal.generate({ prompt: 'x' })).provider, 'GROQ');
+  assert.equal((await bal.generate({ prompt: 'x', search: true })).provider, 'GEMINI', 'tra Google vẫn luôn Gemini');
 });

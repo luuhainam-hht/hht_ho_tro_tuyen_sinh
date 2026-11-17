@@ -55,6 +55,11 @@ const MIGRATIONS = [
           ALTER TABLE ai_api_keys ADD CONSTRAINT ai_api_keys_provider_check CHECK (provider IN ('GEMINI', 'GROQ'));`,
   },
   {
+    // Dùng cả Groq và Gemini "chan hòa": chat và gợi ý ngành chuyển sang chế độ chia đều tải (nếu vẫn để mặc định cũ).
+    id: '2026-11-17-ai-provider-balance',
+    sql: `UPDATE system_configs SET value = 'BALANCE' WHERE key IN ('AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND') AND value = 'GROQ';`,
+  },
+  {
     // Phân việc AI theo nhà cung cấp: bỏ cấu hình chung AI_CHAT_PROVIDER; llama-3.3-70b của Groq đã chuyển gói
     // doanh nghiệp/ngừng -> mô hình dự phòng mặc định đổi sang openai/gpt-oss-20b.
     id: '2026-11-17-ai-provider-per-task',

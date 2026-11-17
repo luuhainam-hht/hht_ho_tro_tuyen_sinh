@@ -17,7 +17,7 @@
   const ENUMS = {
     AI_TONE: { THAN_THIEN: 'Thân thiện, gần gũi', TRANG_TRONG: 'Lịch sự, trang trọng', NGAN_GON: 'Ngắn gọn, đi thẳng vào ý' },
     ...Object.fromEntries(['AI_PROVIDER_CHAT', 'AI_PROVIDER_RECOMMEND', 'AI_PROVIDER_ANALYTICS'].map((k) => [k, {
-      GROQ: 'Groq (lỗi thì chuyển Gemini)', GEMINI: 'Gemini (lỗi thì chuyển Groq)', AUTO: 'Tự động (Groq trước nếu có khóa)',
+      BALANCE: 'Chia đều Groq + Gemini (giảm tải cho nhau)', GROQ: 'Groq (lỗi thì chuyển Gemini)', GEMINI: 'Gemini (lỗi thì chuyển Groq)', AUTO: 'Tự động (Groq trước nếu có khóa)',
     }])),
   };
   const MODEL_SUGGESTIONS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];

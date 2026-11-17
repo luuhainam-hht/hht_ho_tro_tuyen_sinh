@@ -23,8 +23,8 @@ const CONFIG_DEFAULTS = [
   C('LLM_MODEL', 'gemini-2.5-flash', 'STRING', 'Mô hình trả lời', 'Tên mô hình Gemini dùng để soạn câu trả lời'),
   C('LLM_FALLBACK_MODEL', 'gemini-2.5-flash-lite', 'STRING', 'Mô hình dự phòng', 'Dùng khi mô hình chính lỗi hoặc quá tải. Để trống nếu không dùng'),
   // Phân việc: mỗi việc chọn nhà cung cấp chính; lỗi/hết ngân sách tự chuyển sang bên còn lại.
-  C('AI_PROVIDER_CHAT', 'GROQ', 'STRING', 'Trả lời chat của thí sinh', 'Nhà cung cấp chính khi AI soạn câu trả lời theo tài liệu/FAQ. Groq nhanh hơn; lỗi tự chuyển Gemini'),
-  C('AI_PROVIDER_RECOMMEND', 'GROQ', 'STRING', 'Giải thích "Gợi ý ngành"', 'Câu giải thích ngắn sau bài trắc nghiệm gợi ý ngành (Groq dùng mô hình nhỏ)'),
+  C('AI_PROVIDER_CHAT', 'BALANCE', 'STRING', 'Trả lời chat của thí sinh', 'Chia đều: mỗi câu đi bên đang dùng ít token hôm nay hơn để giảm tải cho nhau. Lỗi/hết hạn mức tự chuyển bên còn lại'),
+  C('AI_PROVIDER_RECOMMEND', 'BALANCE', 'STRING', 'Giải thích "Gợi ý ngành"', 'Câu giải thích ngắn sau bài trắc nghiệm gợi ý ngành (Groq dùng mô hình nhỏ)'),
   C('AI_PROVIDER_ANALYTICS', 'GEMINI', 'STRING', 'AI phân tích trang Tổng quan', 'Nhận định số liệu cho lãnh đạo, chạy khi cán bộ bấm nút'),
   C('GROQ_MODEL', 'openai/gpt-oss-120b', 'STRING', 'Mô hình Groq', 'Tên mô hình trên console.groq.com/docs/models. Groq ngừng mô hình thì đổi ở đây'),
   C('GROQ_FALLBACK_MODEL', 'openai/gpt-oss-20b', 'STRING', 'Mô hình Groq dự phòng', 'Dùng khi mô hình Groq chính lỗi. Để trống nếu không dùng'),
