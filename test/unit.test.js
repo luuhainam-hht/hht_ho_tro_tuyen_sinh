@@ -246,8 +246,21 @@ test('phân quyền: Phòng Tuyển sinh và Cán bộ Khoa', () => {
   const { permissionsOf } = require('../src/constants/roles');
   assert.ok(permissionsOf('ADMISSION_OFFICE').includes('ADMISSION_INFO'));
   assert.ok(permissionsOf('ADMISSION_OFFICE').includes('FAQ_APPROVE'));
-  assert.deepEqual(permissionsOf('FACULTY').sort(), ['FAQ_EDIT', 'KB_VIEW', 'MAJOR_MANAGE']);
+  assert.deepEqual(permissionsOf('FACULTY').sort(), ['ADMISSION_INFO', 'FAQ_EDIT', 'KB_VIEW', 'MAJOR_MANAGE']);
+  const { PERMISSION_GROUPS } = require('../src/constants/roles');
+  assert.deepEqual(permissionsOf('SUPER_ADMIN').sort(), Object.keys(PERMISSION_GROUPS).sort());
   assert.ok(!permissionsOf('FACULTY').includes('CONFIG'));
+});
+
+test('bảng theo hệ: kiểm tra chỉ tiêu, học phí, trùng hệ', () => {
+  const { programFields } = require('../src/routes/adminMajorRoutes');
+  assert.equal(programFields({}), undefined);
+  const [p] = programFields({ programs: [{ level: 'CAO_DANG', quotaCs1: '30', quotaCs3: 5, duration: ' 3 năm ', tuitionMin: 1800000, tuitionMax: 2400000 }] });
+  assert.deepEqual([p.quota_cs1, p.quota_cs2, p.quota_cs3, p.duration], [30, null, 5, '3 năm']);
+  assert.throws(() => programFields({ programs: [{ level: 'CAO_DANG', quotaCs1: -1 }] }));
+  assert.throws(() => programFields({ programs: [{ level: 'CAO_DANG', tuitionMin: 5, tuitionMax: 1 }] }));
+  assert.throws(() => programFields({ programs: [{ level: 'SO_CAP' }, { level: 'SO_CAP' }] }));
+  assert.throws(() => programFields({ programs: 'x' }));
 });
 
 test('hỗ trợ học phí: chuẩn hóa "70" -> "70%", giữ chữ tự do, chặn > 100%', () => {

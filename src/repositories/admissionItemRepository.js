@@ -3,7 +3,7 @@ const { updateWhitelisted } = require('../utils/sqlUpdate');
 
 const crypto = require('node:crypto');
 
-const UPDATABLE = new Set(['title', 'detail', 'audience', 'code', 'is_mandatory', 'copy_type', 'quantity', 'note', 'order_no', 'date_from', 'date_to', 'is_active']);
+const UPDATABLE = new Set(['title', 'detail', 'audience', 'code', 'is_mandatory', 'copy_type', 'quantity', 'note', 'order_no', 'date_from', 'date_to', 'is_active', 'major_code']);
 const PUBLIC_COLUMNS = 'id, kind, audience, major_code, code, title, detail, is_mandatory, copy_type, quantity, note, order_no, date_from, date_to, source_codes';
 
 async function list(c, { year, kind, audience = null, majorCode = null }) {
@@ -43,4 +43,11 @@ const listInfo = async (c, year) => (await c.query(
     WHERE is_active AND admission_year = ? AND kind IN ('LEVEL_INFO', 'SUPPORT_INFO') ORDER BY kind, order_no, id`, [year],
 )).rows;
 
-module.exports = { list, listAllForAdmin, findByIdForUpdate, update, insert, remove, listInfo };
+/** Mục riêng của một ngành (Phòng Tuyển sinh/Khoa gắn major_code) – hiện trên trang chi tiết ngành. */
+const listForMajor = async (c, year, majorCode) => (await c.query(
+  `SELECT ${PUBLIC_COLUMNS} FROM admission_items
+    WHERE is_active AND admission_year = ? AND major_code = ? AND kind IN ('DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT')
+    ORDER BY kind, order_no, id`, [year, majorCode],
+)).rows;
+
+module.exports = { listForMajor, list, listAllForAdmin, findByIdForUpdate, update, insert, remove, listInfo };

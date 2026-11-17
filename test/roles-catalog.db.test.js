@@ -25,6 +25,14 @@ before(async () => {
 });
 after(() => ctx.close());
 
+/** Cán bộ Khoa CNTT mới (test "đổi khoa" đã làm phiên khoacntt hết hiệu lực). */
+let facN = 0;
+async function facultyLogin() {
+  facN += 1;
+  await createStaff(ctx.db, `khoacntt${facN}`, 'FACULTY', { faculty: CNTT });
+  return ctx.login(`khoacntt${facN}`);
+}
+
 async function chat(message) {
   const s = await request(app).post('/api/chat/sessions').send({}).expect(201);
   return (await request(app).post('/api/chat/messages').send({ sessionId: s.body.sessionId, message }).expect(200)).body;
@@ -35,7 +43,10 @@ test('đăng nhập trả vai trò, khoa và danh sách quyền cho giao diện'
   assert.equal(me.role, 'FACULTY');
   assert.equal(me.faculty, CNTT);
   assert.ok(me.permissions.includes('MAJOR_MANAGE'));
-  assert.ok(!me.permissions.includes('ADMISSION_INFO'));
+  assert.ok(me.permissions.includes('ADMISSION_INFO'), 'Khoa cấu hình thông tin tuyển sinh của ngành thuộc khoa mình');
+  assert.ok(!me.permissions.includes('CONTACT_CONFIG'));
+  const admin = (await request(app).get('/api/auth/me').set(H.admin).expect(200)).body.user;
+  assert.deepEqual(admin.permissions.sort(), Object.keys(require('../src/constants/roles').PERMISSION_GROUPS).sort(), 'Quản trị hệ thống có mọi quyền');
   const office = (await request(app).get('/api/auth/me').set(H.office).expect(200)).body.user;
   for (const p of ['MAJOR_MANAGE', 'ADMISSION_INFO', 'CONTACT_CONFIG', 'FAQ_APPROVE', 'KB_PUBLISH', 'HANDOFF']) assert.ok(office.permissions.includes(p), p);
   assert.ok(!office.permissions.includes('CONFIG'));
@@ -73,8 +84,10 @@ test('Cán bộ Khoa: chỉ thấy/sửa/thêm ngành của khoa mình', async (
   assert.deepEqual(audit.rows.map((x) => x.action), ['MAJOR_UPDATE', 'MAJOR_CREATE']);
 });
 
-test('Phòng Tuyển sinh: thêm đợt nhận hồ sơ -> lịch công khai + trợ lý dùng ngay; Khoa không có quyền', async () => {
-  await request(app).get('/api/admin/catalog/admission-items').set(H.faculty).expect(403);
+test('Phòng Tuyển sinh: thêm đợt nhận hồ sơ -> lịch công khai + trợ lý dùng ngay; Khoa không sửa mục chung', async () => {
+  await request(app).get('/api/admin/catalog/admission-items').set(H.leader).expect(403);
+  await request(app).post('/api/admin/catalog/admission-items').set(H.faculty)
+    .send({ kind: 'SCHEDULE', audience: 'CĐ chính quy', title: 'Đợt chung của Khoa', dateFrom: '2026-12-01', dateTo: '2026-12-31' }).expect(403);
   await request(app).post('/api/admin/catalog/admission-items').set(H.office)
     .send({ kind: 'SCHEDULE', audience: 'CĐ chính quy', title: 'Đợt sai ngày', dateFrom: '2026-12-31', dateTo: '2026-12-01' }).expect(400);
   const created = await request(app).post('/api/admin/catalog/admission-items').set(H.office).send({
@@ -139,4 +152,72 @@ test('trang Ngành học: giải thích hệ đào tạo và hỗ trợ học ph
   const item = (await ctx.db.query("SELECT id FROM admission_items WHERE item_key = 'LEVEL:HE_9_PLUS'")).rows[0];
   await request(app).put(`/api/admin/catalog/admission-items/${item.id}`).set(H.office).send({ detail: 'Hệ 9+ (đã cập nhật): học 4 năm, nhận 3 bằng.' }).expect(200);
   assert.match((await request(app).get('/api/handbook/info')).body.levels.HE_9_PLUS.detail, /đã cập nhật/);
+});
+
+test('bảng thông tin tuyển sinh theo hệ: Khoa sửa ngành của khoa mình -> trang ngành, bộ lọc, trợ lý cập nhật ngay', async () => {
+  H.faculty = await facultyLogin();
+  const own = (await ctx.db.query("SELECT code, name FROM majors WHERE faculty = ? AND 'HE_9_PLUS' = ANY(levels) ORDER BY code LIMIT 1", [CNTT])).rows[0];
+  const other = (await ctx.db.query('SELECT code FROM majors WHERE faculty <> ? LIMIT 1', [CNTT])).rows[0];
+
+  // Dữ liệu cũ đã có bảng theo hệ (tạo tự động từ bảng ngành)
+  const before = (await request(app).get(`/api/handbook/majors/${own.code}`).expect(200)).body.major;
+  assert.ok(before.programs.length > 0);
+  assert.ok(before.programs.find((p) => p.level === 'HE_9_PLUS').duration);
+
+  const programs = [
+    { level: 'HE_9_PLUS', quotaCs1: 40, quotaCs2: 25, quotaCs3: 15, duration: '4 năm', tuitionNote: 'Miễn 100% giai đoạn Trung cấp', methods: 'Xét học bạ lớp 9' },
+    { level: 'CAO_DANG', quotaCs1: 120, quotaCs3: 30, duration: '3 năm', tuitionMin: 2000000, tuitionMax: 2600000, methods: 'Xét học bạ THPT' },
+  ];
+  await request(app).put(`/api/admin/catalog/majors/${own.code}`).set(H.faculty)
+    .send({ programs: [{ ...programs[1], tuitionMin: 3000000, tuitionMax: 2000000 }] }).expect(400);
+  await request(app).put(`/api/admin/catalog/majors/${own.code}`).set(H.faculty).send({ programs: [programs[0], programs[0]] }).expect(400);
+  await request(app).put(`/api/admin/catalog/majors/${own.code}`).set(H.faculty).send({ programs: [{ level: 'DAI_HOC' }] }).expect(400);
+  await request(app).put(`/api/admin/catalog/majors/${other.code}`).set(H.faculty).send({ programs }).expect(403);
+
+  const saved = (await request(app).put(`/api/admin/catalog/majors/${own.code}`).set(H.faculty).send({ programs }).expect(200)).body.major;
+  assert.deepEqual(saved.levels, ['HE_9_PLUS', 'CAO_DANG'], 'hệ tuyển sinh đồng bộ theo bảng');
+  assert.equal(saved.quota_9plus_cs1, 40);
+  assert.equal(saved.tuition_per_month_min, 2000000);
+  assert.equal(saved.programs.find((p) => p.level === 'CAO_DANG').quota_cs3, 30);
+
+  const pub = (await request(app).get(`/api/handbook/majors/${own.code}`).expect(200)).body.major;
+  assert.deepEqual(pub.programs.map((p) => p.level), ['HE_9_PLUS', 'CAO_DANG']);
+  const tc = (await request(app).get('/api/handbook/majors?level=TRUNG_CAP').expect(200)).body.majors;
+  assert.ok(!tc.some((m) => m.code === own.code), 'bỏ hệ Trung cấp -> không còn trong bộ lọc TC');
+
+  const r = await chat(`Ngành ${own.name} hệ Cao đẳng chỉ tiêu cơ sở 3 bao nhiêu?`);
+  assert.match(r.answer, /Cơ sở 3: 30/);
+
+  // Quản trị hệ thống sửa được mọi khoa; Lãnh đạo không có quyền sửa
+  await request(app).put(`/api/admin/catalog/majors/${other.code}`).set(H.admin).send({ programs: [{ level: 'SO_CAP', duration: '3 tháng' }] }).expect(200);
+  await request(app).put(`/api/admin/catalog/majors/${other.code}`).set(H.leader).send({ programs: [] }).expect(403);
+  const audit = await ctx.db.query("SELECT payload FROM audit_logs WHERE target_type = 'MAJOR' AND target_id = ? ORDER BY id DESC LIMIT 1", [own.code]);
+  assert.equal(audit.rows[0].payload.programs.length, 2, 'nhật ký ghi lại bảng đã lưu');
+});
+
+test('Khoa: thêm/sửa mục tuyển sinh gắn với ngành của khoa mình; không sửa mục chung hay khoa khác', async () => {
+  H.faculty = await facultyLogin();
+  const own = (await ctx.db.query('SELECT code FROM majors WHERE faculty = ? ORDER BY code LIMIT 1', [CNTT])).rows[0];
+  const other = (await ctx.db.query('SELECT code FROM majors WHERE faculty <> ? LIMIT 1', [CNTT])).rows[0];
+  const list = (await request(app).get('/api/admin/catalog/admission-items').set(H.faculty).expect(200)).body;
+  assert.equal(list.scopeFaculty, CNTT);
+  assert.ok(list.majors.every((m) => m.faculty === CNTT));
+  const global = list.items.find((i) => !i.major_code && i.kind === 'SCHEDULE');
+  assert.equal(global.can_edit, false);
+  await request(app).put(`/api/admin/catalog/admission-items/${global.id}`).set(H.faculty).send({ title: 'Sửa trộm' }).expect(403);
+  await request(app).delete(`/api/admin/catalog/admission-items/${global.id}`).set(H.faculty).expect(403);
+  await request(app).post('/api/admin/catalog/admission-items').set(H.faculty).send({ kind: 'CONTACT', audience: 'Khoa', title: 'x', majorCode: other.code }).expect(403);
+  await request(app).post('/api/admin/catalog/admission-items').set(H.faculty).send({ kind: 'LEVEL_INFO', title: 'x', majorCode: own.code }).expect(403);
+
+  const created = (await request(app).post('/api/admin/catalog/admission-items').set(H.faculty)
+    .send({ kind: 'CONTACT', audience: 'Tư vấn ngành', title: 'Thầy phụ trách ngành', detail: 'Gọi 0912 000 111 giờ hành chính', majorCode: own.code }).expect(201)).body.item;
+  await request(app).put(`/api/admin/catalog/admission-items/${created.id}`).set(H.faculty).send({ majorCode: other.code }).expect(403);
+  await request(app).put(`/api/admin/catalog/admission-items/${created.id}`).set(H.faculty).send({ detail: 'Gọi 0912 000 222' }).expect(200);
+  const pub = (await request(app).get(`/api/handbook/majors/${own.code}`).expect(200)).body.major;
+  assert.ok(pub.items.some((i) => i.title === 'Thầy phụ trách ngành' && i.detail === 'Gọi 0912 000 222'), 'mục riêng hiện trên trang ngành');
+  await request(app).delete(`/api/admin/catalog/admission-items/${created.id}`).set(H.faculty).expect(200);
+  // Phòng Tuyển sinh gắn mục với bất kỳ ngành nào, hoặc bỏ gắn
+  const o = (await request(app).post('/api/admin/catalog/admission-items').set(H.office).send({ kind: 'CONTACT', audience: 'x', title: 'y', majorCode: other.code }).expect(201)).body.item;
+  assert.equal((await request(app).put(`/api/admin/catalog/admission-items/${o.id}`).set(H.office).send({ majorCode: '' }).expect(200)).body.item.major_code, null);
+  await request(app).post('/api/admin/catalog/admission-items').set(H.office).send({ kind: 'CONTACT', audience: 'x', title: 'y', majorCode: 'KHONG-CO' }).expect(400);
 });

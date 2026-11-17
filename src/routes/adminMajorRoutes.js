@@ -1,8 +1,10 @@
 'use strict';
 /**
  * Quản lý dữ liệu cẩm nang:
- *   /majors           – ngành học (MAJOR_MANAGE). Cán bộ Khoa chỉ thấy/sửa/thêm ngành của KHOA MÌNH.
+ *   /majors           – ngành học + bảng thông tin tuyển sinh theo hệ (MAJOR_MANAGE). Cán bộ Khoa chỉ thấy/sửa/thêm
+ *                       ngành của KHOA MÌNH.
  *   /admission-items  – hồ sơ, đợt nhận hồ sơ, hướng dẫn, liên hệ, giải thích hệ/hỗ trợ học phí (ADMISSION_INFO).
+ *                       Cán bộ Khoa xem mục chung (chỉ đọc) và thêm/sửa/xóa mục gắn với ngành của khoa mình.
  *   /contact-configs  – hotline, email, địa chỉ nộp hồ sơ, lời chào (CONTACT_CONFIG).
  * Mọi thay đổi ghi audit_logs và phát sự kiện realtime để trang quản trị khác tự tải lại.
  */
@@ -14,6 +16,7 @@ const { requirePermission } = require('../middleware/auth');
 const { LEVELS, COPY_TYPES } = require('../constants/catalog');
 const { FACULTY_SCOPED_ROLES } = require('../constants/roles');
 const majorRepository = require('../repositories/majorRepository');
+const majorProgramRepository = require('../repositories/majorProgramRepository');
 const admissionItemRepository = require('../repositories/admissionItemRepository');
 const auditRepository = require('../repositories/auditRepository');
 
@@ -82,12 +85,54 @@ function itemFields(body, { creating = false } = {}) {
     date_from: v.date(body, 'dateFrom') ?? undefined,
     date_to: v.date(body, 'dateTo') ?? undefined,
     is_active: v.bool(body, 'isActive') ?? undefined,
+    major_code: v.str(body, 'majorCode', { label: 'Ngành áp dụng', max: 60 }) ?? undefined,
   };
+  if (body?.majorCode === '' || body?.majorCode === null) fields.major_code = null; // áp dụng mọi ngành
   if (body?.detail === '') fields.detail = '';
   if (body?.dateFrom === '') fields.date_from = null;
   if (body?.dateTo === '') fields.date_to = null;
   if (fields.date_from && fields.date_to && fields.date_from > fields.date_to) throw new HttpError(400, 'Ngày bắt đầu phải trước ngày kết thúc');
   return fields;
+}
+
+/**
+ * Bảng thông tin tuyển sinh theo hệ: [{ level, quotaCs1, quotaCs2, quotaCs3, duration, tuitionMin, tuitionMax,
+ * tuitionNote, methods, note }]. Hệ có trong mảng = ngành có tuyển hệ đó.
+ */
+function programFields(body) {
+  if (body?.programs === undefined) return undefined;
+  if (!Array.isArray(body.programs) || body.programs.length > LEVEL_CODES.length) throw new HttpError(400, 'Bảng thông tin tuyển sinh không hợp lệ');
+  const seen = new Set();
+  return body.programs.map((p) => {
+    const level = v.oneOf(p, 'level', LEVEL_CODES, { required: true, label: 'Hệ tuyển sinh' });
+    if (seen.has(level)) throw new HttpError(400, 'Mỗi hệ chỉ khai báo một lần');
+    seen.add(level);
+    const name = majorProgramRepository.LEVEL_SHORT[level];
+    const q = (k, n) => v.int(p, k, { label: `Chỉ tiêu ${name} – Cơ sở ${n}`, min: 0, max: 100000 });
+    const out = {
+      level,
+      quota_cs1: q('quotaCs1', 1), quota_cs2: q('quotaCs2', 2), quota_cs3: q('quotaCs3', 3),
+      duration: v.str(p, 'duration', { label: `Thời gian học ${name}`, max: 150 }),
+      tuition_min: v.int(p, 'tuitionMin', { label: `Học phí thấp nhất ${name}`, min: 0, max: 100000000 }),
+      tuition_max: v.int(p, 'tuitionMax', { label: `Học phí cao nhất ${name}`, min: 0, max: 100000000 }),
+      tuition_note: v.str(p, 'tuitionNote', { label: `Ghi chú học phí ${name}`, max: 300 }),
+      methods: v.str(p, 'methods', { label: `Phương thức xét tuyển ${name}`, max: 500 }),
+      note: v.str(p, 'note', { label: `Ghi chú ${name}`, max: 500 }),
+    };
+    if (out.tuition_min !== null && out.tuition_max !== null && out.tuition_min > out.tuition_max) throw new HttpError(400, `Học phí ${name}: mức thấp nhất lớn hơn mức cao nhất`);
+    return out;
+  });
+}
+
+/** Lưu bảng theo hệ rồi đồng bộ majors.levels/duration/chỉ tiêu 9+/học phí (cùng transaction). */
+async function savePrograms(c, code, programs) {
+  if (programs === undefined) {
+    // Bản giao diện cũ không gửi bảng: tạo bảng mặc định cho hệ vừa chọn (nếu chưa có).
+    await majorProgramRepository.backfillMissing(c);
+    return majorProgramRepository.listByMajor(c, code);
+  }
+  await majorProgramRepository.replaceForMajor(c, code, programs);
+  return majorProgramRepository.syncMajorSummary(c, code);
 }
 
 const definedOnly = (o) => Object.fromEntries(Object.entries(o).filter(([, x]) => x !== undefined));
@@ -103,21 +148,28 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
   majors.get('/', ah(async (req, res) => {
     const fac = scopedFaculty(req.user);
     const all = await majorRepository.listAll(db);
-    res.json({ majors: fac ? all.filter((m) => m.faculty === fac) : all, scopeFaculty: fac, faculties: [...new Set(all.map((m) => m.faculty))].sort() });
+    const shown = fac ? all.filter((m) => m.faculty === fac) : all;
+    const programs = await majorProgramRepository.mapByMajors(db, shown.map((m) => m.code));
+    res.json({
+      majors: shown.map((m) => ({ ...m, programs: programs.get(m.code) || [] })),
+      scopeFaculty: fac, faculties: [...new Set(all.map((m) => m.faculty))].sort(),
+    });
   }));
 
   majors.post('/', ah(async (req, res) => {
     const fac = scopedFaculty(req.user);
     // Cán bộ Khoa luôn thêm ngành vào khoa của mình (bỏ qua khoa gửi lên).
     const fields = majorFields(fac ? { ...req.body, faculty: fac } : req.body, { creating: true });
+    const programs = programFields(req.body);
     const code = v.str(req.body, 'code', { label: 'Mã ngành', required: true, max: 30, pattern: MAJOR_CODE, patternMessage: 'Mã ngành chỉ gồm chữ, số, dấu chấm, gạch (2–30 ký tự)' });
     const major = await db.withTransaction(async (c) => {
       const created = await majorRepository.insert(c, {
         ...definedOnly(fields), code, occupation_code: v.str(req.body, 'occupationCode', { max: 30 }) || code, admission_year: year(),
       });
       if (!created) throw new HttpError(409, 'Mã ngành đã tồn tại');
-      await auditRepository.insert(c, { actorId: req.user.id, action: 'MAJOR_CREATE', targetType: 'MAJOR', targetId: code, payload: definedOnly(fields), ip: req.ip });
-      return created;
+      const saved = await savePrograms(c, code, programs);
+      await auditRepository.insert(c, { actorId: req.user.id, action: 'MAJOR_CREATE', targetType: 'MAJOR', targetId: code, payload: { ...definedOnly(fields), programs }, ip: req.ip });
+      return { ...(await majorRepository.findByCodeForUpdate(c, code)), programs: saved };
     });
     broadcast('CATALOG_UPDATED', { type: 'MAJOR', code });
     res.status(201).json({ major });
@@ -126,6 +178,8 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
   majors.put('/:code', ah(async (req, res) => {
     const code = v.str(req.params, 'code', { required: true, max: 60 });
     const fields = majorFields(req.body);
+    const programs = programFields(req.body);
+    if (programs) delete fields.levels; // hệ tuyển sinh lấy theo bảng thông tin tuyển sinh
     const fac = scopedFaculty(req.user);
     if (fac && fields.faculty !== undefined && fields.faculty !== fac) throw new HttpError(403, 'Cán bộ Khoa không chuyển ngành sang khoa khác');
     const major = await db.withTransaction(async (c) => {
@@ -135,9 +189,11 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
       const merged = { state: fields.state_support !== undefined ? fields.state_support : cur.state_support, ent: fields.enterprise_support !== undefined ? fields.enterprise_support : cur.enterprise_support };
       const pct = (s) => { const m = /^(\d{1,3})%$/.exec(s || ''); return m ? Number(m[1]) : 0; };
       if (pct(merged.state) + pct(merged.ent) > 100) throw new HttpError(400, 'Tổng mức hỗ trợ Nhà nước + Doanh nghiệp vượt quá 100%');
-      const u = await majorRepository.update(c, code, fields);
-      await auditRepository.insert(c, { actorId: req.user.id, action: 'MAJOR_UPDATE', targetType: 'MAJOR', targetId: code, payload: definedOnly(fields), ip: req.ip });
-      return u;
+      // Chỉ gửi bảng theo hệ (không sửa cột nào của majors) thì bỏ qua bước cập nhật majors.
+      if (Object.keys(definedOnly(fields)).length || !programs) await majorRepository.update(c, code, fields);
+      const saved = await savePrograms(c, code, programs);
+      await auditRepository.insert(c, { actorId: req.user.id, action: 'MAJOR_UPDATE', targetType: 'MAJOR', targetId: code, payload: { ...definedOnly(fields), programs }, ip: req.ip });
+      return { ...(await majorRepository.findByCodeForUpdate(c, code)), programs: saved };
     });
     broadcast('CATALOG_UPDATED', { type: 'MAJOR', code });
     res.json({ major });
@@ -148,12 +204,45 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
   const items = express.Router();
   items.use(requirePermission('ADMISSION_INFO'));
 
-  items.get('/', ah(async (_req, res) => res.json({ items: await admissionItemRepository.listAllForAdmin(db, year()) })));
+  /**
+   * Phạm vi của Cán bộ Khoa: chỉ thao tác mục gắn với ngành thuộc khoa mình (major_code), không sửa mục chung
+   * và không sửa giải thích hệ/hỗ trợ học phí. Trả null nếu người dùng không bị giới hạn theo khoa.
+   */
+  async function facultyMajorCodes(c, user) {
+    const fac = scopedFaculty(user);
+    if (!fac) return null;
+    const { rows } = await c.query('SELECT code FROM majors WHERE faculty = ?', [fac]);
+    return new Set(rows.map((x) => x.code));
+  }
+  const FACULTY_KINDS = ['DOC_CHECKLIST', 'SCHEDULE', 'ONLINE_GUIDE_STEP', 'CONTACT'];
+  function assertFacultyItem(own, { kind, majorCode }) {
+    if (!own) return;
+    if (!FACULTY_KINDS.includes(kind)) throw new HttpError(403, 'Cán bộ Khoa không sửa phần giải thích hệ đào tạo/hỗ trợ học phí');
+    if (!majorCode || !own.has(majorCode)) throw new HttpError(403, 'Cán bộ Khoa chỉ thêm/sửa mục gắn với ngành của khoa mình');
+  }
+  async function assertMajorExists(c, majorCode) {
+    if (majorCode && !(await majorRepository.findByCode(c, majorCode))) throw new HttpError(400, 'Ngành áp dụng không tồn tại');
+  }
+
+  items.get('/', ah(async (req, res) => {
+    const all = await admissionItemRepository.listAllForAdmin(db, year());
+    const own = await facultyMajorCodes(db, req.user);
+    const { rows: majorList } = await db.query(
+      own ? 'SELECT code, name, faculty FROM majors WHERE faculty = ? ORDER BY name' : 'SELECT code, name, faculty FROM majors ORDER BY faculty, name',
+      own ? [scopedFaculty(req.user)] : [],
+    );
+    res.json({
+      items: all.map((i) => ({ ...i, can_edit: !own || (FACULTY_KINDS.includes(i.kind) && own.has(i.major_code)) })),
+      majors: majorList, scopeFaculty: scopedFaculty(req.user),
+    });
+  }));
 
   items.post('/', ah(async (req, res) => {
     const kind = v.oneOf(req.body, 'kind', ITEM_KINDS, { required: true, label: 'Loại mục' });
     const fields = itemFields(req.body, { creating: true });
     const item = await db.withTransaction(async (c) => {
+      assertFacultyItem(await facultyMajorCodes(c, req.user), { kind, majorCode: fields.major_code });
+      await assertMajorExists(c, fields.major_code);
       const created = await admissionItemRepository.insert(c, { ...definedOnly(fields), kind, admission_year: year() });
       await auditRepository.insert(c, { actorId: req.user.id, action: 'ADMISSION_ITEM_CREATE', targetType: 'ADMISSION_ITEM', targetId: created.id, payload: { kind, title: created.title }, ip: req.ip });
       return created;
@@ -168,6 +257,9 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
     const item = await db.withTransaction(async (c) => {
       const cur = await admissionItemRepository.findByIdForUpdate(c, id);
       if (!cur) throw new HttpError(404, 'Không tìm thấy mục');
+      const own = await facultyMajorCodes(c, req.user);
+      assertFacultyItem(own, { kind: cur.kind, majorCode: cur.major_code });
+      if (fields.major_code !== undefined) { assertFacultyItem(own, { kind: cur.kind, majorCode: fields.major_code }); await assertMajorExists(c, fields.major_code); }
       const from = fields.date_from !== undefined ? fields.date_from : cur.date_from && String(cur.date_from).slice(0, 10);
       const to = fields.date_to !== undefined ? fields.date_to : cur.date_to && String(cur.date_to).slice(0, 10);
       if (from && to && from > to) throw new HttpError(400, 'Ngày bắt đầu phải trước ngày kết thúc');
@@ -184,6 +276,7 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
     const removed = await db.withTransaction(async (c) => {
       const cur = await admissionItemRepository.findByIdForUpdate(c, id);
       if (!cur) throw new HttpError(404, 'Không tìm thấy mục');
+      assertFacultyItem(await facultyMajorCodes(c, req.user), { kind: cur.kind, majorCode: cur.major_code });
       await admissionItemRepository.remove(c, id);
       await auditRepository.insert(c, { actorId: req.user.id, action: 'ADMISSION_ITEM_DELETE', targetType: 'ADMISSION_ITEM', targetId: id, payload: { kind: cur.kind, title: cur.title, detail: cur.detail }, ip: req.ip });
       return cur;
@@ -207,4 +300,5 @@ module.exports = function adminMajorRoutes({ db, configService, broadcast = () =
 };
 
 module.exports.normalizeSupport = normalizeSupport;
+module.exports.programFields = programFields;
 module.exports.CONTACT_KEYS = CONTACT_KEYS;

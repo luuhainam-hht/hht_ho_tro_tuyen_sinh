@@ -20,9 +20,63 @@
 
   function studentShare(m) { return Math.max(0, 100 - pct(m.state_support) - pct(m.enterprise_support)); }
 
+  // ---------- Bảng thông tin tuyển sinh theo hệ (Hệ 9+, SC, TC, CĐ) ----------
+  const PROGRAM_LEVELS = [['HE_9_PLUS', 'Hệ 9+'], ['SO_CAP', 'SC – Sơ cấp'], ['TRUNG_CAP', 'TC – Trung cấp'], ['CAO_DANG', 'CĐ – Cao đẳng']];
+  const PROGRAM_ROWS = [
+    ['quotaCs1', 'quota_cs1', 'Chỉ tiêu – Cơ sở 1', 'number'],
+    ['quotaCs2', 'quota_cs2', 'Chỉ tiêu – Cơ sở 2', 'number'],
+    ['quotaCs3', 'quota_cs3', 'Chỉ tiêu – Cơ sở 3', 'number'],
+    ['duration', 'duration', 'Thời gian học', 'text', 'vd: Khoảng 3 năm'],
+    ['tuitionMin', 'tuition_min', 'Học phí từ (đ/tháng)', 'money'],
+    ['tuitionMax', 'tuition_max', 'Học phí đến (đ/tháng)', 'money'],
+    ['tuitionNote', 'tuition_note', 'Ghi chú học phí', 'text', 'vd: Miễn 100% giai đoạn TC'],
+    ['methods', 'methods', 'Phương thức xét tuyển', 'area', 'vd: Xét học bạ THPT'],
+    ['note', 'note', 'Ghi chú khác', 'text'],
+  ];
+
+  /** Lưới nhập: cột = hệ, hàng = chỉ tiêu CS1/2/3, thời gian, học phí, phương thức. Bỏ "Có tuyển" = xóa hệ đó. */
+  function programGrid(d) {
+    const byLevel = Object.fromEntries((d.programs || []).map((p) => [p.level, p]));
+    const input = ([field, col, label, type, placeholder], level) => {
+      const v = byLevel[level]?.[col] ?? '';
+      const name = `p_${level}_${field}`;
+      const common = { name, 'aria-label': `${label} – ${PROGRAM_LEVELS.find(([k]) => k === level)[1]}`, 'data-level': level };
+      if (type === 'area') return el('textarea', { ...common, rows: '2', maxlength: '500', placeholder: placeholder || '' }, v);
+      if (type === 'number') return el('input', { ...common, type: 'number', min: '0', max: '100000', inputmode: 'numeric', value: v });
+      if (type === 'money') return el('input', { ...common, type: 'number', min: '0', step: '1000', inputmode: 'numeric', value: v });
+      return el('input', { ...common, maxlength: field === 'tuitionNote' ? '300' : '150', placeholder: placeholder || '', value: v });
+    };
+    const table = el('table', { class: 'program-grid' },
+      el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Hệ tuyển sinh'),
+        PROGRAM_LEVELS.map(([k, label]) => el('th', { scope: 'col' },
+          el('label', { class: 'check' }, el('input', { type: 'checkbox', name: 'levels', value: k, checked: Boolean(byLevel[k]) }), label))))),
+      el('tbody', {}, PROGRAM_ROWS.map((r) => el('tr', {}, el('th', { scope: 'row' }, r[2]), PROGRAM_LEVELS.map(([k]) => el('td', {}, input(r, k)))))));
+    const sync = () => PROGRAM_LEVELS.forEach(([k]) => {
+      const on = table.querySelector(`input[name="levels"][value="${k}"]`).checked;
+      table.querySelectorAll(`[data-level="${k}"]`).forEach((x) => { x.disabled = !on; });
+    });
+    table.addEventListener('change', (e) => { if (e.target.name === 'levels') sync(); });
+    sync();
+    return el('fieldset', {}, el('legend', {}, 'Thông tin tuyển sinh theo hệ'),
+      el('p', { class: 'hint' }, 'Tích "Có tuyển" ở hệ ngành này tuyển. Hiện thành bảng trên trang chi tiết ngành; trợ lý dùng ngay sau khi lưu.'),
+      el('div', { class: 'table-wrap' }, table));
+  }
+
+  function programsFromForm(f) {
+    const fd = new FormData(f);
+    return fd.getAll('levels').map((level) => {
+      const p = { level };
+      for (const [field, , , type] of PROGRAM_ROWS) {
+        const raw = (fd.get(`p_${level}_${field}`) ?? '').toString().trim();
+        p[field] = raw === '' ? null : (type === 'number' || type === 'money' ? Number(raw) : raw);
+      }
+      return p;
+    });
+  }
+
   function majorEditor(m = null) {
     const creating = !m;
-    const d = m || { levels: [], is_active: true, faculty: majorScope || '' };
+    const d = m || { levels: [], programs: [], is_active: true, faculty: majorScope || '' };
     const facultyField = majorScope
       ? el('label', {}, 'Khoa', el('input', { name: 'faculty', value: majorScope, disabled: true }), el('span', { class: 'hint' }, 'Cán bộ Khoa chỉ quản lý ngành của khoa mình'))
       : el('label', {}, 'Khoa', el('input', { name: 'faculty', value: d.faculty || '', list: 'major-faculties', required: true }));
@@ -32,22 +86,14 @@
       el('div', { class: 'form-grid' },
         creating ? el('label', {}, 'Mã ngành', el('input', { name: 'code', required: true, placeholder: 'vd: 6480201', maxlength: '30' }), el('span', { class: 'hint' }, 'Mã nghề nhà nước hoặc mã nội bộ')) : null,
         el('label', {}, 'Tên ngành', el('input', { name: 'name', value: d.name || '', required: true, maxlength: '200' })),
-        facultyField,
-        el('label', {}, 'Thời gian học', el('input', { name: 'duration', value: d.duration || '', placeholder: 'vd: Cao đẳng khoảng 3 năm' }))),
-      el('fieldset', {}, el('legend', {}, 'Hệ tuyển sinh'),
-        el('div', { class: 'btn-row' }, LEVEL_ORDER.map(([k, short]) => el('label', { class: 'check' }, el('input', { type: 'checkbox', name: 'levels', value: k, checked: d.levels.includes(k) }), short === 'Hệ 9+' ? 'Hệ 9+ (THPT – Cao đẳng)' : `${short} – ${hht.LEVEL_SHORT[k]}`)))),
-      el('fieldset', {}, el('legend', {}, 'Học phí và hỗ trợ học phí'),
+        facultyField),
+      programGrid(d),
+      el('fieldset', {}, el('legend', {}, 'Hỗ trợ học phí'),
         el('div', { class: 'admin-form-grid-3' },
-          el('label', {}, 'Học phí thấp nhất (đ/tháng)', el('input', { name: 'tuitionPerMonthMin', type: 'number', min: '0', step: '1000', value: d.tuition_per_month_min ?? '' })),
-          el('label', {}, 'Học phí cao nhất (đ/tháng)', el('input', { name: 'tuitionPerMonthMax', type: 'number', min: '0', step: '1000', value: d.tuition_per_month_max ?? '' })),
-          el('span', {}),
           el('label', {}, 'Nhà nước hỗ trợ (%)', el('input', { name: 'stateSupport', value: d.state_support || '', placeholder: 'vd: 70%' })),
           el('label', {}, 'Doanh nghiệp hỗ trợ (%)', el('input', { name: 'enterpriseSupport', value: d.enterprise_support || '', placeholder: 'vd: 30%' })),
           el('div', {}, el('span', { class: 'setting-name' }, 'Sinh viên tự đóng'), preview)),
         el('label', { class: 'check mt-xs' }, el('input', { type: 'checkbox', name: 'supportNeedsVerify', checked: Boolean(d.support_needs_verify) }), 'Mức hỗ trợ học phí cần xác minh (hiện ghi chú "cần xác nhận")')),
-      el('div', { class: 'form-grid' },
-        el('label', {}, 'Chỉ tiêu hệ 9+ – Cơ sở 1', el('input', { name: 'quota9PlusCs1', type: 'number', min: '0', value: d.quota_9plus_cs1 ?? '' })),
-        el('label', {}, 'Chỉ tiêu hệ 9+ – Cơ sở 2', el('input', { name: 'quota9PlusCs2', type: 'number', min: '0', value: d.quota_9plus_cs2 ?? '' }))),
       el('label', {}, 'Mô tả ngành', el('textarea', { name: 'description', rows: '3', maxlength: '3000' }, d.description || '')),
       el('label', { class: 'check' }, el('input', { type: 'checkbox', name: 'isActive', checked: d.is_active !== false }), 'Hiển thị trên trang Ngành học'),
       el('label', {}, 'Ghi chú nội bộ (không hiện cho thí sinh)', el('input', { name: 'internalNote', value: d.internal_note || '', maxlength: '1000' })),
@@ -55,7 +101,10 @@
     const updatePreview = () => {
       const s = pct(form.stateSupport.value); const e = pct(form.enterpriseSupport.value);
       const sv = 100 - s - e;
-      const lo = Number(form.tuitionPerMonthMin.value) || 0; const hi = Number(form.tuitionPerMonthMax.value) || lo;
+      // Số tiền tham khảo theo học phí hệ Trung cấp/Cao đẳng trong bảng.
+      const paid = programsFromForm(form).filter((p) => p.level === 'TRUNG_CAP' || p.level === 'CAO_DANG');
+      const mins = paid.map((p) => p.tuitionMin ?? p.tuitionMax).filter(Boolean); const maxs = paid.map((p) => p.tuitionMax ?? p.tuitionMin).filter(Boolean);
+      const lo = mins.length ? Math.min(...mins) : 0; const hi = maxs.length ? Math.max(...maxs) : lo;
       preview.textContent = sv < 0 ? 'Tổng hỗ trợ vượt 100% – kiểm tra lại' : `${sv}%${lo ? ` ≈ ${vnd(Math.round((lo * sv) / 100))}${hi !== lo ? ` – ${vnd(Math.round((hi * sv) / 100))}` : ''}/tháng` : ''}`;
     };
     form.addEventListener('input', updatePreview);
@@ -80,10 +129,11 @@
           el('button', { class: 'btn btn--sm btn--tag', type: 'button', 'data-action': 'major-new' }, 'Thêm ngành')),
         el('datalist', { id: 'major-faculties' }, allFaculties.map((f) => el('option', { value: f }))),
         el('div', { id: 'catalog-editor' }),
-        admin.table(['Ngành', 'Khoa', ...LEVEL_ORDER.map(([, s]) => s), 'Học phí/tháng', 'NN', 'DN', 'SV đóng', 'Hiển thị', ''], shown.map((m) => el('tr', {},
+        admin.table(['Ngành', 'Khoa', ...LEVEL_ORDER.map(([, s]) => s), 'Chỉ tiêu', 'Học phí/tháng', 'NN', 'DN', 'SV đóng', 'Hiển thị', ''], shown.map((m) => el('tr', {},
           el('td', {}, el('strong', {}, m.name), el('div', { class: 'small muted' }, m.occupation_code || m.code), m.internal_note ? el('div', { class: 'small' }, m.internal_note) : null),
           el('td', { class: 'small' }, m.faculty),
           LEVEL_ORDER.map(([k]) => el('td', { class: 'center' }, m.levels.includes(k) ? el('span', { class: 'tick' }, '✓') : el('span', { class: 'dash' }, '–'))),
+          el('td', { class: 'small' }, quotaSummary(m)),
           el('td', { class: 'small' }, m.tuition_per_month_min ? `${vnd(m.tuition_per_month_min)}${m.tuition_per_month_max && m.tuition_per_month_max !== m.tuition_per_month_min ? ` – ${vnd(m.tuition_per_month_max)}` : ''}` : '–'),
           el('td', {}, m.state_support || '–'),
           el('td', {}, m.enterprise_support || '–'),
@@ -93,14 +143,19 @@
     },
   });
 
+  /** "120 (CS1 80 · CS3 40)" – tổng chỉ tiêu mọi hệ theo cơ sở. */
+  function quotaSummary(m) {
+    const sum = [1, 2, 3].map((i) => (m.programs || []).reduce((s, p) => s + (p[`quota_cs${i}`] || 0), 0));
+    const total = sum.reduce((a, b) => a + b, 0);
+    if (!total) return '–';
+    return [el('strong', {}, String(total)), el('div', { class: 'tiny muted' }, sum.map((n, i) => (n ? `CS${i + 1}: ${n}` : null)).filter(Boolean).join(' · '))];
+  }
+
   function majorBody(f) {
     const fd = new FormData(f);
-    const num = (k) => (fd.get(k) === '' || fd.get(k) === null ? undefined : Number(fd.get(k)));
     const body = {
-      name: fd.get('name'), duration: fd.get('duration') || undefined, description: fd.get('description') || undefined, internalNote: fd.get('internalNote') || undefined,
-      levels: fd.getAll('levels'), stateSupport: fd.get('stateSupport'), enterpriseSupport: fd.get('enterpriseSupport'),
-      tuitionPerMonthMin: num('tuitionPerMonthMin'), tuitionPerMonthMax: num('tuitionPerMonthMax'),
-      quota9PlusCs1: num('quota9PlusCs1'), quota9PlusCs2: num('quota9PlusCs2'),
+      name: fd.get('name'), description: fd.get('description') || undefined, internalNote: fd.get('internalNote') || undefined,
+      programs: programsFromForm(f), stateSupport: fd.get('stateSupport'), enterpriseSupport: fd.get('enterpriseSupport'),
       supportNeedsVerify: fd.get('supportNeedsVerify') === 'on', isActive: fd.get('isActive') === 'on',
     };
     if (!majorScope) body.faculty = fd.get('faculty');
@@ -121,6 +176,8 @@
   const SCHEDULE_STATUS = { ONGOING: ['Đang diễn ra', 'badge--go'], UPCOMING: ['Sắp tới', 'badge--wait'], PAST: ['Đã qua', ''], UNKNOWN: ['Không có ngày', ''] };
   let items = [];
   let meta = null;
+  let itemMajors = [];      // ngành được phép gắn mục (Cán bộ Khoa: chỉ ngành của khoa mình)
+  let itemScope = null;     // tên khoa nếu người dùng là Cán bộ Khoa
 
   function scheduleStatus(i) {
     if (!i.date_from && !i.date_to) return 'UNKNOWN';
@@ -149,6 +206,14 @@
         el('datalist', { id: `groups-${kind}` }, groupsOf(kind).map((g) => el('option', { value: g })))));
     }
     if (isInfo) fields.push(el('p', { class: 'small muted' }, `Mã: ${d.code} – hiện khi thí sinh bấm cột tương ứng trên trang Ngành học và là tri thức của trợ lý.`));
+    else {
+      // Gắn mục với một ngành: hiện ở mục "Thông tin riêng của ngành" trên trang chi tiết ngành.
+      fields.push(el('label', {}, 'Áp dụng cho ngành',
+        el('select', { name: 'majorCode', required: Boolean(itemScope) },
+          itemScope ? el('option', { value: '' }, '— Chọn ngành của khoa —') : el('option', { value: '' }, 'Mọi ngành (mục chung)'),
+          itemMajors.map((m) => el('option', { value: m.code, selected: m.code === d.major_code }, itemScope ? m.name : `${m.name} – ${m.faculty}`))),
+        el('span', { class: 'hint' }, itemScope ? `Cán bộ Khoa chỉ thêm mục cho ngành của Khoa ${itemScope}.` : 'Chọn một ngành nếu mục chỉ áp dụng cho ngành đó.')));
+    }
     fields.push(
       el('label', {}, kind === 'SCHEDULE' ? 'Tên đợt' : 'Tiêu đề', el('input', { name: 'title', value: d.title || '', required: true, maxlength: '300', placeholder: kind === 'SCHEDULE' ? 'vd: Nhập học đợt 4' : '' })),
       el('label', {}, kind === 'SCHEDULE' ? 'Mô tả thời gian' : 'Nội dung', el('textarea', { name: 'detail', rows: isInfo ? '6' : '3', maxlength: '3000' }, d.detail || '')));
@@ -174,11 +239,15 @@
   }
 
   function rowActions(i, { canDelete = true } = {}) {
+    if (i.can_edit === false) return el('td', { class: 'tiny muted' }, 'Chỉ xem');
     return el('td', {}, el('div', { class: 'btn-row' },
       el('button', { class: 'btn btn--sm', 'data-action': 'item-edit', 'data-id': i.id }, 'Sửa'),
       canDelete ? el('button', { class: 'btn btn--sm btn--ghost', 'data-action': 'item-delete', 'data-id': i.id, 'data-title': i.title }, 'Xóa') : null));
   }
-  const activeBadge = (i) => (i.is_active ? null : el('span', { class: 'badge' }, 'Đang ẩn'));
+  const majorName = (code) => itemMajors.find((m) => m.code === code)?.name || code;
+  const activeBadge = (i) => [
+    i.major_code ? el('span', { class: 'badge badge--wait' }, `Ngành: ${majorName(i.major_code)}`) : null,
+    i.is_active ? null : el('span', { class: 'badge' }, 'Đang ẩn')];
 
   function viewTable(view) {
     const list = view === 'INFO' ? items.filter((i) => i.kind === 'LEVEL_INFO' || i.kind === 'SUPPORT_INFO') : items.filter((i) => i.kind === view);
@@ -231,9 +300,12 @@
     id: 'admission-info', title: 'Thông tin tuyển sinh', perm: 'ADMISSION_INFO', events: ['CATALOG_UPDATED'],
     async render(root) {
       meta = await hht.meta();
-      items = (await apiClient.get('/api/admin/catalog/admission-items')).items;
+      const ir = await apiClient.get('/api/admin/catalog/admission-items');
+      items = ir.items; itemMajors = ir.majors || []; itemScope = ir.scopeFaculty || null;
       const view = root.dataset.infoView || 'SCHEDULE';
       root.replaceChildren(
+        itemScope ? el('p', { class: 'scope-note' }, 'Bạn đang quản lý thông tin tuyển sinh của ', el('strong', {}, `Khoa ${itemScope}`),
+          '. Mục chung của Nhà trường chỉ xem; mục bạn thêm gắn với ngành của khoa và hiện trên trang chi tiết ngành. Chỉ tiêu, thời gian học, học phí, phương thức theo hệ sửa ở tab "Ngành học".') : null,
         el('div', { class: 'subtabs', role: 'tablist' }, VIEWS.map((v) => el('button', {
           class: `btn btn--sm ${v.id === view ? 'btn--primary' : ''}`, role: 'tab', 'aria-selected': String(v.id === view), 'data-action': 'info-view', 'data-value': v.id,
         }, `${v.label} (${v.id === 'INFO' ? items.filter((i) => i.kind === 'LEVEL_INFO' || i.kind === 'SUPPORT_INFO').length : items.filter((i) => i.kind === v.id).length})`))),
@@ -254,6 +326,7 @@
     if (f.elements.copyType) body.copyType = fd.get('copyType') || undefined;
     if (f.elements.quantity && fd.get('quantity')) body.quantity = Number(fd.get('quantity'));
     if (f.elements.dateFrom) { body.dateFrom = fd.get('dateFrom'); body.dateTo = fd.get('dateTo'); }
+    if (f.elements.majorCode) body.majorCode = fd.get('majorCode') || '';
     return body;
   }
 

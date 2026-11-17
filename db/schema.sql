@@ -208,6 +208,30 @@ CREATE INDEX IF NOT EXISTS idx_majors_faculty     ON majors (faculty);
 CREATE INDEX IF NOT EXISTS idx_majors_levels      ON majors USING GIN (levels);
 CREATE INDEX IF NOT EXISTS idx_majors_document_id ON majors (document_id);
 
+-- Thông tin tuyển sinh theo TỪNG HỆ của một ngành (bảng trên trang chi tiết ngành):
+-- chỉ tiêu theo cơ sở 1/2/3, thời gian học, học phí, phương thức xét tuyển.
+-- Phòng Tuyển sinh sửa mọi ngành; Cán bộ Khoa sửa ngành của khoa mình. majors.levels/duration/quota_9plus_*
+-- được đồng bộ lại từ bảng này mỗi lần lưu (trợ lý, bộ lọc, gợi ý ngành vẫn đọc majors như cũ).
+CREATE TABLE IF NOT EXISTS major_programs (
+  id            BIGSERIAL PRIMARY KEY,
+  major_code    TEXT NOT NULL REFERENCES majors (code) ON DELETE CASCADE ON UPDATE CASCADE,
+  level         TEXT NOT NULL CHECK (level IN ('HE_9_PLUS', 'TRUNG_CAP', 'CAO_DANG', 'SO_CAP')),
+  quota_cs1     INT CHECK (quota_cs1 IS NULL OR quota_cs1 >= 0),
+  quota_cs2     INT CHECK (quota_cs2 IS NULL OR quota_cs2 >= 0),
+  quota_cs3     INT CHECK (quota_cs3 IS NULL OR quota_cs3 >= 0),
+  duration      TEXT,
+  tuition_min   INT CHECK (tuition_min IS NULL OR tuition_min >= 0),
+  tuition_max   INT CHECK (tuition_max IS NULL OR tuition_max >= 0),
+  tuition_note  TEXT,
+  methods       TEXT,
+  note          TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (major_code, level),
+  CHECK (tuition_min IS NULL OR tuition_max IS NULL OR tuition_min <= tuition_max)
+);
+CREATE INDEX IF NOT EXISTS idx_major_programs_major ON major_programs (major_code);
+
 CREATE TABLE IF NOT EXISTS admission_items (
   id              BIGSERIAL PRIMARY KEY,
   item_key        TEXT NOT NULL UNIQUE,                -- khóa tự nhiên để seed idempotent
@@ -462,6 +486,7 @@ SELECT md5(
   -- Ngành và mục cẩm nang (đợt nhận hồ sơ, liên hệ…) cũng là tri thức trả lời: Phòng Tuyển sinh/Khoa sửa
   -- là bộ nhớ đệm câu trả lời tự hết hiệu lực.
   || '|' || COALESCE((SELECT max(m.updated_at)::text FROM majors m), '')
+  || '|' || COALESCE((SELECT max(p.updated_at)::text || ':' || count(*)::text FROM major_programs p), '')
   || '|' || COALESCE((SELECT max(i.updated_at)::text || ':' || count(*)::text FROM admission_items i), '')
 ) AS kb_version;
 
@@ -471,7 +496,7 @@ SELECT md5(
 DO $$
 DECLARE t TEXT;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['staff', 'system_configs', 'kb_documents', 'faq_entries', 'majors', 'admission_items',
+  FOREACH t IN ARRAY ARRAY['staff', 'system_configs', 'kb_documents', 'faq_entries', 'majors', 'major_programs', 'admission_items',
                            'handoff_requests', 'jobs', 'appointment_slots', 'appointments', 'ai_api_keys']
   LOOP
     EXECUTE format('DROP TRIGGER IF EXISTS trg_%1$s_updated_at ON %1$I', t);

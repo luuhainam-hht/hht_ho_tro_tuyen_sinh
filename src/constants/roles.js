@@ -1,10 +1,12 @@
 'use strict';
 /**
  * Vai trò cán bộ.
- *  - SUPER_ADMIN       Quản trị hệ thống: toàn quyền, cài đặt AI, tài khoản.
+ *  - SUPER_ADMIN       Quản trị hệ thống: TOÀN QUYỀN (có mặt trong mọi nhóm quyền), cài đặt AI, tài khoản.
  *  - LEADER            Lãnh đạo: xem, duyệt FAQ, công bố tài liệu.
- *  - ADMISSION_OFFICE  Phòng Tuyển sinh: quản lý hồ sơ, đợt nhận hồ sơ, ngành của mọi khoa, hỏi đáp, liên hệ.
- *  - FACULTY           Cán bộ Khoa: chỉ sửa/thêm ngành của KHOA MÌNH (staff.faculty), soạn hỏi đáp chờ duyệt.
+ *  - ADMISSION_OFFICE  Phòng Tuyển sinh: thông tin tuyển sinh của mọi ngành (hệ, chỉ tiêu CS1/2/3, thời gian học,
+ *                      học phí, phương thức), hồ sơ, đợt nhận hồ sơ, hướng dẫn, liên hệ, hỏi đáp.
+ *  - FACULTY           Cán bộ Khoa: như Phòng Tuyển sinh nhưng chỉ trong KHOA MÌNH (staff.faculty): sửa/thêm ngành
+ *                      và bảng thông tin tuyển sinh theo hệ; thêm/sửa mục hồ sơ, đợt, liên hệ gắn với ngành của khoa.
  *  - ADVISOR           Cán bộ tư vấn: trả lời câu hỏi chuyển cán bộ, lịch hẹn, soạn FAQ.
  */
 const ROLES = Object.freeze({
@@ -23,7 +25,7 @@ const PERMISSION_GROUPS = Object.freeze({
   FAQ_EDIT: ['SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR'], // soạn FAQ (DRAFT)
   FAQ_APPROVE: ['SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE'],
   MAJOR_MANAGE: ['SUPER_ADMIN', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR'],       // FACULTY bị giới hạn trong khoa mình
-  ADMISSION_INFO: ['SUPER_ADMIN', 'ADMISSION_OFFICE', 'ADVISOR'],                // hồ sơ, đợt nhận hồ sơ, hướng dẫn, liên hệ, giải thích hệ
+  ADMISSION_INFO: ['SUPER_ADMIN', 'ADMISSION_OFFICE', 'FACULTY', 'ADVISOR'],     // hồ sơ, đợt, hướng dẫn, liên hệ, giải thích hệ (FACULTY: mục của ngành thuộc khoa mình)
   CONTACT_CONFIG: ['SUPER_ADMIN', 'ADMISSION_OFFICE'],                           // hotline, email, địa chỉ nộp hồ sơ…
   HANDOFF: ['SUPER_ADMIN', 'ADMISSION_OFFICE', 'ADVISOR'],
   ANALYTICS: ['SUPER_ADMIN', 'LEADER', 'ADMISSION_OFFICE', 'ADVISOR'],
@@ -31,6 +33,9 @@ const PERMISSION_GROUPS = Object.freeze({
   CONFIG: ['SUPER_ADMIN'],
   STAFF_MANAGEMENT: ['SUPER_ADMIN'],
 });
+
+// Quản trị hệ thống luôn có mọi quyền, kể cả nhóm quyền thêm sau này.
+for (const roles of Object.values(PERMISSION_GROUPS)) if (!roles.includes('SUPER_ADMIN')) throw new Error('SUPER_ADMIN phải có mọi nhóm quyền');
 
 /** Danh sách nhóm quyền của một vai trò (trả cho giao diện quản trị để ẩn/hiện chức năng). */
 const permissionsOf = (role) => Object.keys(PERMISSION_GROUPS).filter((g) => PERMISSION_GROUPS[g].includes(role));

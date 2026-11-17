@@ -15,6 +15,7 @@ const path = require('node:path');
 const { normalizeVi } = require('../utils/textNormalize');
 const { chunkLines, estimateTokens } = require('../services/rag/chunker');
 const { LEVELS, AUDIENCES, COPY_TYPES } = require('../constants/catalog');
+const majorProgramRepository = require('../repositories/majorProgramRepository');
 
 const SEED_DIR = path.join(__dirname, '..', '..', 'db', 'seed');
 const SEED_YEAR = 2026; // năm học 2026–2027
@@ -227,6 +228,8 @@ async function seedAll(c, { refresh = false } = {}) {
   const docs = await seedSources(c, sources, refresh);
   await seedFaq(c, faqs, docs, refresh);
   await seedMajors(c, majors, profiles, docs, refresh);
+  // Bảng thông tin tuyển sinh theo hệ (chỉ tiêu CS1/2/3, thời gian, học phí, phương thức) cho ngành chưa có.
+  await majorProgramRepository.backfillMissing(c);
   await seedAdmissionItems(c, items, docs, refresh);
   await seedChunks(c, buildSeedChunks({ faqs, majors, items, docs }), refresh);
 }

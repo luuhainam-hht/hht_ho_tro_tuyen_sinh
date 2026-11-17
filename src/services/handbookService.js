@@ -10,6 +10,7 @@ const { vnToday } = require('../utils/time');
 const { LEVELS, AUDIENCES, TOPICS, COPY_TYPES } = require('../constants/catalog');
 const majorRepository = require('../repositories/majorRepository');
 const admissionItemRepository = require('../repositories/admissionItemRepository');
+const majorProgramRepository = require('../repositories/majorProgramRepository');
 
 function scheduleStatus(item, today) {
   if (!item.date_from && !item.date_to) return 'UNKNOWN';
@@ -42,7 +43,12 @@ function createHandbookService({ db, configService }) {
     );
     delete m.riasec_profile;
     delete m.subject_weights;
-    return { ...m, related };
+    // Bảng thông tin tuyển sinh theo hệ + mục riêng của ngành (hồ sơ/đợt/liên hệ do Phòng Tuyển sinh, Khoa thêm).
+    const [programs, items] = await Promise.all([
+      majorProgramRepository.listByMajor(db, code),
+      admissionItemRepository.listForMajor(db, year(), code),
+    ]);
+    return { ...m, related, programs, items };
   }
 
   async function checklist({ audience, majorCode = null }) {

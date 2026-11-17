@@ -12,6 +12,7 @@
 const { normalizeVi, coverage } = require('../../utils/textNormalize');
 const { vnToday } = require('../../utils/time');
 const { LEVELS, AUDIENCES, COPY_TYPES } = require('../../constants/catalog');
+const majorProgramRepository = require('../../repositories/majorProgramRepository');
 
 const LIVE_TITLE = 'Dữ liệu tuyển sinh cập nhật trên hệ thống';
 const HEAD_BONUS = 1;
@@ -74,18 +75,39 @@ function weightedCoverage(tokens, words, df, total) {
   return all ? hit / all : 0;
 }
 
+/** Bảng theo hệ -> câu cho trợ lý: "Hệ 9+: chỉ tiêu Cơ sở 1: 35, Cơ sở 2: 20; thời gian học …; học phí …; xét tuyển …". */
+function programLines(programs) {
+  const money = (n) => `${Number(n).toLocaleString('vi-VN')} đ`;
+  return programs.map((p) => {
+    const quota = [p.quota_cs1, p.quota_cs2, p.quota_cs3].map((q, i) => (q ? `Cơ sở ${i + 1}: ${q}` : null)).filter(Boolean);
+    const tuition = p.tuition_min || p.tuition_max
+      ? `${money(p.tuition_min ?? p.tuition_max)}${p.tuition_max && p.tuition_max !== p.tuition_min ? ` – ${money(p.tuition_max)}` : ''}/tháng`
+      : null;
+    const parts = [
+      quota.length ? `chỉ tiêu ${quota.join(', ')}` : null,
+      p.duration ? `thời gian học ${p.duration}` : null,
+      tuition || p.tuition_note ? `học phí ${[tuition, p.tuition_note].filter(Boolean).join(' – ')}` : null,
+      p.methods ? `xét tuyển: ${p.methods}` : null,
+      p.note ? `ghi chú: ${p.note}` : null,
+    ].filter(Boolean);
+    const name = majorProgramRepository.LEVEL_SHORT[p.level];
+    return parts.length ? `${name.startsWith('Hệ') ? name : `Hệ ${name}`}: ${parts.join('; ')}.` : null;
+  });
+}
+
 function createLiveKnowledge({ db, configService, logger = console }) {
   let cache = { key: null, chunks: [], df: new Map() };
 
   async function build() {
     const year = configService.get('CURRENT_ADMISSION_YEAR');
     const today = vnToday();
-    const [{ rows: majors }, { rows: items }] = await Promise.all([
+    const [{ rows: majors }, { rows: items }, programsByMajor] = await Promise.all([
       db.query(`SELECT code, name, faculty, levels, duration, tuition_per_month_min, tuition_per_month_max, state_support, enterprise_support,
                        support_needs_verify, quota_9plus_cs1, quota_9plus_cs2, description
                   FROM majors WHERE is_active AND admission_year = ? ORDER BY faculty, name`, [year]),
       db.query(`SELECT kind, audience, code, title, detail, is_mandatory, copy_type, quantity, date_from, date_to, order_no
                   FROM admission_items WHERE is_active AND admission_year = ? ORDER BY kind, audience, order_no, id`, [year]),
+      majorProgramRepository.mapByMajors(db),
     ]);
     const yearLabel = `${year}–${year + 1}`;
     const out = [];
@@ -97,9 +119,12 @@ function createLiveKnowledge({ db, configService, logger = console }) {
       const lines = [
         `Ngành ${m.name} (mã ${m.code}) thuộc Khoa ${m.faculty}, tuyển sinh năm học ${yearLabel}.`,
         levels.length ? `Hệ tuyển sinh: ${levels.join(', ')}.` : 'Năm nay chưa công bố hệ tuyển sinh cho ngành này.',
-        m.duration ? `Thời gian học: ${m.duration}.` : null,
         `Học phí và hỗ trợ: ${tuitionSentence(m)}.`,
-        m.quota_9plus_cs1 || m.quota_9plus_cs2 ? `Chỉ tiêu hệ 9+: ${[m.quota_9plus_cs1 ? `Cơ sở 1: ${m.quota_9plus_cs1}` : null, m.quota_9plus_cs2 ? `Cơ sở 2: ${m.quota_9plus_cs2}` : null].filter(Boolean).join('; ')}.` : null,
+        // Bảng theo hệ (chỉ tiêu CS1/2/3, thời gian, học phí, phương thức) thay cho dòng tóm tắt cũ.
+        ...(programsByMajor.get(m.code)?.length ? programLines(programsByMajor.get(m.code)) : [
+          m.duration ? `Thời gian học: ${m.duration}.` : null,
+          m.quota_9plus_cs1 || m.quota_9plus_cs2 ? `Chỉ tiêu hệ 9+: ${[m.quota_9plus_cs1 ? `Cơ sở 1: ${m.quota_9plus_cs1}` : null, m.quota_9plus_cs2 ? `Cơ sở 2: ${m.quota_9plus_cs2}` : null].filter(Boolean).join('; ')}.` : null,
+        ]),
         m.description ? `Giới thiệu: ${m.description}` : null,
       ].filter(Boolean);
       add(`Ngành học › ${m.name}`, lines.join('\n'), `/nganh-chi-tiet.html?code=${encodeURIComponent(m.code)}`);
