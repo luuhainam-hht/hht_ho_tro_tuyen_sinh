@@ -163,13 +163,33 @@ function waitDbReady() {
   return false;
 }
 
+/**
+ * CSDL Docker được tạo lần đầu với POSTGRES_PASSWORD của .env lúc đó (vd bản dự án ở ổ khác). Đổi .env sau đó
+ * thì mật khẩu trong CSDL KHÔNG tự đổi theo -> "password authentication failed". Đặt lại mật khẩu user hht
+ * bên trong container (kết nối nội bộ qua socket, không cần mật khẩu) cho khớp .env. Dữ liệu giữ nguyên.
+ */
+function syncDockerPassword() {
+  const pw = process.env.POSTGRES_PASSWORD;
+  say(`[!!] Mật khẩu user ${LOCAL_USER} trong CSDL Docker khác POSTGRES_PASSWORD của .env -> đặt lại cho khớp .env (dữ liệu giữ nguyên)...`);
+  const r = run('docker', ['compose', 'exec', '-T', 'db', 'psql', '-v', 'ON_ERROR_STOP=1', '-q', '-U', LOCAL_USER, '-d', LOCAL_DB],
+    { input: `ALTER ROLE ${LOCAL_USER} WITH PASSWORD '${pw.replace(/'/g, "''")}';\n`, quiet: true }); // qua stdin: mật khẩu không lộ trên dòng lệnh
+  if (r.code !== 0) fail(`Không đặt lại được mật khẩu trong container: ${r.err}`);
+  say('     Đã đặt lại mật khẩu.');
+}
+
 async function assertHostReachesProjectDb() {
   if (LOCAL_TOOLS) return;
   const name = () => run('docker', ['compose', 'ps', '--format', '{{.Name}}', 'db'], { quiet: true }).out.split('\n')[0] || 'db';
+  // Cổng đang do chính container db của dự án mở -> lỗi không phải do trùng cổng.
+  const portIsOurs = () => portOwners(DB_PORT).includes(`(dự án: ${COMPOSE_PROJECT})`);
   let check = await hostIdentity();
+  if (!check.ok && /password authentication failed/i.test(check.err || '') && portIsOurs()) {
+    syncDockerPassword();
+    check = await hostIdentity();
+  }
   // Cổng máy đang trỏ vào PostgreSQL khác (vd bandoso-db, hcc_mot_cua) -> tự chuyển container của dự án sang cổng trống.
   for (const port of FALLBACK_PORTS) {
-    if (check.ok) break;
+    if (check.ok || portIsOurs()) break;
     if (port === DB_PORT) continue;
     say(`[!!] Cổng ${DB_PORT} trên máy đang thuộc PostgreSQL khác${check.err ? ` (${check.err})` : ''}:\n${portOwners(DB_PORT) || '  (PostgreSQL ngoài Docker, vd cài trên Windows)'}`);
     say(`     -> Chuyển container ${name()} sang cổng ${port} (ghi DOCKER_DB_PORT=${port} vào .env)...`);
@@ -178,6 +198,7 @@ async function assertHostReachesProjectDb() {
     if (up.code !== 0) { check = { ok: false, err: up.err.split('\n').pop() }; continue; }
     if (!waitDbReady()) fail('PostgreSQL trong Docker chưa sẵn sàng sau 60 giây');
     check = await hostIdentity();
+    if (!check.ok && /password authentication failed/i.test(check.err || '') && portIsOurs()) { syncDockerPassword(); check = await hostIdentity(); }
   }
   if (check.ok) { say(`[OK] Đang ghi vào đúng CSDL ${LOCAL_DB} trong container ${name()} (dự án Docker "${COMPOSE_PROJECT}", cổng ${DB_PORT}).`); return; }
   fail([

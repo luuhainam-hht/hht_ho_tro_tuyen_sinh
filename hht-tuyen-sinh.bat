@@ -372,7 +372,7 @@ git push -u origin %BRANCH%
 if errorlevel 1 (
   echo.
   echo  [LOI] Day len that bai. Kiem tra:
-  echo     - Dang nhap GitHub khi cua so dang nhap hien ra (Git Credential Manager).
+  echo     - Dang nhap GitHub khi cua so dang nhap hien ra ^(Git Credential Manager^).
   echo     - Tai khoan co quyen ghi vao luuhainam-hht/hht_ho_tro_tuyen_sinh.
   exit /b 1
 )
