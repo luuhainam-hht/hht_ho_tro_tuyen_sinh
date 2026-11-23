@@ -103,3 +103,24 @@ test('quản trị: không giảm sức chứa dưới số đã đặt; ngày n
   const slots = await request(app).get('/api/appointments/slots').expect(200);
   assert.ok(!slots.body.days.some((d) => d.date === day));
 });
+
+test('tra cứu: trả lịch sử trạng thái (không lộ cán bộ); quên mã -> lấy lại bằng SĐT + ngày hẹn', async () => {
+  const day = addDays(vnToday(), 9);
+  const s1 = await insertSlot(day, '07:00', 3);
+  const s2 = await insertSlot(day, '18:00', 3);
+  const a = (await book(s1, { contactPhone: '0987 654 321', consent: true }).expect(201)).body;
+  assert.deepEqual(a.history.map((h) => h.kind), ['BOOKED']);
+  await request(app).post(`/api/appointments/${a.code}/reschedule`).send({ slotId: s2 }).expect(200);
+  const v = (await request(app).get(`/api/appointments/${a.code}`).expect(200)).body;
+  assert.deepEqual(v.history.map((h) => h.kind), ['BOOKED', 'RESCHEDULED']);
+  assert.ok(v.history.every((h) => h.at && h.byStaff === false && h.note === undefined && h.actorId === undefined));
+
+  const ok = await request(app).post('/api/appointments/recover').send({ phone: '+84987654321', date: day }).expect(200);
+  assert.deepEqual(ok.body.items.map((i) => [i.code, i.startTime]), [[a.code, '18:00']]);
+  assert.equal(ok.body.items[0].contactName, undefined);
+  await request(app).post('/api/appointments/recover').send({ phone: '0987654321', date: addDays(day, 1) }).expect(404); // sai ngày
+  await request(app).post('/api/appointments/recover').send({ phone: '0987654321' }).expect(400);                      // thiếu ngày
+  await request(app).post('/api/appointments/recover').send({ phone: '12345', date: day }).expect(400);                 // SĐT sai dạng
+  await request(app).post(`/api/appointments/${a.code}/cancel`).expect(200);
+  await request(app).post('/api/appointments/recover').send({ phone: '0987654321', date: day }).expect(404);             // đã hủy thì không trả
+});

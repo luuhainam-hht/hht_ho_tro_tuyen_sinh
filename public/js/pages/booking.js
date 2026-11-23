@@ -77,17 +77,19 @@
   function step4(a) {
     try { localStorage.setItem('hht.lastAppointment', a.code); } catch { /* bỏ qua */ }
     const missing = a.checklist?.missingMandatory || [];
-    root.replaceChildren(el('div', { class: 'ticket' },
-      el('p', { class: 'mb-0' }, 'Mã hẹn của bạn'),
-      el('p', { class: 'ticket-code' }, a.code),
-      el('p', { class: 'lede' }, `${weekday(a.date)}, ${fmtDate(a.date)} · ${a.startTime} – ${a.endTime}`),
-      el('p', {}, a.address),
-      el('p', { class: 'small muted' }, 'Đây không phải số thứ tự. Đến trong khung giờ, xuất trình mã hẹn tại bàn tiếp nhận.')),
+    root.replaceChildren(el('div', { class: 'ticket ticket--qr' },
+      el('div', { class: 'ticket-info' },
+        el('p', { class: 'mb-0' }, 'Mã hẹn của bạn'),
+        el('p', { class: 'ticket-code' }, a.code),
+        el('p', { class: 'lede' }, `${weekday(a.date)}, ${fmtDate(a.date)} · ${a.startTime} – ${a.endTime}`),
+        el('p', {}, a.address),
+        el('p', { class: 'small muted' }, 'Đây không phải số thứ tự. Đến trong khung giờ, xuất trình mã hẹn hoặc mã QR tại bàn tiếp nhận. Hãy chụp màn hình hoặc bấm "Tải ảnh QR" để lưu lại.')),
+      hhtQr.ticketQr(a)),
     missing.length ? el('div', { class: 'note note--stop mt-m' }, el('strong', {}, 'Giấy tờ bắt buộc còn thiếu:'), el('ul', {}, missing.map((m) => el('li', {}, m.title)))) : el('p', { class: 'note mt-m' }, 'Bạn đã khai đủ giấy tờ bắt buộc. Nhớ mang theo bản gốc để đối chiếu.'),
     el('div', { class: 'btn-row mt-m no-print' },
       el('a', { class: 'btn btn--primary', href: `/api/appointments/${a.code}/ics`, download: `lich-hen-${a.code}.ics` }, 'Thêm vào lịch điện thoại'),
       el('button', { class: 'btn', 'data-action': 'print' }, 'In phiếu hẹn'),
-      el('a', { class: 'btn', href: `/hen.html?code=${a.code}` }, 'Đổi hoặc hủy lịch')));
+      el('a', { class: 'btn', href: `/hen.html?code=${a.code}` }, 'Tra cứu, đổi hoặc hủy lịch')));
   }
 
   async function render() {

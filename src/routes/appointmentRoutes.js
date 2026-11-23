@@ -35,6 +35,12 @@ module.exports = function appointmentRoutes({ appointmentService, visitorHash, l
     }));
   }));
 
+  // Quên mã hẹn (đặt TRƯỚC '/:code'): SĐT + ngày hẹn phải khớp; giới hạn tần suất riêng.
+  r.post('/recover', limits.codeRecover, ah(async (req, res) => res.json(await appointmentService.recover({
+    phone: v.phone(req.body, 'phone', { required: true }),
+    date: v.date(req.body, 'date', { label: 'Ngày hẹn', required: true }),
+  }))));
+
   r.get('/:code', limits.codeLookup, ah(async (req, res) => res.json(await appointmentService.view(req.params.code))));
   r.post('/:code/cancel', limits.codeLookup, ah(async (req, res) => res.json(await appointmentService.cancel(req.params.code))));
   r.post('/:code/reschedule', limits.codeLookup, ah(async (req, res) => {

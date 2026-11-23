@@ -2,7 +2,19 @@
   'use strict';
   const { LEVEL_SHORT, fmtDate } = hht;
 
+  // Tra cứu lịch hẹn ngay trên trang chủ -> chuyển sang trang chi tiết /hen.html
+  const openAppointment = (code) => { location.href = `/hen.html?code=${encodeURIComponent(code)}`; };
+
   actionDelegate.register({
+    'home-lookup'(form) {
+      const code = hhtQr.extractCode(form.code.value);
+      if (code) openAppointment(code);
+      else { toast('Mã hẹn có dạng HS-XXXX-XXXX (8 ký tự sau chữ HS). Vui lòng kiểm tra lại.', 'error'); form.code.focus(); }
+    },
+    async 'home-scan'() {
+      const code = await hhtQr.scan();
+      if (code) openAppointment(code);
+    },
     'hero-ask'(form) {
       const q = form.q.value.trim();
       if (q) openChat({ question: q });

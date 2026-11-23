@@ -134,10 +134,27 @@ function createAppointmentService({ db, configService, broadcast }) {
       date: a.slot_date, startTime: a.start_time, endTime: a.end_time, slotId: Number(a.slot_id),
       address: configService.get('SUBMISSION_ADDRESS'), checklist: a.checklist_snapshot, rescheduleCount: a.reschedule_count,
       rescheduleLeft: Math.max(0, configService.get('APPOINTMENT_MAX_RESCHEDULE') - a.reschedule_count),
-      contactName: maskName(a.contact_name), trackUrl: `/hen.html?code=${a.code}`,
+      contactName: maskName(a.contact_name), trackUrl: `/hen.html?code=${a.code}`, createdAt: a.created_at,
+      checkedInAt: a.checked_in_at, completedAt: a.completed_at, cancelledAt: a.cancelled_at,
+      history: (await appointmentRepository.listHistory(db, a.id)).map((h) => ({
+        from: h.from_status, to: h.to_status, at: h.created_at, byStaff: h.by_staff,
+        kind: h.from_status === 'BOOKED' && h.to_status === 'BOOKED' ? 'RESCHEDULED' : h.to_status,
+      })),
     };
     if (includeContact) Object.assign(out, { contactName: a.contact_name, contactPhone: a.contact_phone, contactEmail: a.contact_email });
     return out;
+  }
+
+  /**
+   * Quên mã hẹn: thí sinh nhập SĐT đã khai lúc đặt + ngày hẹn -> trả lại mã.
+   * Phải khớp cả hai (SĐT một mình là thông tin dễ biết); route có rate-limit riêng chặt hơn tra cứu mã.
+   * Không trả họ tên/email; lịch đặt không khai SĐT thì không lấy lại được (đúng thiết kế "mã là chìa khóa").
+   */
+  async function recover({ phone, date }) {
+    if (!phone || !date) throw new HttpError(400, 'Cần nhập số điện thoại đã khai khi đặt lịch và ngày hẹn');
+    const rows = await appointmentRepository.findByPhoneAndDate(db, { phone, date });
+    if (!rows.length) throw new HttpError(404, 'Không tìm thấy lịch hẹn khớp số điện thoại và ngày hẹn. Lịch đặt không khai số điện thoại thì không lấy lại được mã – vui lòng liên hệ hotline.');
+    return { items: rows.map((r) => ({ code: r.code, status: r.status, date: r.slot_date, startTime: r.start_time, endTime: r.end_time })) };
   }
 
   /** Khung chung cho chuyển trạng thái. actor = null: thí sinh/hệ thống (không ghi audit). */
@@ -263,7 +280,7 @@ function createAppointmentService({ db, configService, broadcast }) {
   }
 
   return {
-    generateSlots, availableSlots, evaluateChecklist, book, view, cancel, reschedule, checkIn, complete, markNoShows, ics,
+    generateSlots, availableSlots, evaluateChecklist, book, view, recover, cancel, reschedule, checkIn, complete, markNoShows, ics,
     adminDay, adminCalendar, updateSlot, setHoliday, parseCode,
   };
 }

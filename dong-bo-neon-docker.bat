@@ -11,6 +11,8 @@ setlocal EnableExtensions
 chcp 65001 >nul
 title Dong bo Neon - Docker
 cd /d "%~dp0"
+REM Co dinh ten du an Docker: bien COMPOSE_PROJECT_NAME cua du an khac (vd hcc_mot_cua) se lam docker compose chay nham nhom container.
+set "COMPOSE_PROJECT_NAME=hht-tuyen-sinh"
 
 call :prepare || goto :end
 if /i "%~1"=="status"         (node scripts\db-sync.js status & goto :end)

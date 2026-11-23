@@ -80,7 +80,7 @@ async function main() {
       env.set('DATABASE_URL', await ask('  Chuỗi kết nối postgres://...'));
       if (/neon\.tech|sslmode=require/.test(env.get('DATABASE_URL'))) env.set('DATABASE_SSL', 'true');
     } else {
-      env.set('DATABASE_URL', `postgres://hht:${env.get('POSTGRES_PASSWORD')}@localhost:5432/hht_tuyen_sinh`);
+      env.set('DATABASE_URL', `postgres://hht:${env.get('POSTGRES_PASSWORD')}@localhost:${env.get('DOCKER_DB_PORT') || 5432}/hht_tuyen_sinh`);
       env.set('DATABASE_SSL', 'false');
       env.set('USE_DOCKER_DB', 'true');
     }

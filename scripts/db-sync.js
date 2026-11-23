@@ -26,12 +26,24 @@ const ENV_FILE = path.join(ROOT, '.env');
 const BACKUP_DIR = path.join(ROOT, 'backups');
 const LOCAL_DB = 'hht_tuyen_sinh';
 const LOCAL_USER = 'hht';
+// Tên dự án Docker Compose CỐ ĐỊNH. Biến môi trường COMPOSE_PROJECT_NAME (vd. còn sót từ dự án khác như
+// hcc_mot_cua) được Compose ưu tiên hơn "name:" trong docker-compose.yml -> mọi lệnh docker compose sẽ chạy
+// nhầm sang dự án đó. Ghi đè tại đây để luôn làm việc với đúng nhóm container hht-tuyen-sinh.
 const TABLES = ['staff', 'kb_documents', 'kb_chunks', 'faq_entries', 'majors', 'admission_items', 'chat_sessions', 'chat_messages', 'handoff_requests', 'appointments'];
 const args = process.argv.slice(2);
 const YES = args.includes('--yes');
 const LOCAL_TOOLS = process.env.PG_TOOLS === 'local';
 
 require('dotenv').config({ path: ENV_FILE, quiet: true });
+
+const COMPOSE_PROJECT = 'hht-tuyen-sinh';
+if (process.env.COMPOSE_PROJECT_NAME && process.env.COMPOSE_PROJECT_NAME !== COMPOSE_PROJECT) {
+  console.log(`[!!] Máy đang đặt COMPOSE_PROJECT_NAME=${process.env.COMPOSE_PROJECT_NAME} – bỏ qua, dùng dự án Docker "${COMPOSE_PROJECT}".`);
+}
+process.env.COMPOSE_PROJECT_NAME = COMPOSE_PROJECT;
+// Cổng PostgreSQL Docker mở ra máy (khớp docker-compose.yml). Đổi khi 5432 đã bị PostgreSQL khác chiếm.
+let DB_PORT = Number(process.env.DOCKER_DB_PORT) || 5432;
+const FALLBACK_PORTS = [55432, 55433, 55434, 56432, 57432];
 
 const say = (m) => console.log(m);
 const fail = (m) => { console.error(`\n[LỖI] ${m}`); process.exit(1); };
@@ -77,7 +89,8 @@ function dockerUrl({ fromHost = false } = {}) {
   const pw = process.env.POSTGRES_PASSWORD;
   if (!pw || /doi-mat-khau/.test(pw)) fail('Chưa có POSTGRES_PASSWORD trong .env (chạy hht-tuyen-sinh.bat mục 9 hoặc mục 1)');
   const host = fromHost || LOCAL_TOOLS ? '127.0.0.1' : 'db';
-  return `postgres://${LOCAL_USER}:${encodeURIComponent(pw)}@${host}:5432/${process.env.DOCKER_DB_NAME || LOCAL_DB}`;
+  const port = fromHost || LOCAL_TOOLS ? DB_PORT : 5432; // trong mạng Docker container db luôn nghe 5432
+  return `postgres://${LOCAL_USER}:${encodeURIComponent(pw)}@${host}:${port}/${process.env.DOCKER_DB_NAME || LOCAL_DB}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,12 +104,89 @@ function ensureDocker() {
 function ensureDockerDb() {
   if (LOCAL_TOOLS) return;
   say('Khởi động PostgreSQL trong Docker...');
-  if (run('docker', ['compose', 'up', '-d', 'db']).code !== 0) fail('Không chạy được container db (cổng 5432 bị chiếm?)');
+  let r = run('docker', ['compose', 'up', '-d', 'db'], { quiet: true });
+  // Cổng đang bị PostgreSQL/dự án khác (vd hcc_mot_cua) giữ -> tự chuyển sang cổng trống, ghi vào .env.
+  for (const port of FALLBACK_PORTS) {
+    if (r.code === 0 || !/already allocated|address already in use|Only one usage|bind/i.test(r.err)) break;
+    if (port === DB_PORT) continue;
+    say(`[!!] Cổng ${DB_PORT} đang bị chiếm bởi:\n${portOwners(DB_PORT) || '  (PostgreSQL ngoài Docker, vd cài trên Windows)'}`);
+    say(`     -> Chuyển PostgreSQL của dự án sang cổng ${port} (ghi DOCKER_DB_PORT=${port} vào .env).`);
+    useDbPort(port);
+    r = run('docker', ['compose', 'up', '-d', 'db'], { quiet: true });
+  }
+  if (r.code !== 0) {
+    process.stderr.write(`${r.err}\n`);
+    fail(`Không chạy được container db của dự án "${COMPOSE_PROJECT}". Các container đang mở cổng ${DB_PORT}:\n${portOwners(DB_PORT) || '  (không có)'}`);
+  }
+  if (DB_PORT !== 5432) say(`PostgreSQL của dự án đang mở ở cổng ${DB_PORT} trên máy.`);
+  if (!waitDbReady()) fail('PostgreSQL trong Docker chưa sẵn sàng sau 60 giây');
+}
+
+function portOwners(port) {
+  return run('docker', ['ps', '--filter', `publish=${port}`, '--format', '  - {{.Names}} (dự án: {{.Label "com.docker.compose.project"}})'], { quiet: true }).out;
+}
+
+/** Đổi cổng Docker DB: .env (Compose đọc khi up) + DATABASE_URL trỏ PostgreSQL Docker trên máy (nếu có). */
+function useDbPort(port) {
+  DB_PORT = port;
+  process.env.DOCKER_DB_PORT = String(port);
+  upsertEnvValue('DOCKER_DB_PORT', String(port));
+  const cur = process.env.DATABASE_URL || '';
+  if (/@(localhost|127\.0\.0\.1):\d+\/hht_tuyen_sinh/.test(cur) && process.env.USE_DOCKER_DB === 'true') {
+    const next = cur.replace(/@(localhost|127\.0\.0\.1):\d+\//, `@$1:${port}/`);
+    upsertEnvValue('DATABASE_URL', next);
+    process.env.DATABASE_URL = next;
+    say('     Đã cập nhật DATABASE_URL trong .env theo cổng mới.');
+  }
+}
+
+/**
+ * Chặn ghi nhầm CSDL: lệnh chạy từ Windows kết nối 127.0.0.1:<DB_PORT>. Nếu cổng đó đang thuộc PostgreSQL
+ * khác (container của dự án khác, PostgreSQL cài trên Windows) thì dữ liệu sẽ đổ sang đó. So sánh
+ * system_identifier (mã duy nhất của mỗi cụm PostgreSQL) đọc trong container db với đọc qua cổng máy.
+ */
+async function hostIdentity() {
+  const q = 'select system_identifier::text AS id from pg_control_system()';
+  const inside = run('docker', ['compose', 'exec', '-T', 'db', 'psql', '-U', LOCAL_USER, '-d', LOCAL_DB, '-tAc', q], { quiet: true }).out.trim();
+  const { Client } = require('pg');
+  const c = new Client({ connectionString: dockerUrl({ fromHost: true }), ssl: false, connectionTimeoutMillis: 5000 });
+  let outside = null; let err = null;
+  try { await c.connect(); outside = (await c.query(q)).rows[0].id; } catch (e) { err = e.message; } finally { await c.end().catch(() => {}); }
+  return { ok: Boolean(inside) && outside === inside, err };
+}
+
+function waitDbReady() {
   for (let i = 0; i < 30; i += 1) {
-    if (run('docker', ['compose', 'exec', '-T', 'db', 'pg_isready', '-U', LOCAL_USER, '-d', LOCAL_DB], { quiet: true }).code === 0) return;
+    if (run('docker', ['compose', 'exec', '-T', 'db', 'pg_isready', '-U', LOCAL_USER, '-d', LOCAL_DB], { quiet: true }).code === 0) return true;
     spawnSync(process.platform === 'win32' ? 'timeout' : 'sleep', process.platform === 'win32' ? ['/t', '2', '/nobreak'] : ['2'], { stdio: 'ignore', shell: process.platform === 'win32' });
   }
-  fail('PostgreSQL trong Docker chưa sẵn sàng sau 60 giây');
+  return false;
+}
+
+async function assertHostReachesProjectDb() {
+  if (LOCAL_TOOLS) return;
+  const name = () => run('docker', ['compose', 'ps', '--format', '{{.Name}}', 'db'], { quiet: true }).out.split('\n')[0] || 'db';
+  let check = await hostIdentity();
+  // Cổng máy đang trỏ vào PostgreSQL khác (vd bandoso-db, hcc_mot_cua) -> tự chuyển container của dự án sang cổng trống.
+  for (const port of FALLBACK_PORTS) {
+    if (check.ok) break;
+    if (port === DB_PORT) continue;
+    say(`[!!] Cổng ${DB_PORT} trên máy đang thuộc PostgreSQL khác${check.err ? ` (${check.err})` : ''}:\n${portOwners(DB_PORT) || '  (PostgreSQL ngoài Docker, vd cài trên Windows)'}`);
+    say(`     -> Chuyển container ${name()} sang cổng ${port} (ghi DOCKER_DB_PORT=${port} vào .env)...`);
+    useDbPort(port);
+    const up = run('docker', ['compose', 'up', '-d', 'db'], { quiet: true });
+    if (up.code !== 0) { check = { ok: false, err: up.err.split('\n').pop() }; continue; }
+    if (!waitDbReady()) fail('PostgreSQL trong Docker chưa sẵn sàng sau 60 giây');
+    check = await hostIdentity();
+  }
+  if (check.ok) { say(`[OK] Đang ghi vào đúng CSDL ${LOCAL_DB} trong container ${name()} (dự án Docker "${COMPOSE_PROJECT}", cổng ${DB_PORT}).`); return; }
+  fail([
+    `Không kết nối được vào container ${name()} của dự án "${COMPOSE_PROJECT}" qua cổng ${DB_PORT}${check.err ? ` (${check.err})` : ''}.`,
+    'Đã DỪNG để không ghi nhầm sang CSDL khác.',
+    `Các container đang mở cổng ${DB_PORT}:`,
+    portOwners(DB_PORT) || '  (không có)',
+    'Nếu lỗi là "password authentication failed": mật khẩu POSTGRES_PASSWORD trong .env khác mật khẩu lúc tạo CSDL Docker lần đầu.',
+  ].join('\n'));
 }
 
 let cachedNetwork = null;
@@ -236,6 +326,7 @@ async function status() {
 async function migrateDocker() {
   ensureDocker();
   ensureDockerDb();
+  await assertHostReachesProjectDb();
   const refresh = args.includes('--refresh-seed');
   const url = dockerUrl({ fromHost: true });
   if (refresh) {
@@ -256,6 +347,7 @@ async function migrateDocker() {
 async function runOnDocker(script, scriptArgs) {
   ensureDocker();
   ensureDockerDb();
+  await assertHostReachesProjectDb();
   const child = spawn(process.execPath, [script, ...scriptArgs], {
     cwd: ROOT, stdio: 'inherit', env: { ...process.env, DATABASE_URL: dockerUrl({ fromHost: true }), DATABASE_SSL: 'false' },
   });

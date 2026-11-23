@@ -4,34 +4,49 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tra cứu lịch hẹn – Tuyển sinh HHT</title>
-  <meta name="description" content="Tra cứu, đổi hoặc hủy lịch hẹn nộp hồ sơ bằng mã hẹn.">
+  <meta name="description" content="Tra cứu, đổi hoặc hủy lịch hẹn nộp hồ sơ bằng mã hẹn hoặc mã QR.">
   <meta name="theme-color" content="#c8102e">
   <link rel="icon" href="/img/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="/img/icon-192.png">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="preload" href="/fonts/be-vietnam-pro-vietnamese-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/css/app.css?v=20261117m">
+  <link rel="stylesheet" href="/css/app.css?v=20261123a">
 </head>
 <body>
   <div data-layout="header"></div>
   <main id="main">
     <section class="page-head"><div class="wrap"><p class="crumbs"><a href="/">Trang chủ</a> / Lịch hẹn</p>
       <h1>Tra cứu lịch hẹn</h1>
-      <p class="lede">Nhập mã hẹn dạng HS-XXXX-XXXX để xem, đổi giờ hoặc hủy lịch.</p>
+      <p class="lede">Nhập mã hẹn dạng HS-XXXX-XXXX hoặc quét mã QR trên phiếu hẹn để xem tình trạng hồ sơ, đổi giờ hoặc hủy lịch.</p>
     </div></section>
     <section class="section"><div class="wrap narrow-760">
-      <form class="ask ask--bordered no-print mb-l" data-action="lookup">
+      <form class="ask ask--bordered no-print" data-action="lookup">
         <label class="visually-hidden" for="code">Mã hẹn</label>
-        <input id="code" name="code" placeholder="HS-XXXX-XXXX" autocomplete="off" maxlength="14" class="upper">
+        <input id="code" name="code" placeholder="HS-XXXX-XXXX" autocomplete="off" maxlength="80" class="upper">
         <button class="btn btn--primary" type="submit">Tra cứu</button>
+        <button class="btn" type="button" data-action="scan-qr">Quét QR</button>
       </form>
+      <details class="recover no-print mt-s mb-l" id="quen-ma">
+        <summary>Quên mã hẹn?</summary>
+        <form class="form mt-s" data-action="recover">
+          <p class="small muted mb-0">Nhập đúng số điện thoại bạn đã khai khi đặt lịch và ngày hẹn. Lịch đặt không khai số điện thoại thì chỉ cán bộ tuyển sinh hỗ trợ tra lại được.</p>
+          <div class="form-grid">
+            <label>Số điện thoại đã khai <input name="phone" inputmode="tel" maxlength="15" autocomplete="tel" required></label>
+            <label>Ngày hẹn <input name="date" type="date" required></label>
+          </div>
+          <div class="btn-row"><button class="btn btn--primary" type="submit">Tìm mã hẹn</button></div>
+          <div id="recover-result" aria-live="polite"></div>
+        </form>
+      </details>
       <div id="appointment"></div>
     </div></section>
   </main>
   <div data-layout="footer"></div>
-  <script src="/js/apiClient.js?v=20261117m"></script>
-  <script src="/js/actionDelegate.js?v=20261117m"></script>
-  <script src="/js/common.js?v=20261117m"></script>
-  <script src="/js/pages/appointment.js?v=20261117m"></script>
+  <script src="/js/apiClient.js?v=20261123a"></script>
+  <script src="/js/actionDelegate.js?v=20261123a"></script>
+  <script src="/js/common.js?v=20261123a"></script>
+  <script src="/js/vendor/qrcode.min.js?v=1.4.4"></script>
+  <script src="/js/qr.js?v=20261123a"></script>
+  <script src="/js/pages/appointment.js?v=20261123a"></script>
 </body>
 </html>

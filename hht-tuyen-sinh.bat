@@ -15,6 +15,8 @@ setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 title HHT Tuyen sinh
 cd /d "%~dp0"
+REM Co dinh ten du an Docker: bien COMPOSE_PROJECT_NAME cua du an khac (vd hcc_mot_cua) se lam docker compose chay nham nhom container.
+set "COMPOSE_PROJECT_NAME=hht-tuyen-sinh"
 
 set "REPO_URL=https://github.com/luuhainam-hht/hht_ho_tro_tuyen_sinh.git"
 set "BRANCH=main"
@@ -275,6 +277,23 @@ node scripts\reset-admin-password.js %ADMIN_USER%
 exit /b 0
 
 REM --------------------------------------------------------------------------
+:git_safe_dir
+REM O dia exFAT/FAT32 (USB, o cung ngoai) khong luu chu so huu file -> Git bao
+REM "detected dubious ownership" va chan moi lenh. Them thu muc hien tai vao
+REM danh sach tin cay cua Git (chi them 1 lan, khong trung lap).
+set "SAFE_DIR=%CD:\=/%"
+git config --global --get-all safe.directory 2>nul | findstr /i /x /c:"%SAFE_DIR%" /c:"*" >nul
+if errorlevel 1 (
+  git config --global --add safe.directory "%SAFE_DIR%"
+  if errorlevel 1 (
+    echo  [LOI] Khong ghi duoc cau hinh safe.directory cho Git.
+    exit /b 1
+  )
+  echo  [OK] Da them %SAFE_DIR% vao danh sach thu muc tin cay cua Git.
+)
+exit /b 0
+
+REM --------------------------------------------------------------------------
 :push
 echo.
 echo  ===== DAY MA NGUON LEN GITHUB =====
@@ -284,10 +303,17 @@ if errorlevel 1 (
   start "" "https://git-scm.com/download/win"
   exit /b 1
 )
+call :git_safe_dir || exit /b 1
 if not exist ".git" (
   git init >nul
   git checkout -b %BRANCH% >nul 2>&1
   echo  [OK] Da khoi tao kho Git.
+)
+git rev-parse --is-inside-work-tree >nul 2>&1
+if errorlevel 1 (
+  echo  [LOI] Git khong mo duoc kho tai %CD%:
+  git rev-parse --is-inside-work-tree
+  exit /b 1
 )
 for /f "delims=" %%n in ('git config user.name 2^>nul') do set "GIT_NAME=%%n"
 if "%GIT_NAME%"=="" (
@@ -308,11 +334,19 @@ git rm -r --cached -q node_modules >nul 2>&1
 echo  Chay kiem tra cu phap truoc khi day...
 for /r src %%f in (*.js) do node --check "%%f" >nul 2>&1 || (echo  [LOI] Loi cu phap: %%f & exit /b 1)
 git add -A
+if errorlevel 1 (
+  echo  [LOI] git add that bai - xem thong bao o tren.
+  exit /b 1
+)
 git diff --cached --quiet
 if errorlevel 1 (
   set "MSG=Cap nhat HHT Tuyen sinh"
   set /p "MSG=  Noi dung commit [Cap nhat HHT Tuyen sinh]: "
   git commit -q -m "!MSG!"
+  if errorlevel 1 (
+    echo  [LOI] Tao commit that bai - xem thong bao o tren.
+    exit /b 1
+  )
   echo  [OK] Da tao commit.
 ) else (
   echo  Khong co thay doi moi de commit.

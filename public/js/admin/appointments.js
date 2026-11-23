@@ -16,8 +16,9 @@
       }
       root.replaceChildren(
         el('form', { class: 'toolbar', 'data-action': 'appt-checkin-code' },
-          el('label', {}, 'Check-in bằng mã hẹn', el('input', { name: 'code', placeholder: 'HS-XXXX-XXXX', class: 'upper' })),
-          el('button', { class: 'btn btn--sm btn--primary', type: 'submit' }, 'Tra cứu')),
+          el('label', {}, 'Check-in bằng mã hẹn', el('input', { name: 'code', id: 'appt-code', placeholder: 'HS-XXXX-XXXX', class: 'upper', autocomplete: 'off' })),
+          el('button', { class: 'btn btn--sm btn--primary', type: 'submit' }, 'Tra cứu'),
+          el('button', { class: 'btn btn--sm', type: 'button', 'data-action': 'appt-scan' }, 'Quét QR')),
         el('div', { id: 'appt-lookup' }),
         el('h3', {}, 'Công suất các ngày tới'),
         el('div', { class: 'choice-grid mb-m' }, [...byDate].map(([d, v]) => el('button', { class: 'choice', 'data-action': 'appt-day', 'data-value': d, 'aria-pressed': String(d === date) },
@@ -45,19 +46,27 @@
     },
   });
 
+  /** Tra cứu cho check-in: nhận cả mã gõ tay lẫn nội dung QR (URL /hen.html?code=…). */
+  async function lookupCode(raw) {
+    const code = hhtQr.extractCode(raw) || String(raw || '').trim();
+    try {
+      const a = await apiClient.get(`/api/admin/appointments/lookup/${encodeURIComponent(code)}`);
+      $('#appt-lookup').replaceChildren(el('div', { class: 'panel mb-m' },
+        el('strong', {}, `${a.code} · ${STATUS[a.status][0]}`),
+        el('p', { class: 'small' }, `${hht.fmtDate(a.date)} ${a.startTime}–${a.endTime} · ${a.audienceLabel}${a.majorName ? ` · ${a.majorName}` : ''} · ${[a.contactName, a.contactPhone].filter(Boolean).join(' · ')}`),
+        (a.checklist.missingMandatory || []).length ? el('p', { class: 'note note--stop small' }, `Thiếu: ${a.checklist.missingMandatory.map((m) => m.title).join(', ')}`) : null,
+        a.status === 'BOOKED' ? el('button', { class: 'btn btn--primary btn--sm', 'data-action': 'appt-act', 'data-code': a.code, 'data-op': 'check-in' }, 'Check-in') : null,
+        a.status === 'CHECKED_IN' ? el('button', { class: 'btn btn--primary btn--sm', 'data-action': 'appt-act', 'data-code': a.code, 'data-op': 'complete' }, 'Đã nhận hồ sơ') : null));
+    } catch (e) { $('#appt-lookup').replaceChildren(); toast(e.message, 'error'); }
+  }
+
   const refresh = (msg) => () => { toast(msg, 'ok'); admin.reload(); };
   actionDelegate.register({
     'appt-day': (b) => { $('#tab').dataset.apptDate = b.dataset.value; admin.reload(); },
-    async 'appt-checkin-code'(f) {
-      try {
-        const a = await apiClient.get(`/api/admin/appointments/lookup/${encodeURIComponent(f.code.value.trim())}`);
-        $('#appt-lookup').replaceChildren(el('div', { class: 'panel mb-m' },
-          el('strong', {}, `${a.code} · ${STATUS[a.status][0]}`),
-          el('p', { class: 'small' }, `${hht.fmtDate(a.date)} ${a.startTime}–${a.endTime} · ${a.audienceLabel}${a.majorName ? ` · ${a.majorName}` : ''} · ${[a.contactName, a.contactPhone].filter(Boolean).join(' · ')}`),
-          (a.checklist.missingMandatory || []).length ? el('p', { class: 'note note--stop small' }, `Thiếu: ${a.checklist.missingMandatory.map((m) => m.title).join(', ')}`) : null,
-          a.status === 'BOOKED' ? el('button', { class: 'btn btn--primary btn--sm', 'data-action': 'appt-act', 'data-code': a.code, 'data-op': 'check-in' }, 'Check-in') : null,
-          a.status === 'CHECKED_IN' ? el('button', { class: 'btn btn--primary btn--sm', 'data-action': 'appt-act', 'data-code': a.code, 'data-op': 'complete' }, 'Đã nhận hồ sơ') : null));
-      } catch (e) { toast(e.message, 'error'); }
+    'appt-checkin-code': (f) => lookupCode(f.code.value),
+    async 'appt-scan'() {
+      const code = await hhtQr.scan({ title: 'Quét QR phiếu hẹn để check-in' });
+      if (code) { $('#appt-code').value = code; await lookupCode(code); }
     },
     'appt-act': (b) => apiClient.post(`/api/admin/appointments/${b.dataset.code}/${b.dataset.op}`, {}).then(refresh('Đã cập nhật')).catch((e) => toast(e.message, 'error')),
     async 'slot-toggle'(b) {

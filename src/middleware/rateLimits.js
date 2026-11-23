@@ -10,6 +10,7 @@ const LIMITS = Object.freeze({
   recommend: [10 * MINUTE_MS, 20, 'Bạn làm bài gợi ý ngành quá nhiều lần, vui lòng thử lại sau.'],
   booking: [60 * MINUTE_MS, 5, 'Bạn đặt lịch quá nhiều lần trong 1 giờ.'],
   codeLookup: [10 * MINUTE_MS, 20, 'Bạn tra cứu mã hẹn quá nhiều lần, vui lòng thử lại sau.'],
+  codeRecover: [30 * MINUTE_MS, 6, 'Bạn thử lấy lại mã hẹn quá nhiều lần, vui lòng thử lại sau 30 phút hoặc gọi hotline.'],
   upload: [60 * MINUTE_MS, 20, 'Bạn tải lên quá nhiều tài liệu trong 1 giờ.'],
   api: [MINUTE_MS, 300, 'Quá nhiều yêu cầu, vui lòng thử lại sau.'],
 });

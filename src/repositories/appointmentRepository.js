@@ -108,6 +108,28 @@ async function insertHistory(c, { appointmentId, fromStatus, toStatus, actorId =
   );
 }
 
+/** Lịch sử trạng thái của 1 lịch hẹn (cũ -> mới). by_staff: chỉ cho biết có cán bộ thao tác, không lộ danh tính. */
+async function listHistory(c, appointmentId) {
+  const { rows } = await c.query(
+    `SELECT from_status, to_status, note, (actor_id IS NOT NULL) AS by_staff, created_at
+       FROM appointment_history WHERE appointment_id = ? ORDER BY created_at, id`,
+    [appointmentId],
+  );
+  return rows;
+}
+
+/** Lấy lại mã hẹn: khớp ĐÚNG cả SĐT đã khai và ngày hẹn; bỏ lịch đã hủy/vắng. */
+async function findByPhoneAndDate(c, { phone, date }) {
+  const { rows } = await c.query(
+    `SELECT a.code, a.status, s.slot_date::text AS slot_date, to_char(s.start_time, 'HH24:MI') AS start_time, to_char(s.end_time, 'HH24:MI') AS end_time
+       FROM appointments a JOIN appointment_slots s ON s.id = a.slot_id
+      WHERE a.contact_phone = ? AND s.slot_date = ?::date AND a.status IN ('BOOKED', 'CHECKED_IN', 'COMPLETED')
+      ORDER BY s.start_time, a.created_at LIMIT 5`,
+    [phone, date],
+  );
+  return rows;
+}
+
 const listHolidays = async (c, from, to) => (await c.query('SELECT day::text AS day, reason FROM holidays WHERE day BETWEEN ?::date AND ?::date ORDER BY day', [from, to])).rows;
 const upsertHoliday = (c, day, reason) => c.query('INSERT INTO holidays (day, reason) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET reason = EXCLUDED.reason', [day, reason]);
 const deleteHoliday = (c, day) => c.query('DELETE FROM holidays WHERE day = ?', [day]);
@@ -117,6 +139,6 @@ const countBookedOnDate = async (c, day) => (await c.query(
 
 module.exports = {
   findSlotForUpdate, lockSlotsOrdered, adjustBooked, updateSlot, insertSlot, listOpenSlots, listSlotsForAdmin, insert,
-  findByCodeForUpdate, findViewByCode, update, countActive, listByDate, listOverdueBookedIds, insertHistory,
+  findByCodeForUpdate, findViewByCode, update, countActive, listByDate, listOverdueBookedIds, insertHistory, listHistory, findByPhoneAndDate,
   listHolidays, upsertHoliday, deleteHoliday, countBookedOnDate,
 };

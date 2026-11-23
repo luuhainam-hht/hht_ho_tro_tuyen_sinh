@@ -80,7 +80,7 @@
   // ---------- Khung trang ----------
   const NAV = [
     ['/', 'Trang chủ'], ['/nganh.html', 'Ngành học'], ['/ho-so.html', 'Hồ sơ'], ['/lich-tuyen-sinh.html', 'Lịch tuyển sinh'],
-    ['/cam-nang.html', 'Hỏi đáp'], ['/goi-y-nganh.html', 'Gợi ý ngành'], ['/lien-he.html', 'Liên hệ'],
+    ['/cam-nang.html', 'Hỏi đáp'], ['/goi-y-nganh.html', 'Gợi ý ngành'], ['/thanh-vien.html', 'Giới thiệu'], ['/lien-he.html', 'Liên hệ'],
   ];
 
   function renderHeader() {
@@ -131,7 +131,8 @@
           el('li', {}, el('a', { href: 'https://hht.edu.vn', rel: 'noopener', target: '_blank' }, 'Website hht.edu.vn')),
           el('li', {}, el('a', { href: cfg.OFFICIAL_REGISTER_URL || '#', rel: 'noopener', target: '_blank' }, 'Đăng ký xét tuyển trực tuyến')),
           el('li', {}, el('a', { href: cfg.FANPAGE_URL || '#', rel: 'noopener', target: '_blank' }, 'Trang Facebook tuyển sinh')),
-          el('li', {}, el('a', { href: '/nguon-du-lieu.html' }, 'Nguồn dữ liệu của hệ thống'))))),
+          el('li', {}, el('a', { href: '/nguon-du-lieu.html' }, 'Nguồn dữ liệu của hệ thống')),
+          el('li', {}, el('a', { href: '/thanh-vien.html' }, 'Nhóm thực hiện sản phẩm'))))),
       el('p', { class: 'footer-note' }, `© ${new Date().getFullYear()} Trường Cao đẳng Công nghệ cao Hà Nội. Thông tin tuyển sinh tổng hợp từ các thông báo của Nhà trường; khi có khác biệt, văn bản do Nhà trường ban hành là căn cứ cuối cùng.`)));
   }
 

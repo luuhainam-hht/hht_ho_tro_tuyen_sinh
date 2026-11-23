@@ -10,6 +10,8 @@ Hệ thống trợ lý ảo AI tư vấn tuyển sinh của **Trường Cao đ�
 | M4 Gợi ý ngành | `goi-y-nganh.html` | Trắc nghiệm Holland RIASEC 18 câu, tự đánh giá môn học và mong muốn. Trả về top 3 ngành kèm điểm từng phần và lý do. |
 | M5 Thống kê | Admin › Tổng quan | Câu hỏi theo ngày/giờ, tỉ lệ từng nguồn trả lời, top chủ đề/ngành, câu chưa trả lời được (gom cụm), độ trễ, token, xuất Excel. |
 | M6 Đặt lịch nộp hồ sơ | `dat-lich.html`, `hen.html`, Admin › Lịch hẹn | Thí sinh nhận mã hẹn (không phải số thứ tự), đổi/hủy lịch, tải tệp .ics. Cán bộ check-in và xác nhận đã nhận hồ sơ. |
+| M6+ Tra cứu & QR | `hen.html`, Admin › Lịch hẹn | Phiếu hẹn có mã QR (tải ảnh PNG, in kèm phiếu). Tra cứu bằng mã, quét QR bằng camera hoặc chọn ảnh; xem tiến trình hồ sơ và lịch sử thay đổi. Quên mã: nhập SĐT đã khai + ngày hẹn (`POST /api/appointments/recover`, giới hạn 6 lần/30 phút). Cán bộ bấm "Quét QR" để check-in. |
+| Nhóm thực hiện | `thanh-vien.html` | Ảnh, họ tên, chức vụ, đơn vị, trách nhiệm của thành viên làm sản phẩm. Thêm người: chép một khối `<article class="member">`, đặt ảnh vào `public/img/team/`. |
 | Chuyển cán bộ | Admin › Câu hỏi chờ cán bộ | Thí sinh đồng ý để lại liên hệ → cán bộ trả lời → có thể "Đưa vào FAQ" để Lãnh đạo duyệt. |
 
 ## Chạy trên Windows (khuyên dùng)
@@ -90,3 +92,10 @@ npm run report -- 2027-01-01 2027-04-30         # xuất số liệu thử nghi�
 ```
 
 Xem thêm: `docs/KIEN-TRUC.md` (kiến trúc, luồng, quyết định thiết kế) và `docs/DU-LIEU.md` (nguồn dữ liệu, điểm cần xác minh).
+
+## Thư viện bên thứ ba nhúng sẵn (không cần cài thêm)
+
+- `public/js/vendor/qrcode.min.js` – qrcode-generator 1.4.4 (Kazuhiko Arase, MIT): tạo mã QR trên trình duyệt.
+- `public/js/vendor/jsqr.min.js` – jsQR 1.4.0 (Apache-2.0): đọc mã QR, chỉ nạp khi bấm "Quét QR".
+- Camera chỉ mở được trên HTTPS hoặc `localhost`; truy cập qua `http://IP-máy` thì dùng nút "Chọn ảnh có mã QR".
+
