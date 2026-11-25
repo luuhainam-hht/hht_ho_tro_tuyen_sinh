@@ -49,11 +49,22 @@ const SECRET_NOUN = new RegExp([
 ].map((x) => `\\b(${x})\\b`).join('|'));
 const ASK_VERB = /\b(cho (toi|minh|em|tao|xin)? ?(xem|biet|lay)|xin|tiet lo|lo|cung cap|liet ke|gui|in ra|hien thi|doc|chia se|dump|export|xuat|lay|truy cap|vao|dang nhap|hack|be khoa|crack|tim|tra cuu|la gi|bao nhieu|o dau|nhu the nao|cach|lam sao|the nao|nao|dau|link|url|nam o)\b|\b(show|give|reveal|print|list|send|leak|what is|what are|tell me|how to)\b/;
 
+/**
+ * Trường có ngành CNTT, An ninh mạng, Quản trị mạng: thí sinh hỏi "ngành nào học cơ sở dữ liệu?", "an ninh mạng
+ * có học về lỗ hổng bảo mật không?" là câu hỏi tuyển sinh hợp lệ. Các danh từ "học thuật" dưới đây được bỏ qua
+ * khi câu hỏi nói về việc HỌC và không nhắm vào hệ thống/website của trường. Bí mật thật (mật khẩu, khóa API,
+ * token, chuỗi kết nối, file .env…) vẫn luôn bị chặn.
+ */
+const ACADEMIC_NOUN = /\b(database|co so du lieu|csdl|ma nguon|source ?code|lo hong( bao mat)?|exploit|sql injection|xss|backdoor|ddos|tan cong (website|trang web|he thong|may chu))\b/g;
+const STUDY_CONTEXT = /\b(nganh|nghe|mon( hoc)?|hoc phan|giao trinh|chuong trinh (dao tao|hoc)|ky nang|ra truong|viec lam|duoc hoc|co hoc|hoc ve|hoc gi|hoc nhung|hoc cach|sinh vien|lap trinh|an ninh mang|an toan thong tin|bao mat thong tin|quan tri mang)\b/;
+const SYSTEM_TARGET = /\b(cua|tren|trong|vao|o) (truong|nha truong|he thong|hht|web|website|trang web|chatbot|tro ly|ban|bot|may chu|server|hosting)\b|\b(he thong|website|chatbot|tro ly) (nay|cua truong)\b|\bhht\.edu\.vn\b/;
+
 function detectSecretProbe(question) {
   const n = normalizeVi(question);
   if (!n) return false;
   if (INJECTION.some((re) => re.test(n))) return true;
-  return SECRET_NOUN.test(n) && ASK_VERB.test(n);
+  const text = STUDY_CONTEXT.test(n) && !SYSTEM_TARGET.test(n) ? n.replace(ACADEMIC_NOUN, ' ') : n;
+  return SECRET_NOUN.test(text) && ASK_VERB.test(text);
 }
 
 // ----- 2. Lọc câu trả lời -----

@@ -76,7 +76,10 @@ function createGeminiTransport({ fetchImpl = globalThis.fetch } = {}) {
       }
       const usage = data?.usageMetadata || {};
       const out = { text, tokensIn: usage.promptTokenCount || 0, tokensOut: (usage.candidatesTokenCount || 0) + (usage.thoughtsTokenCount || 0) };
-      if (search) out.webSources = extractWebSources(data);
+      if (search) {
+        out.webSources = extractWebSources(data);
+        out.webSupports = extractWebSupports(data);
+      }
       return out;
     },
     async embed(apiKey, { model, texts, dim, taskType }) {
@@ -100,6 +103,24 @@ function extractWebSources(res) {
     out.push({ title: String(ch.web.title || url).slice(0, 200), url });
   }
   return out;
+}
+
+/**
+ * Đoạn câu trả lời được Google xác nhận có nguồn (groundingSupports): [{ text, sources: [{ title, url }] }].
+ * Dùng để kiểm tra con số trong câu trả lời Internet: con số chỉ được giữ khi nằm trong đoạn có nguồn tin cậy.
+ */
+function extractWebSupports(res) {
+  const meta = res?.candidates?.[0]?.groundingMetadata || {};
+  const chunks = meta.groundingChunks || [];
+  return (meta.groundingSupports || [])
+    .map((s) => ({
+      text: String(s?.segment?.text || '').trim(),
+      sources: (s?.groundingChunkIndices || [])
+        .map((i) => chunks[i]?.web)
+        .filter((w) => w?.uri)
+        .map((w) => ({ title: String(w.title || w.uri).slice(0, 200), url: w.uri })),
+    }))
+    .filter((s) => s.text && s.sources.length);
 }
 
 /** Lỗi kỹ thuật -> câu tiếng Việt cho cán bộ (trang Cài đặt AI). */
@@ -343,4 +364,4 @@ function dot(a, b) {
   return s;
 }
 
-module.exports = { CHAT_PROVIDERS, ROUTE_VALUES, GEMINI_API_VERSION, createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources };
+module.exports = { CHAT_PROVIDERS, ROUTE_VALUES, GEMINI_API_VERSION, createLlmClient, createGeminiTransport, describeLlmError, normalizeVector, dot, extractWebSources, extractWebSupports };

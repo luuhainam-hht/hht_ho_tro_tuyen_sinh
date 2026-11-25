@@ -85,13 +85,14 @@ function buildUserPrompt({ question, chunks }) {
  * của Gemini khi bật công cụ tìm kiếm) -> văn bản thuần; nguồn lấy từ groundingMetadata, không tin AI tự ghi.
  * contextChunks: đoạn nội bộ liên quan (nếu có) để AI không mâu thuẫn với dữ liệu của trường.
  */
-function buildWebSearchPrompt({ schoolName, hotline, maxWords = 150, tone = 'THAN_THIEN', question, contextChunks = [], site = 'hht.edu.vn' }) {
+function buildWebSearchPrompt({ schoolName, hotline, maxWords = 150, tone = 'THAN_THIEN', question, contextChunks = [], site = 'hht.edu.vn', domains = [site] }) {
   const context = contextChunks.slice(0, 3).map((c, i) => `[${i + 1}] ${c.content}`).join('\n\n');
+  const list = (domains.length ? domains : [site]).join(', ');
   return {
     system: [
       `Bạn là trợ lý tư vấn tuyển sinh của ${schoolName} (viết tắt HHT, website ${site}). Người hỏi là thí sinh và phụ huynh.`,
       'Hãy dùng công cụ Google Search để tra cứu rồi trả lời. QUY TẮC:',
-      `1. Tìm trên website chính thức TRƯỚC: tìm với "site:${site}" kèm từ khóa của câu hỏi. Chỉ khi ${site} không có mới dùng fanpage chính thức của trường, cổng thông tin Bộ/Sở, báo chính thống. Chỉ nói về ${schoolName}; KHÔNG nhầm với "Trường Cao đẳng Công nghệ Hà Nội" (CNH) hay trường khác cùng tên gần giống.`,
+      `1. CHỈ dùng thông tin từ các tên miền: ${list}. Tìm với "site:${site}" kèm từ khóa của câu hỏi. Không dùng trang tổng hợp tuyển sinh, diễn đàn hay báo (hệ thống sẽ loại câu trả lời dựa trên nguồn khác). Chỉ nói về ${schoolName}; KHÔNG nhầm với "Trường Cao đẳng Công nghệ Hà Nội" (CNH) hay trường khác cùng tên gần giống.`,
       '2. Không bịa. Không tìm thấy thông tin đáng tin cậy thì trả lời đúng một câu: KHONG_TIM_THAY.',
       '3. Số liệu (học phí, ngày tháng, chỉ tiêu) chỉ nêu khi nguồn tìm được ghi rõ, kèm năm của thông tin.',
       '4. Trả lời THẲNG vào câu hỏi từ câu đầu tiên; không nhắc lại câu hỏi, không chào hỏi, không mở đầu bằng "Theo kết quả tìm kiếm…".',

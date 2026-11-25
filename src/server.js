@@ -83,6 +83,7 @@ function createApp(c) {
 async function start() {
   const c = createContainer();
   const { logger, env } = c;
+  env.assertProductionSecrets(); // production thiếu bí mật -> dừng ngay, không chạy với khóa mã hóa tạm
   await runMigrations(c.db, { logger });
   logger.info(`[boot] nạp ${await c.configService.loadAll()} tham số cấu hình`);
   await c.refreshMajors();

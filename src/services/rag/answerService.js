@@ -20,7 +20,7 @@ const { maskPii, forMatching } = require('../piiFilter');
 const { systemPromptFromConfig, buildUserPrompt, buildWebSearchPrompt, buildGeneralWebPrompt } = require('../ai/promptBuilder');
 const { createSecurityGuard } = require('../securityGuard');
 const { describeLlmError } = require('../ai/llmClient');
-const { validateCitations } = require('./citation');
+const { validateCitations, validateWebAnswer } = require('./citation');
 const chatRepository = require('../../repositories/chatRepository');
 const kbDocumentRepository = require('../../repositories/kbDocumentRepository');
 const answerCacheRepository = require('../../repositories/answerCacheRepository');
@@ -40,8 +40,31 @@ function isSchoolQuestion(question, cls) {
   return SCHOOL_TERMS.test(normalizeVi(question).replace(/\b9 \b/g, '9+ '));
 }
 
-/** Nguồn web thuộc website chính thức? (Gemini thường trả URL chuyển hướng, tên miền nằm ở tiêu đề.) */
-const isOfficial = (s, site) => Boolean(site) && `${s.title || ''} ${s.url || ''}`.toLowerCase().includes(site.toLowerCase());
+/**
+ * Khóa bộ nhớ đệm: câu hỏi đã chuẩn hóa + mã ngành đang xem. Cùng câu "học phí bao nhiêu?" ở trang ngành A
+ * và ngành B là hai câu hỏi khác nhau (truy xuất được bổ sung tên ngành), không được dùng chung câu trả lời.
+ */
+const cacheKey = (question, majorContext = null) => sha256(`${normalizeVi(question)}|major:${majorContext?.code || ''}`);
+
+/** 'hht.edu.vn, moet.gov.vn' -> ['hht.edu.vn', 'moet.gov.vn'] */
+const parseDomains = (v) => String(v || '').split(',').map((s) => s.trim().toLowerCase().replace(/^www\./, '')).filter(Boolean);
+
+/** Tên miền của nguồn: URL thật, hoặc tiêu đề khi Gemini trả URL chuyển hướng (khi đó tiêu đề là tên miền, vd "hht.edu.vn"). */
+const GOOGLE_REDIRECT = /(^|\.)vertexaisearch\.cloud\.google\.com$|(^|\.)google\.com$/;
+function sourceHost(s) {
+  let host = '';
+  try { host = new URL(String(s.url || '')).hostname.toLowerCase(); } catch { /* URL hỏng */ }
+  if (host && !GOOGLE_REDIRECT.test(host)) return host.replace(/^www\./, '');
+  const title = String(s.title || '').trim().toLowerCase().replace(/^www\./, '');
+  return /^([a-z0-9-]+\.)+[a-z]{2,}$/.test(title) ? title : '';
+}
+
+/** Nguồn thuộc một trong các tên miền cho phép (khớp đúng tên miền hoặc tên miền con, không khớp chuỗi con). */
+function isAllowedSource(s, domains) {
+  const host = sourceHost(s);
+  return Boolean(host) && domains.some((d) => host === d || host.endsWith(`.${d}`));
+}
+const isOfficial = (s, site) => isAllowedSource(s, parseDomains(site));
 
 /**
  * Trích nguyên văn nhưng trả lời THẲNG: đoạn dạng "Hỏi: … / Đáp: …" (từ FAQ) chỉ lấy phần Đáp của cặp
@@ -114,17 +137,36 @@ function createAnswerService({
       schoolName: get('SCHOOL_NAME', 'Nhà trường'), hotline: get('HOTLINE', ''), maxWords: get('AI_ANSWER_MAX_WORDS', 150),
       tone: get('AI_TONE', 'THAN_THIEN'), question, site,
     };
-    const { system, prompt } = general ? buildGeneralWebPrompt(base) : buildWebSearchPrompt({ ...base, contextChunks });
+    const domains = parseDomains(get('AI_WEB_ALLOWED_DOMAINS', site));
+    const { system, prompt } = general ? buildGeneralWebPrompt(base) : buildWebSearchPrompt({ ...base, contextChunks, domains });
     const res = await llm.generate({ system, prompt, search: true });
     try { await tokenUsageRepository.add(db, vnToday(), res.tokensIn, res.tokensOut); } catch (err) { logger.warn('[answer] không ghi được token:', err.message); }
     const text = String(res.text || '').replace(/^```\w*\s*|\s*```$/g, '').trim();
-    const sources = (res.webSources || []).slice(0, MAX_WEB_SOURCES);
+    const all = res.webSources || [];
     if (!text || WEB_NOT_FOUND.test(text) || text.length < 20) return { ok: false, tokens: res, reason: 'Không tìm thấy thông tin đáng tin cậy trên Internet' };
-    if (!sources.length) return { ok: false, tokens: res, reason: 'Tra cứu Internet không trả về nguồn nào nên không dùng' };
+    if (!all.length) return { ok: false, tokens: res, reason: 'Tra cứu Internet không trả về nguồn nào nên không dùng' };
+
+    // Câu hỏi tuyển sinh: CHỈ nhận nguồn thuộc tên miền cho phép (mặc định hht.edu.vn). Trang tổng hợp như
+    // Tuyensinh247 từng trộn thông tin HHT với trường khác (docs/DU-LIEU.md V16) nên không được làm căn cứ.
+    // Câu hỏi chung (khi Admin bật): nhận mọi nguồn nhưng vẫn kiểm tra con số.
+    const trusted = general ? () => true : (s) => isAllowedSource(s, domains);
+    const sources = all.filter(trusted).slice(0, MAX_WEB_SOURCES);
+    if (!sources.length) {
+      return { ok: false, tokens: res, reason: `Nguồn tìm được không thuộc ${domains.join(', ')} nên không dùng`, rejectedSources: all.length };
+    }
+
+    // Con số (học phí, ngày, chỉ tiêu) chỉ giữ khi Google xác nhận đoạn chứa nó có nguồn tin cậy.
+    const checked = validateWebAnswer({
+      answer: text, supports: res.webSupports || [], isTrusted: trusted, allowedNumbers: [get('HOTLINE', '')], contextChunks,
+    });
+    if (!checked.sufficient) {
+      return { ok: false, tokens: res, reason: 'Câu trả lời Internet chứa số liệu không có nguồn tin cậy nên bị loại', droppedSentences: checked.dropped.length };
+    }
     // Nguồn trên website chính thức lên đầu và được đánh dấu.
     const ordered = [...sources.filter((x) => isOfficial(x, site)), ...sources.filter((x) => !isOfficial(x, site))];
     return {
-      ok: true, tokens: res, answer: text, official: ordered.some((x) => isOfficial(x, site)),
+      ok: true, tokens: res, answer: checked.answer, official: ordered.some((x) => isOfficial(x, site)), droppedSentences: checked.dropped.length,
+      rejectedSources: all.length - all.filter(trusted).length,
       citations: ordered.map((x, i) => ({ n: i + 1, chunkId: null, title: x.title, url: x.url, web: true, official: isOfficial(x, site) })),
     };
   }
@@ -132,12 +174,15 @@ function createAnswerService({
   // Tra Google cần Gemini (Groq không có công cụ tìm kiếm).
   const geminiOn = () => (llm.geminiAvailable ? llm.geminiAvailable() : llm.available());
   const webSearchOn = (llmOn) => llmOn && geminiOn() && configService.getOr('AI_WEB_SEARCH_ENABLED', true) !== false;
-  const generalWebOn = (llmOn) => webSearchOn(llmOn) && configService.getOr('AI_WEB_GENERAL_ENABLED', true) !== false;
+  const generalWebOn = (llmOn) => webSearchOn(llmOn) && configService.getOr('AI_WEB_GENERAL_ENABLED', false) === true;
 
   async function webOrNull({ question, contextChunks, t, cls, retrieval, general = false }) {
     try {
       const out = await tryWeb({ question, contextChunks, general });
-      t.web = { used: true, mode: general ? 'GENERAL' : 'SCHOOL', accepted: out.ok, official: Boolean(out.official), reason: out.reason || null, sources: out.citations?.length || 0 };
+      t.web = {
+        used: true, mode: general ? 'GENERAL' : 'SCHOOL', accepted: out.ok, official: Boolean(out.official), reason: out.reason || null,
+        sources: out.citations?.length || 0, rejectedSources: out.rejectedSources || 0, droppedSentences: out.droppedSentences || 0,
+      };
       if (!out.ok) return null;
       return {
         source: 'WEB', answerMode: 'LLM', answer: out.answer, citations: out.citations, topScore: retrieval?.topScore ?? null,
@@ -220,9 +265,18 @@ function createAnswerService({
       };
     }
 
-    // d) cache
-    const questionHash = sha256(normalizeVi(question));
-    const cacheOn = !dryRun && configService.getOr('AI_CACHE_ENABLED', true);
+    // d) cache. Câu trả lời của LLM phụ thuộc cả ngành đang xem (majorContext) lẫn lịch sử hội thoại, nên:
+    //    - khóa cache gồm câu hỏi + mã ngành đang xem (cacheKey);
+    //    - phiên đã có lịch sử thì KHÔNG đọc/ghi cache (câu nối tiếp "còn ngành đó thì sao?" không dùng chung giữa các phiên).
+    let history = [];
+    if (sessionId && !dryRun) {
+      try {
+        history = await chatRepository.recentHistory(db, sessionId, configService.get('MAX_HISTORY_TURNS'));
+      } catch (err) { logger.warn('[answer] không đọc được lịch sử hội thoại:', err.message); }
+    }
+    const questionHash = cacheKey(question, majorContext);
+    const cacheOn = !dryRun && history.length === 0 && configService.getOr('AI_CACHE_ENABLED', true);
+    t.cache = { enabled: Boolean(cacheOn), reason: dryRun ? 'DRY_RUN' : history.length ? 'HAS_HISTORY' : null };
     if (cacheOn) {
       try {
         const hit = await answerCacheRepository.get(db, questionHash, kbVersion);
@@ -256,7 +310,6 @@ function createAnswerService({
     // g–h) LLM
     if (llmOn) {
       try {
-        const history = sessionId ? await chatRepository.recentHistory(db, sessionId, configService.get('MAX_HISTORY_TURNS')) : [];
         const out = await tryLlm({ question, history, retrieval });
         Object.assign(t.llm, { used: true, model: out.tokens?.model || null, provider: out.tokens?.provider || null, fallbackUsed: Boolean(out.tokens?.fallbackUsed), accepted: out.ok, reason: out.reason || null, tokensIn: out.tokens?.tokensIn ?? 0, tokensOut: out.tokens?.tokensOut ?? 0 });
         if (out.ok) {
@@ -377,4 +430,4 @@ function createAnswerService({
   return { answer, compose, preview };
 }
 
-module.exports = { createAnswerService, directAnswer };
+module.exports = { createAnswerService, directAnswer, cacheKey, isAllowedSource, parseDomains };

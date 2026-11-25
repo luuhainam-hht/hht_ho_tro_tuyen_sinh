@@ -128,6 +128,12 @@ const KEY_VALIDATORS = {
   MINDTEK_BOT_ID: (v) => { if (v && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) throw new HttpError(400, 'Bot ID Mindtek có dạng xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (lấy trong mã nhúng /embed/…)'); },
   MINDTEK_BASE_URL: (v) => { if (!/^https:\/\/[a-z0-9.-]+(:\d+)?\/?$/i.test(v)) throw new HttpError(400, 'Địa chỉ Mindtek phải dạng https://ten-mien (không kèm /embed/…)'); },
   AI_OFFICIAL_SITE: (v) => { if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v)) throw new HttpError(400, 'AI_OFFICIAL_SITE chỉ ghi tên miền, vd: hht.edu.vn'); },
+  AI_WEB_ALLOWED_DOMAINS: (v) => {
+    const items = String(v).split(',').map((s) => s.trim()).filter(Boolean);
+    if (!items.length || !items.every((d) => /^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(d))) {
+      throw new HttpError(400, 'AI_WEB_ALLOWED_DOMAINS chỉ ghi tên miền, phân tách bằng dấu phẩy, vd: hht.edu.vn, moet.gov.vn');
+    }
+  },
   AI_ASSISTANT_NAME: (v) => { if (!v || v.length > 60) throw new HttpError(400, 'Tên trợ lý từ 1 đến 60 ký tự'); },
 };
 

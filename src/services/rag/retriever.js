@@ -76,7 +76,7 @@ function createRetriever({ db, configService, liveKnowledge = null }) {
 
   async function retrieve({ question, queryEmbedding = null, kbVersion }) {
     // RAG_ALL_YEARS (mặc định bật): học toàn bộ tài liệu đã công bố của mọi năm học (year = 0).
-    const year = configService.getOr('RAG_ALL_YEARS', true) !== false ? 0 : configService.get('CURRENT_ADMISSION_YEAR');
+    const year = configService.getOr('RAG_ALL_YEARS', false) === true ? 0 : configService.get('CURRENT_ADMISSION_YEAR');
     const topK = configService.get('RAG_TOP_K');
     const tokens = keywords(question);
     const [ftRows, vecRows, liveRows] = await Promise.all([

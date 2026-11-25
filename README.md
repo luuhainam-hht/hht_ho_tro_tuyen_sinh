@@ -5,7 +5,7 @@ Hệ thống trợ lý ảo AI tư vấn tuyển sinh của **Trường Cao đ�
 | Mô-đun | Trang / API | Nội dung |
 |---|---|---|
 | M1 Trợ lý ảo 24/7 | nút "Hỏi trợ lý" ở mọi trang, `chat.html`, `widget.js` | Trả lời lần lượt theo luật → FAQ đã duyệt → bộ nhớ đệm → truy xuất văn bản → LLM. Mọi câu trả lời đều dẫn nguồn. |
-| M2 Kho tri thức | Admin › Kho tri thức | Tải văn bản PDF/DOCX/TXT, hệ thống chia đoạn và tạo vector. Lãnh đạo bấm công bố thì trợ lý mới dùng; có phiên bản theo năm. |
+| M2 Kho tri thức | Admin › Kho tri thức | Tải văn bản PDF/DOCX/TXT, hệ thống chia đoạn và tạo vector. Người có quyền bấm công bố thì trợ lý mới dùng (`KB_AUTO_PUBLISH` mặc định tắt); có phiên bản theo năm. |
 | M3 Cẩm nang số | `nganh.html`, `ho-so.html`, `lich-tuyen-sinh.html`, `huong-dan-dang-ky.html`, `cam-nang.html`, `lien-he.html` | Tra cứu ngành, checklist hồ sơ có thể in, lịch xét tuyển, các bước đăng ký. |
 | M4 Gợi ý ngành | `goi-y-nganh.html` | Trắc nghiệm Holland RIASEC 18 câu, tự đánh giá môn học và mong muốn. Trả về top 3 ngành kèm điểm từng phần và lý do. |
 | M5 Thống kê | Admin › Tổng quan | Câu hỏi theo ngày/giờ, tỉ lệ từng nguồn trả lời, top chủ đề/ngành, câu chưa trả lời được (gom cụm), độ trễ, token, xuất Excel. |
@@ -45,7 +45,8 @@ npm start                   # tự tạo bảng, nạp dữ liệu tuyển sinh,
 ```
 
 - **Trang quản trị:** `http://localhost:3000/admin.html`. Đăng nhập lần đầu bằng `admin` / `ADMIN_INITIAL_PASSWORD`, hệ thống sẽ bắt đổi mật khẩu.
-- **Chưa có `GEMINI_API_KEYS`:** trợ lý vẫn trả lời đầy đủ bằng FAQ đã duyệt và trích nguyên văn văn bản, chỉ không dùng LLM.
+- **Chưa có khóa AI (`GEMINI_API_KEYS` / `GROQ_API_KEYS` hoặc thêm ở Admin › Cài đặt AI):** trợ lý vẫn trả lời đầy đủ bằng FAQ đã duyệt và trích nguyên văn văn bản, chỉ không dùng LLM.
+- **Chạy thật (`NODE_ENV=production`):** bắt buộc đặt `VISITOR_HASH_SECRET` (không để giá trị mẫu), nếu không máy chủ dừng ngay khi khởi động. Đã có khóa API lưu trong CSDL thì giữ nguyên giá trị cũ.
 - **Docker trên VPS:** `docker compose up -d --build` dựng 4 dịch vụ db (PostgreSQL), app, caddy (HTTPS tự động) và backup (pg_dump hằng ngày).
 - **Render + Neon:** dùng `render.yaml`.
 - **Nhúng vào website trường:** thêm `<script src="https://<tên-miền-hệ-thống>/widget.js" async></script>` vào trang, rồi thêm tên miền website vào tham số `ALLOWED_EMBED_ORIGINS` trong Admin.
@@ -61,6 +62,25 @@ Dữ liệu tuyển sinh thật lấy từ file `docs/HHT_du_lieu_chatbot_tuyen_
 - **Giá trị MẪU:** giờ tiếp nhận và khung giờ hẹn (`OFFICE_TIME_SLOTS`) là giá trị mẫu vì website trường chưa công bố. Sửa trong Admin › Cấu hình.
 
 Danh sách 16 điểm cần Nhà trường xác minh nằm ở `docs/DU-LIEU.md`.
+
+## Cấu hình mặc định khi vận hành cho Trường
+
+Từ bản 24/11/2026, các tham số sau mặc định **tắt** để nội dung trả lời luôn qua kiểm soát của Nhà trường. Admin vẫn bật lại được ở Admin › Cấu hình / Cài đặt AI. Khi cập nhật bản cũ, migration `2026-11-24-safe-defaults-for-production` chỉ tắt các tham số **chưa cán bộ nào sửa**; giá trị Admin đã tự chọn được giữ nguyên.
+
+| Tham số | Mặc định | Ý nghĩa |
+|---|---|---|
+| `KB_AUTO_PUBLISH` | tắt | Tài liệu tải lên phải được bấm Công bố thì trợ lý mới dùng |
+| `AI_WEB_GENERAL_ENABLED` | tắt | Trợ lý không trả lời câu hỏi ngoài tuyển sinh bằng Google |
+| `MINDTEK_ENABLED` | tắt | Không gửi câu hỏi của thí sinh sang máy chủ Mindtek (bên thứ ba) |
+| `RAG_ALL_YEARS` | tắt | Chỉ dùng tài liệu của năm tuyển sinh hiện hành trở đi |
+| `AI_WEB_ALLOWED_DOMAINS` | `hht.edu.vn` | Tra Internet cho câu hỏi tuyển sinh chỉ nhận nguồn thuộc các tên miền này |
+
+Các lớp kiểm soát bổ sung trong bản này:
+
+- **Bộ nhớ đệm** tách theo ngành đang xem; câu hỏi nối tiếp trong cùng cuộc trò chuyện không đọc và không ghi bộ nhớ đệm.
+- **Tra Internet**: nguồn ngoài tên miền cho phép bị loại; câu có số liệu (học phí, ngày, chỉ tiêu) chỉ được giữ khi Google xác nhận câu đó lấy từ nguồn được phép.
+- **Giới hạn tần suất khung chat** theo từng cuộc trò chuyện (12 câu/phút), ngưỡng theo IP cao (200 câu/phút) để phòng máy hay buổi tư vấn dùng chung mạng không bị chặn.
+- **Lọc câu hỏi dò bí mật** không còn chặn nhầm câu hỏi về ngành học (an ninh mạng, cơ sở dữ liệu, lập trình); câu nhắm vào hệ thống của Trường vẫn bị chặn.
 
 ## Trang quản trị: cài đặt AI và tài khoản
 
@@ -86,7 +106,7 @@ Chỉ tài khoản **Quản trị hệ thống** thấy hai mục này.
 ## Kiểm thử
 
 ```bash
-TEST_DATABASE_URL=postgres://…/hht_test npm test   # 52 test: unit + tích hợp với PostgreSQL thật (CSDL tên phải có chữ "test")
+TEST_DATABASE_URL=postgres://…/hht_test npm test   # 108 test: unit + tích hợp với PostgreSQL thật (CSDL tên phải có chữ "test")
 npm run eval:rag                                # đánh giá trợ lý theo test/eval/golden.jsonl (CSV + tóm tắt)
 npm run report -- 2027-01-01 2027-04-30         # xuất số liệu thử nghiệm ra Excel cho báo cáo tổng kết
 ```

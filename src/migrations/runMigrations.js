@@ -82,6 +82,16 @@ const MIGRATIONS = [
           UPDATE kb_documents SET status = 'PUBLISHED', published_at = COALESCE(published_at, now())
            WHERE status = 'READY' AND chunk_count > 0;`,
   },
+  {
+    // Vận hành cho Trường: tài liệu phải qua duyệt, chỉ trả lời tuyển sinh, không gửi câu hỏi sang bên thứ ba,
+    // chỉ dùng tài liệu năm hiện hành. Chỉ đổi khi giá trị vẫn là mặc định cũ và CHƯA cán bộ nào sửa (updated_by IS NULL),
+    // để không ghi đè lựa chọn Admin đã đưa ra. Tài liệu đã công bố giữ nguyên.
+    id: '2026-11-24-safe-defaults-for-production',
+    sql: `UPDATE system_configs SET value = 'false'
+           WHERE key IN ('KB_AUTO_PUBLISH', 'AI_WEB_GENERAL_ENABLED', 'MINDTEK_ENABLED', 'RAG_ALL_YEARS')
+             AND value = 'true' AND updated_by IS NULL;
+          DELETE FROM answer_cache;`,
+  },
 ];
 
 async function upsertConfigDefaults(c) {

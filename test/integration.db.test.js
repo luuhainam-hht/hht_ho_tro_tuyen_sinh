@@ -100,7 +100,7 @@ test('kho tri thức: tải văn bản -> job xử lý -> READY -> chỉ Lãnh �
   await ctx.c.configService.update('KB_AUTO_PUBLISH', 'true', { actorId: null, ip: null });
 });
 
-test('kho tri thức: KB_AUTO_PUBLISH (mặc định bật) -> xử lý xong là trợ lý dùng ngay, có nhật ký', async () => {
+test('kho tri thức: KB_AUTO_PUBLISH (khi Admin bật) -> xử lý xong là trợ lý dùng ngay, có nhật ký', async () => {
   const text = '# Thông báo đồng phục 2026\nSinh viên khóa mới nhận đồng phục thể dục tại kho vật tư nhà B sau khi nhập học.';
   const up = await request(app).post('/api/admin/kb').set(H.advisor).field('title', 'Thông báo đồng phục').attach('file', Buffer.from(text), 'dong-phuc.txt').expect(201);
   await ctx.c.jobRunner.runOnce();

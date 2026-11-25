@@ -30,9 +30,12 @@ function responderImpl(req) {
       if (/không thuộc nội dung tuyển sinh/.test(req.system)) {
         return { text: 'Paris là thủ đô của nước Pháp, nằm bên sông Seine.', webSources: [{ title: 'vi.wikipedia.org', url: 'https://vi.wikipedia.org/wiki/Paris' }] };
       }
+      const answer = 'Trường tổ chức ngày hội việc làm vào tháng 5 hằng năm với hơn 50 doanh nghiệp tham gia.';
       return {
-        text: 'Trường tổ chức ngày hội việc làm vào tháng 5 hằng năm với hơn 50 doanh nghiệp tham gia.',
+        text: answer,
         webSources: [{ title: 'baomoi.com', url: 'https://baomoi.com/x' }, { title: 'hht.edu.vn', url: 'https://hht.edu.vn/ngay-hoi' }],
+        // Google xác nhận câu có số liệu dựa trên trang hht.edu.vn
+        webSupports: [{ text: answer, sources: [{ title: 'hht.edu.vn', url: 'https://hht.edu.vn/ngay-hoi' }] }],
       };
     }
     if (mode === 'leak-key') return { answer: 'Khóa hệ thống là AIzaSyDTHISISAFAKEKEYabcdefghijklmnopqrs và CSDL postgres://hht:matkhau@db/hht [1].', citations: [1], insufficient: false };
@@ -48,6 +51,9 @@ before(async () => {
   await ctx.c.configService.update('FAQ_MATCH_SCORE', '0.99', { actorId: null, ip: null });
   await ctx.c.configService.update('FAQ_LEXICAL_MATCH_SCORE', '0.99', { actorId: null, ip: null });
   H.advisor = await ctx.login('tuvan');
+  // Các tính năng dưới đây mặc định TẮT khi vận hành cho Trường; bộ test bật lên để kiểm tra chúng vẫn đúng khi Admin chọn bật.
+  await ctx.c.configService.update('KB_AUTO_PUBLISH', 'true', { actorId: null, ip: null });
+  await ctx.c.configService.update('RAG_ALL_YEARS', 'true', { actorId: null, ip: null });
   await ctx.c.ingestService.reembedMissing(); // như thực tế: mọi đoạn đều có vector
 });
 after(() => ctx.close());
@@ -102,6 +108,7 @@ test('Google: câu hỏi tuyển sinh chưa có tài liệu -> tìm site:hht.edu
   assert.equal(r.webMode, 'SCHOOL');
   assert.equal(r.citations[0].url, 'https://hht.edu.vn/ngay-hoi');
   assert.equal(r.citations[0].official, true);
+  assert.equal(r.citations.length, 1, 'nguồn ngoài tên miền cho phép (baomoi.com) bị loại');
   assert.match(seen.systems[seen.systems.length - 1], /site:hht\.edu\.vn/);
   await setCfg('AI_OFFICIAL_SITE', 'tuyensinh.hht.edu.vn');
   await ask('Trường có câu lạc bộ âm nhạc cho sinh viên không?');
@@ -111,8 +118,9 @@ test('Google: câu hỏi tuyển sinh chưa có tài liệu -> tìm site:hht.edu
   await setCfg('RAG_MIN_SCORE', '0.6');
 });
 
-test('Google: câu hỏi ngoài tuyển sinh được trả lời bằng Google; tắt thì từ chối như cũ', async () => {
+test('Google: câu hỏi ngoài tuyển sinh được trả lời bằng Google khi Admin bật; tắt thì từ chối như cũ', async () => {
   await setCfg('RAG_MIN_SCORE', '0.99');
+  await setCfg('AI_WEB_GENERAL_ENABLED', 'true'); // mặc định tắt
   const r = await ask('Thủ đô của nước Pháp là gì?');
   assert.equal(r.source, 'WEB');
   assert.equal(r.webMode, 'GENERAL');

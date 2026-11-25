@@ -43,7 +43,7 @@ test('chia đều 3 bên + tự chuyển khi Mindtek lỗi; Mindtek lỗi thì n
   let mtFail = false;
   const mtCalls = [];
   const mindtek = createMindtekClient({
-    configService: cfgOf({ MINDTEK_BOT_ID: '1b94a3a9-eae9-4566-a648-ca2265f7e484' }), now: () => t, logger: quiet,
+    configService: cfgOf({ MINDTEK_ENABLED: true, MINDTEK_BOT_ID: '1b94a3a9-eae9-4566-a648-ca2265f7e484' }), now: () => t, logger: quiet,
     transport: { async generate(req) { mtCalls.push(req); if (mtFail) throw Object.assign(new Error('Mindtek 503'), { status: 503 }); return { text: '{"answer":"mt"}' }; } },
   });
   const configService = cfgOf();
@@ -93,6 +93,8 @@ before(async () => {
   await createStaff(ctx.db, 'quantri', 'SUPER_ADMIN');
   await createStaff(ctx.db, 'phongts', 'ADMISSION_OFFICE');
   H.admin = await ctx.login('quantri'); H.office = await ctx.login('phongts');
+  // Mindtek mặc định TẮT (bên thứ ba, endpoint không chính thức) -> bộ test này bật để kiểm tra tính năng.
+  await ctx.c.configService.update('MINDTEK_ENABLED', 'true', { actorId: null, ip: null });
 });
 after(() => ctx.close());
 

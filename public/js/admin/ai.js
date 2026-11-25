@@ -22,7 +22,7 @@
   const ERROR_LABEL = { RATE_LIMIT: 'Hết hạn mức / gọi quá nhanh', AUTH: 'Khóa sai / bị thu hồi', BAD_REQUEST: 'Yêu cầu sai / sai tên mô hình', SERVER: 'Máy chủ nhà cung cấp lỗi', NETWORK: 'Mạng / quá thời gian chờ', NO_KEY: 'Không còn khóa dùng được' };
   const usd = (x) => `$${(x || 0) < 0.01 && x > 0 ? (x || 0).toFixed(4) : (x || 0).toFixed(2)}`;
   let statsDays = 14;
-  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_WEB_SEARCH_ENABLED', 'AI_OFFICIAL_SITE', 'AI_WEB_GENERAL_ENABLED', 'KB_AUTO_PUBLISH', 'AI_OCR_ENABLED', 'AI_RECOMMEND_EXPLAIN'];
+  const STYLE_KEYS = ['AI_ASSISTANT_NAME', 'AI_TONE', 'AI_ANSWER_MAX_WORDS', 'CHAT_GREETING', 'AI_EXTRA_INSTRUCTIONS', 'AI_WEB_SEARCH_ENABLED', 'AI_OFFICIAL_SITE', 'AI_WEB_ALLOWED_DOMAINS', 'AI_WEB_GENERAL_ENABLED', 'KB_AUTO_PUBLISH', 'AI_OCR_ENABLED', 'AI_RECOMMEND_EXPLAIN'];
   const nf = new Intl.NumberFormat('vi-VN');
   const pct = (x) => (x === null || x === undefined ? '—' : `${Math.round(x * 100)}%`);
 
@@ -277,7 +277,15 @@
       else ai = `${t.llm.provider ? `${PROVIDER_NAME[t.llm.provider] || t.llm.provider} – ` : ''}${t.llm.model || 'AI'}${t.llm.fallbackUsed ? ' (mô hình dự phòng)' : ''}: ${t.llm.accepted ? 'câu trả lời hợp lệ' : (t.llm.reason || 'không dùng được')}${t.llm.tokensIn ? `, ${nf.format(t.llm.tokensIn + t.llm.tokensOut)} token` : ''}`;
       steps.push(['AI soạn câu trả lời', ai]);
     }
-    if (t.web) steps.push([t.web.mode === 'GENERAL' ? 'Tra Google (câu hỏi chung)' : 'Tra Google (website trường trước)', t.web.accepted ? `Dùng được, ${t.web.sources} nguồn web${t.web.official ? ', có nguồn từ website chính thức' : ''}` : (t.web.reason || 'Không dùng được')]);
+    if (t.cache && !t.cache.enabled && t.cache.reason === 'HAS_HISTORY') steps.push(['Bộ nhớ đệm', 'Không dùng: câu hỏi nối tiếp trong cuộc trò chuyện']);
+    if (t.web) {
+      const extra = [
+        t.web.rejectedSources ? `đã loại ${t.web.rejectedSources} nguồn ngoài tên miền cho phép` : '',
+        t.web.droppedSentences ? `bỏ ${t.web.droppedSentences} câu có số liệu không có nguồn tin cậy` : '',
+      ].filter(Boolean).join('; ');
+      const main = t.web.accepted ? `Dùng được, ${t.web.sources} nguồn web${t.web.official ? ', có nguồn từ website chính thức' : ''}` : (t.web.reason || 'Không dùng được');
+      steps.push([t.web.mode === 'GENERAL' ? 'Tra Google (câu hỏi chung)' : 'Tra Google (chỉ website được phép)', extra ? `${main} (${extra})` : main]);
+    }
     return el('div', { class: 'try-result' },
       el('div', { class: 'btn-row' },
         el('span', { class: 'badge' }, SOURCE_LABEL[r.source] || r.source),

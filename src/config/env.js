@@ -36,6 +36,35 @@ if (!visitorSecret) {
   visitorSecret = crypto.randomBytes(32).toString('hex');
 }
 
+/** Giá trị mẫu trong .env.example – để nguyên khi chạy thật thì mọi máy chủ dùng chung một bí mật công khai. */
+const PLACEHOLDER_SECRET = /^thay-bang-/i;
+
+/**
+ * Môi trường thật thiếu bí mật -> DỪNG khởi động thay vì chỉ cảnh báo. Lý do: khóa mã hóa tạm sinh ngẫu nhiên
+ * mỗi lần chạy, nên sau khi khởi động lại mọi khóa API Admin đã nhập không giải mã được và trợ lý mất AI
+ * mà không ai biết. Gọi trong server.start(); các công cụ (doctor, setup) vẫn chạy để giúp sửa lỗi.
+ */
+function productionSecretProblems(e = process.env) {
+  if ((e.NODE_ENV || 'development') !== 'production') return [];
+  const problems = [];
+  const visitor = String(e.VISITOR_HASH_SECRET || '');
+  const enc = String(e.SECRET_ENCRYPTION_KEY || '');
+  if (!visitor) problems.push('Thiếu VISITOR_HASH_SECRET');
+  else if (PLACEHOLDER_SECRET.test(visitor)) problems.push('VISITOR_HASH_SECRET vẫn là giá trị mẫu trong .env.example');
+  if (enc && PLACEHOLDER_SECRET.test(enc)) problems.push('SECRET_ENCRYPTION_KEY vẫn là giá trị mẫu');
+  return problems;
+}
+
+function assertProductionSecrets(e = process.env) {
+  const problems = productionSecretProblems(e);
+  if (problems.length) {
+    const err = new Error(`[env] Không khởi động ở chế độ production: ${problems.join('; ')}. `
+      + 'Chạy "npm run setup" hoặc đặt chuỗi ngẫu nhiên ≥32 ký tự trong .env (giữ nguyên giá trị cũ nếu đã có khóa API lưu trong CSDL).');
+    err.code = 'INSECURE_PRODUCTION_CONFIG';
+    throw err;
+  }
+}
+
 module.exports = Object.freeze({
   NODE_ENV,
   PORT: int('PORT', 3000),
@@ -61,4 +90,6 @@ module.exports = Object.freeze({
   ADMIN_INITIAL_USERNAME: process.env.ADMIN_INITIAL_USERNAME || 'admin',
   ADMIN_INITIAL_PASSWORD: process.env.ADMIN_INITIAL_PASSWORD || '',
   SEED_SAMPLE_STAFF: process.env.SEED_SAMPLE_STAFF === 'true',
+  assertProductionSecrets,
+  productionSecretProblems,
 });

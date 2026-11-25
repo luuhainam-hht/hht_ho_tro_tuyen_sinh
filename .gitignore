@@ -5,3 +5,5 @@ data/
 coverage/
 test/eval/*.csv
 backups/
+# Tep Claude gui ve (zip, patch, anh) - khong dua len GitHub
+Claude outputs/

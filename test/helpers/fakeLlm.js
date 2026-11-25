@@ -27,7 +27,7 @@ function createFakeTransport({ responder = () => ({ answer: 'Chưa có thông ti
       const body = responder(req);
       // Chế độ tra cứu Internet: responder trả { text, webSources } (giả lập groundingMetadata của Gemini).
       if (req.search && body && typeof body === 'object' && 'webSources' in body) {
-        return { text: body.text, webSources: body.webSources, tokensIn: 150, tokensOut: 60 };
+        return { text: body.text, webSources: body.webSources, webSupports: body.webSupports || [], tokensIn: 150, tokensOut: 60 };
       }
       return { text: typeof body === 'string' ? body : JSON.stringify(body), tokensIn: 120, tokensOut: 40 };
     },

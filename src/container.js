@@ -100,7 +100,7 @@ function createContainer({ db = getDb(), logger = console, llmTransport, groqTra
       INGEST_DOCUMENT: async (p) => {
         const out = await ingestService.processDocument(p.documentId);
         // KB_AUTO_PUBLISH: tài liệu vừa xử lý xong được trợ lý dùng ngay (vẫn ghi nhật ký, vẫn lưu trữ được).
-        if (configService.getOr('KB_AUTO_PUBLISH', true) !== false) {
+        if (configService.getOr('KB_AUTO_PUBLISH', false) === true) {
           const { rows } = await db.query('SELECT uploaded_by FROM kb_documents WHERE id = ?', [p.documentId]);
           await kbService.publish(p.documentId, { actor: { id: rows[0]?.uploaded_by ?? null }, ip: null, reason: 'Tự công bố sau khi xử lý (KB_AUTO_PUBLISH)' });
           out.published = true;

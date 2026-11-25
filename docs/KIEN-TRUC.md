@@ -16,7 +16,7 @@ Trình duyệt / widget / Messenger
    │ config/db.js (placeholder ?, retry lỗi kết nối, withTransaction chạy lại cả khối)
    └────┬───────────────────────────────┬──────────────────────┘
         │ SQL                            │ HTTPS
-   PostgreSQL (dữ liệu, jobs, NOTIFY)    Gemini (sinh câu + embedding, nhiều key xoay vòng)
+   PostgreSQL (dữ liệu, jobs, NOTIFY)    Groq / Gemini (sinh câu); Gemini (embedding, tra Google, đọc ảnh)
 ```
 
 ## Luồng hỏi đáp (`services/rag/answerService.js`)
@@ -26,7 +26,7 @@ Các bước đi từ rẻ và chắc chắn đến đắt và rủi ro:
 1. **Chuẩn bị:** kiểm tra phiên trò chuyện, che dữ liệu cá nhân (SĐT, CCCD, email) trước khi lưu log hoặc gửi LLM, rồi chuẩn hóa câu hỏi (bỏ dấu, bỏ hư từ).
 2. **Luật:** chào hỏi, câu ngoài phạm vi, nội dung khiếm nhã, nhầm với trường CNH → trả câu mẫu, không tốn token.
 3. **FAQ đã duyệt:** khớp theo cosine embedding hoặc theo độ giống từ khóa → trả **nguyên văn** kèm nguồn.
-4. **Bộ nhớ đệm:** khóa gồm (hash câu hỏi, `kb_version`). Khi công bố tài liệu hoặc duyệt FAQ, `kb_version` đổi nên cache tự hết hiệu lực.
+4. **Bộ nhớ đệm:** khóa gồm (hash câu hỏi + mã ngành đang xem, `kb_version`); phiên đã có lịch sử hội thoại không đọc/ghi bộ nhớ đệm. Khi công bố tài liệu hoặc duyệt FAQ, `kb_version` đổi nên cache tự hết hiệu lực.
 5. **Truy xuất lai:** full-text (tsvector, không dấu) top 20 + vector top 20, gộp bằng Reciprocal Rank Fusion, lấy `RAG_TOP_K` đoạn.
 6. **Không đủ căn cứ** (cosine < `RAG_MIN_SCORE` và độ phủ từ khóa < `RAG_MIN_LEXICAL_SCORE`) → FALLBACK: báo hotline và gợi ý gửi câu hỏi cho cán bộ. **Không gọi LLM.**
 7. **Gọi LLM:** prompt nghiêm ngặt, ngữ cảnh đặt trong khối phân tách để chống prompt injection, yêu cầu trả JSON.
@@ -78,3 +78,15 @@ Mọi chuyển trạng thái đi theo cùng một trình tự: `withTransaction`
   - *Tra cứu Internet* (`AI_WEB_SEARCH_ENABLED`): kho không đủ căn cứ hoặc AI báo tài liệu thiếu → Gemini + Google Search grounding, ưu tiên hht.edu.vn, chỉ nhận khi có nguồn web thật (`groundingMetadata`); nguồn `WEB`, giao diện ghi chú "chưa phải văn bản chính thức".
   - *Trả lời thẳng*: lời nhắc cấm nhắc lại câu hỏi/mở đầu; nhánh trích nguyên văn bỏ "Theo văn bản…", với đoạn "Hỏi/Đáp" chỉ lấy phần Đáp khớp nhất.
   - *Câu trả lời dài*: khung chat cuộn tới ĐẦU câu trả lời (khi cao hơn 55% khung) và thêm nút "↑ Về đầu câu trả lời".
+
+## Nâng cấp vận hành cho Trường (24/11/2026)
+
+- **Bộ nhớ đệm** (`answerService.cacheKey`): khóa = sha256(câu hỏi chuẩn hóa + `|major:<mã ngành>`). Lý do: truy xuất được bổ sung tên ngành đang xem, nên cùng câu "học phí bao nhiêu?" ở hai trang ngành là hai câu hỏi khác nhau. Lịch sử hội thoại được đọc trước bước cache; có lịch sử thì bỏ qua cache (câu nối tiếp phụ thuộc ngữ cảnh). Migration xóa toàn bộ `answer_cache` cũ.
+- **Tra Internet** (`answerService.tryWeb`):
+  - Chế độ SCHOOL chỉ giữ nguồn có tên miền thuộc `AI_WEB_ALLOWED_DOMAINS` (`isAllowedSource`: khớp đúng tên miền hoặc tên miền con; URL chuyển hướng của Google thì lấy tên miền ở tiêu đề). Không còn nguồn nào -> FALLBACK.
+  - `citation.validateWebAnswer`: câu có con số phải nằm trong một `groundingSupports` của Gemini mà nguồn thuộc tên miền tin cậy; hotline và số trong đoạn tài liệu nội bộ luôn được phép. Còn lại < 30 ký tự -> không dùng.
+  - Trace trên trang Thử trợ lý ghi số nguồn bị loại và số câu bị bỏ.
+- **Bí mật** (`env.assertProductionSecrets`, gọi trong `server.start`): production thiếu `VISITOR_HASH_SECRET` hoặc để giá trị mẫu -> dừng khởi động (khóa mã hóa tạm sẽ làm mất khóa API sau mỗi lần khởi động lại). `doctor`/`setup` vẫn chạy được để sửa.
+- **Giới hạn tần suất** (`rateLimits.js`): `limits.chat` = [`chatIp` 200/phút/IP, `chatSession` 12/phút/(IP + sessionId)]; `api` 600/phút/IP.
+- **Lọc câu dò bí mật** (`securityGuard.detectSecretProbe`): danh từ "học thuật" (cơ sở dữ liệu, mã nguồn, lỗ hổng, SQL injection…) được bỏ qua khi câu hỏi nói về việc học (`STUDY_CONTEXT`) và không nhắm vào hệ thống/website của Trường (`SYSTEM_TARGET`). Mật khẩu, khóa API, token, chuỗi kết nối, file .env luôn bị chặn.
+- **Mặc định an toàn**: `KB_AUTO_PUBLISH`, `AI_WEB_GENERAL_ENABLED`, `MINDTEK_ENABLED`, `RAG_ALL_YEARS` = false; migration `2026-11-24-safe-defaults-for-production` chỉ đổi dòng có `updated_by IS NULL`.

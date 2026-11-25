@@ -45,4 +45,32 @@ function validateCitations({ answer, chunks, allowedNumbers = [] }) {
   return { answer: text, citedIndexes: [...cited].sort((a, b) => a - b), dropped, sufficient };
 }
 
-module.exports = { validateCitations, splitSentences, digitsOf };
+/**
+ * Kiểm tra câu trả lời tra cứu Internet (không có đoạn văn bản gốc để đối chiếu như RAG):
+ *  - Câu có con số chỉ được giữ khi các con số đó nằm trong một đoạn mà Google xác nhận có nguồn
+ *    (groundingSupports) VÀ nguồn đó được tin cậy (isTrusted, vd thuộc hht.edu.vn).
+ *  - Con số trong allowedNumbers (hotline) và trong đoạn tài liệu nội bộ (contextChunks) luôn được phép.
+ *  - Câu không có con số giữ nguyên. Còn lại quá ít -> sufficient = false.
+ */
+const squash = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+
+function validateWebAnswer({ answer, supports = [], isTrusted = () => true, allowedNumbers = [], contextChunks = [] }) {
+  const allowed = new Set([...allowedNumbers.flatMap(digitsOf), ...contextChunks.flatMap((c) => digitsOf(c.content))]);
+  const trusted = supports.filter((s) => s.sources.some(isTrusted)).map((s) => ({ text: squash(s.text), digits: new Set(digitsOf(s.text)) }));
+  const kept = [];
+  const dropped = [];
+  for (const sentence of splitSentences(answer)) {
+    const nums = digitsOf(sentence).filter((n) => !allowed.has(n));
+    if (!nums.length) { kept.push(sentence); continue; }
+    const s = squash(sentence);
+    // Đoạn có nguồn chồng lên câu này (Google chia đoạn khác cách tách câu của ta: chứa nhau theo một trong hai chiều).
+    const overlapping = trusted.filter((x) => x.text && (x.text.includes(s) || s.includes(x.text)));
+    const supported = nums.every((n) => overlapping.some((x) => x.digits.has(n)));
+    if (supported) kept.push(sentence);
+    else dropped.push(sentence);
+  }
+  const text = kept.join('\n').trim();
+  return { answer: text, dropped, sufficient: text.length >= MIN_ANSWER_CHARS };
+}
+
+module.exports = { validateCitations, validateWebAnswer, splitSentences, digitsOf };

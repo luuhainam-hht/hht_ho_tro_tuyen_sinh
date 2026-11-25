@@ -94,7 +94,7 @@ function createMindtekClient({ configService, transport = createMindtekTransport
 
   const botId = () => String(cfg('MINDTEK_BOT_ID', '') || '').trim();
   const baseUrl = () => String(cfg('MINDTEK_BASE_URL', DEFAULT_BASE) || DEFAULT_BASE).trim();
-  const configured = () => cfg('MINDTEK_ENABLED', true) !== false && Boolean(botId());
+  const configured = () => cfg('MINDTEK_ENABLED', false) === true && Boolean(botId());
   const available = () => configured() && now() >= state.until;
 
   /**

@@ -7,6 +7,7 @@
   const RETRY_STATUSES = new Set([429, 502, 503]);
   const API_MAX_ATTEMPTS = 3;
   const API_RETRY_BASE_MS = 1000; // 1s, 2s, 3s – đủ cho Render free đánh thức
+  const API_MAX_SILENT_WAIT_MS = 5000; // chờ lâu hơn thì báo lỗi ngay (người dùng tự quyết định thử lại)
   const TOKEN_KEY = 'hht.token';
 
   function getToken() {
@@ -33,8 +34,12 @@
       }
       if (RETRY_STATUSES.has(res.status) && attempt < API_MAX_ATTEMPTS) {
         const retryAfter = Number(res.headers.get('Retry-After'));
-        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : API_RETRY_BASE_MS * attempt);
-        continue;
+        const waitMs = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : API_RETRY_BASE_MS * attempt;
+        // Bị giới hạn tần suất lâu (vd 60 giây): báo ngay cho người dùng thay vì để "Đang trả lời…" treo cả phút.
+        if (waitMs <= API_MAX_SILENT_WAIT_MS) {
+          await sleep(waitMs);
+          continue;
+        }
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
